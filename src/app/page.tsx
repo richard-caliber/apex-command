@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useSWR from "swr";
 import type { DashboardData } from "@/types";
-import LoginScreen from "@/components/LoginScreen";
 import TopBar from "@/components/TopBar";
 import AgentGrid from "@/components/AgentGrid";
 import ProjectCards from "@/components/ProjectCards";
@@ -13,24 +12,13 @@ import StatusBar from "@/components/StatusBar";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function Home() {
-  const [authed, setAuthed] = useState(false);
   const [demoMode, setDemoMode] = useState(true);
 
-  useEffect(() => {
-    if (sessionStorage.getItem("apex-auth") === "1") {
-      setAuthed(true);
-    }
-  }, []);
-
   const { data } = useSWR<DashboardData>(
-    authed ? "/api/status" : null,
+    "/api/status",
     fetcher,
     { refreshInterval: 30000 }
   );
-
-  if (!authed) {
-    return <LoginScreen onAuth={() => setAuthed(true)} />;
-  }
 
   if (!data) {
     return (
