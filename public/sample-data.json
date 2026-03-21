@@ -1,0 +1,98 @@
+{
+  "lastUpdated": "2026-03-21T13:00:00Z",
+  "system": {
+    "status": "operational",
+    "uptime": "72h 14m",
+    "activeAgents": 4,
+    "totalAgents": 8
+  },
+  "agents": [
+    {
+      "id": "atlas", "name": "Atlas", "emoji": "🧭", "role": "CEO / Strategist",
+      "status": "active", "lastSeen": "2026-03-21T13:00:00Z",
+      "currentTask": "Strategic planning session", "model": "claude-opus-4"
+    },
+    {
+      "id": "darwin", "name": "Darwin", "emoji": "🔄", "role": "System Optimizer",
+      "status": "active", "lastSeen": "2026-03-21T12:30:00Z",
+      "currentTask": "Content QA pipeline oversight", "model": "claude-opus-4"
+    },
+    {
+      "id": "newton", "name": "Newton", "emoji": "🔬", "role": "Research & Intel",
+      "status": "active", "lastSeen": "2026-03-21T12:45:00Z",
+      "currentTask": "Reddit + FB draft generation", "model": "claude-sonnet-4"
+    },
+    {
+      "id": "jimmy", "name": "Jimmy", "emoji": "👀", "role": "Content Creation",
+      "status": "active", "lastSeen": "2026-03-21T07:43:00Z",
+      "currentTask": "Waiting for next pipeline trigger", "model": "claude-sonnet-4"
+    },
+    {
+      "id": "donald", "name": "Donald", "emoji": "🔥", "role": "Brand & Strategy",
+      "status": "paused", "lastSeen": "2026-03-20T06:00:00Z",
+      "currentTask": "—", "model": "gpt-4o"
+    },
+    {
+      "id": "elon", "name": "Elon", "emoji": "⚡", "role": "Operations",
+      "status": "paused", "lastSeen": "2026-03-20T06:00:00Z",
+      "currentTask": "—", "model": "gpt-4o-mini"
+    },
+    {
+      "id": "warren", "name": "Warren", "emoji": "💰", "role": "Financials",
+      "status": "paused", "lastSeen": "2026-03-20T06:00:00Z",
+      "currentTask": "—", "model": "gpt-4o-mini"
+    },
+    {
+      "id": "tau", "name": "Tau", "emoji": "🛤️", "role": "Pathfinder",
+      "status": "paused", "lastSeen": "2026-03-20T06:00:00Z",
+      "currentTask": "—", "model": "gpt-4o"
+    }
+  ],
+  "projects": [
+    {
+      "codename": "OPERATION CALIBER", "name": "Caliber Peptides",
+      "progress": 60, "status": "on-track", "stage": "Pre-revenue",
+      "lastAction": "Carousel + Story posted to IG"
+    },
+    {
+      "codename": "OPERATION EDGE", "name": "AI Automation Agency",
+      "progress": 30, "status": "on-track", "stage": "Landing page live",
+      "lastAction": "Landing page deployed on Vercel"
+    },
+    {
+      "codename": "OPERATION QUEST", "name": "StoryQuest.ai",
+      "progress": 40, "status": "attention", "stage": "Bug fixes",
+      "lastAction": "Fixing timeout + character bugs"
+    }
+  ],
+  "activity": [
+    { "time": "2026-03-21T13:00:00Z", "agent": "🧭", "event": "Apex Command Centre spec finalised" },
+    { "time": "2026-03-21T11:22:00Z", "agent": "🧭", "event": "Jimmy cron updated — BIBLE CTA mandatory" },
+    { "time": "2026-03-21T11:10:00Z", "agent": "🧭", "event": "Bible PDF hosted on Google Drive" },
+    { "time": "2026-03-21T11:04:00Z", "agent": "🧭", "event": "Story posted to IG" },
+    { "time": "2026-03-21T11:00:00Z", "agent": "🔬", "event": "Started Reddit + FB draft task" },
+    { "time": "2026-03-21T08:35:00Z", "agent": "🧭", "event": "Carousel published (Media ID: 17916334461325381)" },
+    { "time": "2026-03-21T08:30:00Z", "agent": "🔄", "event": "Approved Peptide Myths carousel" },
+    { "time": "2026-03-21T07:43:00Z", "agent": "👀", "event": "Delivered 7 carousel slides + caption" },
+    { "time": "2026-03-21T05:53:00Z", "agent": "🔄", "event": "Content review PASS" },
+    { "time": "2026-03-21T02:30:00Z", "agent": "🔄", "event": "Research review PASS" },
+    { "time": "2026-03-21T01:00:00Z", "agent": "🔬", "event": "Peptide Myths research delivered" }
+  ],
+  "pipeline": {
+    "date": "2026-03-21",
+    "stages": [
+      { "name": "Research", "status": "done" },
+      { "name": "Review", "status": "done" },
+      { "name": "Create", "status": "done" },
+      { "name": "QA", "status": "done" },
+      { "name": "Publish", "status": "done" },
+      { "name": "Story", "status": "done" }
+    ]
+  },
+  "footer": {
+    "activeAgents": "4/8",
+    "pipelineStatus": "Complete",
+    "nextCron": "10:00 PM",
+    "revenue": "£0"
+  }
+}
