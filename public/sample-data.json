@@ -1,31 +1,31 @@
 {
-  "lastUpdated": "2026-03-21T13:00:00Z",
+  "lastUpdated": "2026-03-23T06:48:00Z",
   "system": {
     "status": "operational",
-    "uptime": "72h 14m",
+    "uptime": "96h 30m",
     "activeAgents": 4,
     "totalAgents": 8
   },
   "agents": [
     {
       "id": "atlas", "name": "Atlas", "emoji": "🧭", "role": "CEO / Strategist",
-      "status": "active", "lastSeen": "2026-03-21T13:00:00Z",
-      "currentTask": "Strategic planning session", "model": "claude-opus-4"
+      "status": "active", "lastSeen": "2026-03-23T06:48:00Z",
+      "currentTask": "Morning brief + task planning", "model": "claude-opus-4"
     },
     {
       "id": "darwin", "name": "Darwin", "emoji": "🔄", "role": "System Optimizer",
-      "status": "active", "lastSeen": "2026-03-21T12:30:00Z",
-      "currentTask": "Content QA pipeline oversight", "model": "claude-opus-4"
+      "status": "active", "lastSeen": "2026-03-23T04:30:00Z",
+      "currentTask": "Apex Studio strategy + content QA", "model": "claude-opus-4"
     },
     {
       "id": "newton", "name": "Newton", "emoji": "🔬", "role": "Research & Intel",
-      "status": "active", "lastSeen": "2026-03-21T12:45:00Z",
-      "currentTask": "Reddit + FB draft generation", "model": "claude-sonnet-4"
+      "status": "active", "lastSeen": "2026-03-23T02:30:00Z",
+      "currentTask": "Reddit/FB drafts + funnel research", "model": "claude-sonnet-4"
     },
     {
       "id": "jimmy", "name": "Jimmy", "emoji": "👀", "role": "Content Creation",
-      "status": "active", "lastSeen": "2026-03-21T07:43:00Z",
-      "currentTask": "Waiting for next pipeline trigger", "model": "claude-sonnet-4"
+      "status": "active", "lastSeen": "2026-03-23T04:06:00Z",
+      "currentTask": "CJC-1295 reel created — awaiting review", "model": "claude-sonnet-4"
     },
     {
       "id": "donald", "name": "Donald", "emoji": "🔥", "role": "Brand & Strategy",
@@ -50,49 +50,151 @@
   ],
   "projects": [
     {
-      "codename": "OPERATION CALIBER", "name": "Caliber Peptides",
+      "codename": "OPERATION CALIBER", "name": "Caliber Peptides", "icon": "🧪",
       "progress": 60, "status": "on-track", "stage": "Pre-revenue",
-      "lastAction": "Carousel + Story posted to IG"
+      "lastAction": "CJC-1295 reel created — awaiting Darwin review"
     },
     {
-      "codename": "OPERATION EDGE", "name": "AI Automation Agency",
-      "progress": 30, "status": "on-track", "stage": "Landing page live",
-      "lastAction": "Landing page deployed on Vercel"
+      "codename": "OPERATION EDGE", "name": "AI Automation Agency", "icon": "🤖",
+      "progress": 35, "status": "on-track", "stage": "First client (Todd)",
+      "lastAction": "Todd WordPress migration complete"
     },
     {
-      "codename": "OPERATION QUEST", "name": "StoryQuest.ai",
+      "codename": "OPERATION QUEST", "name": "StoryQuest.ai", "icon": "🎮",
       "progress": 40, "status": "attention", "stage": "Bug fixes",
-      "lastAction": "Fixing timeout + character bugs"
+      "lastAction": "Claude Code fixing timeout + character bugs"
+    },
+    {
+      "codename": "OPERATION REPOST", "name": "RepostAI", "icon": "🔄",
+      "progress": 15, "status": "on-track", "stage": "Building MVP",
+      "lastAction": "Claude Code building first version"
     }
   ],
-  "activity": [
-    { "time": "2026-03-21T13:00:00Z", "agent": "🧭", "event": "Apex Command Centre spec finalised" },
-    { "time": "2026-03-21T11:22:00Z", "agent": "🧭", "event": "Jimmy cron updated — BIBLE CTA mandatory" },
-    { "time": "2026-03-21T11:10:00Z", "agent": "🧭", "event": "Bible PDF hosted on Google Drive" },
-    { "time": "2026-03-21T11:04:00Z", "agent": "🧭", "event": "Story posted to IG" },
-    { "time": "2026-03-21T11:00:00Z", "agent": "🔬", "event": "Started Reddit + FB draft task" },
-    { "time": "2026-03-21T08:35:00Z", "agent": "🧭", "event": "Carousel published (Media ID: 17916334461325381)" },
-    { "time": "2026-03-21T08:30:00Z", "agent": "🔄", "event": "Approved Peptide Myths carousel" },
-    { "time": "2026-03-21T07:43:00Z", "agent": "👀", "event": "Delivered 7 carousel slides + caption" },
-    { "time": "2026-03-21T05:53:00Z", "agent": "🔄", "event": "Content review PASS" },
-    { "time": "2026-03-21T02:30:00Z", "agent": "🔄", "event": "Research review PASS" },
-    { "time": "2026-03-21T01:00:00Z", "agent": "🔬", "event": "Peptide Myths research delivered" }
+  "tasks": [
+    {
+      "id": "t1",
+      "task": "Fix IG profile — change name to Caliber Peptides + update bio",
+      "project": "caliber",
+      "priority": "high",
+      "type": "human",
+      "status": "pending",
+      "assignedBy": "atlas"
+    },
+    {
+      "id": "t2",
+      "task": "Review Reddit comment drafts from Newton",
+      "project": "caliber",
+      "priority": "medium",
+      "type": "approve",
+      "status": "pending",
+      "assignedBy": "atlas"
+    },
+    {
+      "id": "t3",
+      "task": "Send Todd the agency landing page link",
+      "project": "agency",
+      "priority": "high",
+      "type": "human",
+      "status": "pending",
+      "assignedBy": "darwin"
+    },
+    {
+      "id": "t4",
+      "task": "Create Reddit account + start lurking r/peptides",
+      "project": "caliber",
+      "priority": "medium",
+      "type": "human",
+      "status": "pending",
+      "assignedBy": "atlas"
+    },
+    {
+      "id": "t5",
+      "task": "Join top 5 Facebook peptide/biohacking groups",
+      "project": "caliber",
+      "priority": "medium",
+      "type": "human",
+      "status": "pending",
+      "assignedBy": "atlas"
+    },
+    {
+      "id": "t6",
+      "task": "Pipeline: CJC-1295 reel — Darwin review at 1:30pm",
+      "project": "caliber",
+      "priority": "low",
+      "type": "automated",
+      "status": "pending",
+      "assignedBy": "atlas"
+    },
+    {
+      "id": "t7",
+      "task": "Review IG story from Saturday — any tweaks needed?",
+      "project": "caliber",
+      "priority": "medium",
+      "type": "review",
+      "status": "pending",
+      "assignedBy": "atlas"
+    }
+  ],
+  "taskMetrics": {
+    "doneToday": 0,
+    "totalToday": 7,
+    "automationLevel": 47,
+    "stepsToRevenue": {
+      "closest": "agency",
+      "remaining": 3
+    }
+  },
+  "ideas": [
+    {
+      "id": "i1", "title": "Polymarket Signal Bot", "stage": "researching",
+      "ev": "high", "description": "AI news → prediction market alerts. $20-40K/mo potential", "agent": "🔬"
+    },
+    {
+      "id": "i2", "title": "Riz Dating App", "stage": "researching",
+      "ev": "high", "description": "AI dating assistant — poker pro teaches dating strategy", "agent": "🔬"
+    },
+    {
+      "id": "i3", "title": "Squad Playbook Product", "stage": "incoming",
+      "ev": "high", "description": "Package our AI team system, sell for $49-99", "agent": null
+    },
+    {
+      "id": "i4", "title": "UK Parliament Tracker", "stage": "incoming",
+      "ev": "medium", "description": "Track MP votes vs promises — newsletter product", "agent": null
+    },
+    {
+      "id": "i5", "title": "Online Comic Creator", "stage": "incoming",
+      "ev": "medium", "description": "Consistent character gen + voices + animation", "agent": null
+    },
+    {
+      "id": "i6", "title": "Build a Game", "stage": "incoming",
+      "ev": "low", "description": "Creative flex — test AI game dev capabilities", "agent": null
+    }
   ],
   "pipeline": {
-    "date": "2026-03-21",
+    "date": "2026-03-23",
     "stages": [
       { "name": "Research", "status": "done" },
       { "name": "Review", "status": "done" },
       { "name": "Create", "status": "done" },
-      { "name": "QA", "status": "done" },
-      { "name": "Publish", "status": "done" },
-      { "name": "Story", "status": "done" }
+      { "name": "QA", "status": "pending" },
+      { "name": "Publish", "status": "pending" },
+      { "name": "Story", "status": "pending" }
     ]
   },
+  "activity": [
+    { "time": "2026-03-23T06:48:00Z", "agent": "🧭", "event": "Morning brief sent to Ginge" },
+    { "time": "2026-03-23T04:06:00Z", "agent": "👀", "event": "CJC-1295 reel content created — 5 images + caption" },
+    { "time": "2026-03-23T02:30:00Z", "agent": "🔄", "event": "Research review PASS — CJC-1295 reel" },
+    { "time": "2026-03-23T01:00:00Z", "agent": "🔬", "event": "CJC-1295 + Ipamorelin research delivered" },
+    { "time": "2026-03-22T17:16:00Z", "agent": "🔄", "event": "Apex Studio strategy defined — portfolio model" },
+    { "time": "2026-03-22T16:53:00Z", "agent": "🧭", "event": "Apex Command Centre deployed to Vercel" },
+    { "time": "2026-03-21T11:04:00Z", "agent": "🧭", "event": "Story posted to IG" },
+    { "time": "2026-03-21T08:35:00Z", "agent": "🧭", "event": "First carousel published to IG" }
+  ],
   "footer": {
     "activeAgents": "4/8",
-    "pipelineStatus": "Complete",
-    "nextCron": "10:00 PM",
+    "pipelineStatus": "QA Pending",
+    "nextCron": "1:30 PM (Darwin Review)",
     "revenue": "£0"
   }
 }

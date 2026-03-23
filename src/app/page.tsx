@@ -6,6 +6,8 @@ import type { DashboardData } from "@/types";
 import TopBar from "@/components/TopBar";
 import AgentGrid from "@/components/AgentGrid";
 import ProjectCards from "@/components/ProjectCards";
+import TaskList from "@/components/TaskList";
+import IdeaPipeline from "@/components/IdeaPipeline";
 import ActivityFeed from "@/components/ActivityFeed";
 import StatusBar from "@/components/StatusBar";
 
@@ -41,20 +43,25 @@ export default function Home() {
       {/* 2. Agent Grid */}
       <AgentGrid agents={data.agents} />
 
-      {/* 3. Projects + Activity Feed */}
-      <section
-        className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6 animate-fade-in"
-        style={{ animationDelay: "0.2s" }}
-      >
-        <div className="lg:col-span-2">
-          <ProjectCards projects={data.projects} />
-        </div>
-        <div className="lg:col-span-3">
-          <ActivityFeed activity={data.activity} />
-        </div>
+      {/* 3. Project Cards */}
+      <section className="mb-6 animate-fade-in" style={{ animationDelay: "0.15s" }}>
+        <ProjectCards projects={data.projects} />
       </section>
 
-      {/* 4. Bottom Status Bar */}
+      {/* 4. Task List */}
+      {data.tasks && data.taskMetrics && (
+        <TaskList tasks={data.tasks} metrics={data.taskMetrics} />
+      )}
+
+      {/* 5. Idea Pipeline (collapsed by default) */}
+      {data.ideas && <IdeaPipeline ideas={data.ideas} />}
+
+      {/* 6. Activity Feed */}
+      <section className="mb-6 animate-fade-in" style={{ animationDelay: "0.25s" }}>
+        <ActivityFeed activity={data.activity} />
+      </section>
+
+      {/* 7. Bottom Status Bar */}
       <StatusBar
         activeAgents={data.footer.activeAgents}
         pipelineStatus={data.footer.pipelineStatus}
