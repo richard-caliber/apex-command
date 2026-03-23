@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     await put("apex-data.json", JSON.stringify(data), {
       access: "public",
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
 
     return NextResponse.json({ ok: true, updated: data.lastUpdated });
