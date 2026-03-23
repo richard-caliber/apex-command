@@ -23,7 +23,8 @@ export default function AppDetail({ params }: { params: Promise<{ id: string }> 
     return <Shell><div className="flex items-center justify-center h-[60vh]"><span className="text-zinc-500 animate-pulse">Loading...</span></div></Shell>;
   }
 
-  const app = data.apps.find((a) => a.id === id);
+  const apps = data.apps || [];
+  const app = apps.find((a) => a.id === id);
   if (!app) {
     return <Shell><div className="text-center py-20"><p className="text-zinc-500">App not found</p><Link href="/" className="text-cyan-400 text-sm mt-2 inline-block">Back to Mission Control</Link></div></Shell>;
   }

@@ -55,7 +55,12 @@ export default function MissionControl() {
     );
   }
 
-  const decisions = data.apps.filter((a) => {
+  const apps = data.apps || [];
+  const portfolio = data.portfolio || { totalMRR: 0, target: 10000, liveApps: 0, buildingApps: 0 };
+  const revenueHistory = data.revenueHistory || [];
+  const activity = data.activity || [];
+
+  const decisions = apps.filter((a) => {
     const action = getAction(a.status, a.launchDate, a.mrr);
     return action.label === "Kill?";
   });
@@ -74,9 +79,9 @@ export default function MissionControl() {
 
         {/* Top stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Total MRR" value={`£${data.portfolio.totalMRR}`} sub={`Target: £${data.portfolio.target.toLocaleString()}/mo`} />
-          <StatCard label="Live Apps" value={data.portfolio.liveApps} />
-          <StatCard label="Building" value={data.portfolio.buildingApps} />
+          <StatCard label="Total MRR" value={`£${portfolio.totalMRR}`} sub={`Target: £${portfolio.target.toLocaleString()}/mo`} />
+          <StatCard label="Live Apps" value={portfolio.liveApps} />
+          <StatCard label="Building" value={portfolio.buildingApps} />
           <StatCard
             label="Decisions Needed"
             value={decisions.length}
@@ -87,7 +92,7 @@ export default function MissionControl() {
         {/* Revenue chart */}
         <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-4">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Revenue (30d)</h2>
-          <RevenueChart data={data.revenueHistory} />
+          <RevenueChart data={revenueHistory} />
         </div>
 
         {/* App Portfolio Table */}
@@ -109,7 +114,7 @@ export default function MissionControl() {
                 </tr>
               </thead>
               <tbody>
-                {data.apps.map((app) => {
+                {apps.map((app) => {
                   const s = statusConfig[app.status] || statusConfig.paused;
                   const action = getAction(app.status, app.launchDate, app.mrr);
                   const days = daysLive(app.launchDate);
@@ -151,7 +156,7 @@ export default function MissionControl() {
           <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-4">
             <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Activity Feed</h2>
             <div className="space-y-2 max-h-[250px] overflow-y-auto">
-              {data.activity.map((e, i) => (
+              {activity.map((e, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs">
                   <span className="text-zinc-600 shrink-0 w-[52px]" style={{ fontFamily: "var(--font-mono)" }}>
                     {new Date(e.time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
