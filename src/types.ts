@@ -1,77 +1,63 @@
-export interface Agent {
+export interface App {
   id: string;
   name: string;
-  emoji: string;
-  role: string;
-  status: "active" | "idle" | "error" | "paused";
-  lastSeen: string;
-  currentTask: string;
-  model: string;
-}
-
-export interface Project {
-  name: string;
   icon: string;
-  status: "live" | "building" | "blocked" | "paused" | "complete" | "idea";
-  progress: number;
+  url: string;
+  status: "live" | "building" | "paused" | "queued" | "complete";
+  launchDate: string | null;
   mrr: number;
   targetMRR: number;
-  lastActivity: string;
-  nextAction: string;
-}
-
-export interface ProductRevenue {
-  name: string;
-  mrr: number;
-  target: number;
-}
-
-export interface MonthlyRevenue {
-  month: string;
-  actual: number;
-  projected: number;
-}
-
-export interface Revenue {
-  totalMRR: number;
-  currency: string;
-  target: number;
-  byProduct: ProductRevenue[];
-  monthly: MonthlyRevenue[];
+  dau: number;
+  conversionRate: number;
+  pricing: string;
+  techStack: string;
+  notes: string;
+  competitors: string;
+  decisions: { date: string; action: string; reason: string }[];
 }
 
 export interface Idea {
   id: string;
-  title: string;
-  stage: "incoming" | "researching" | "building" | "live" | "killed";
+  name: string;
+  stage: "incoming" | "validating" | "ready" | "building" | "live";
+  niche: string;
   ev: "high" | "medium" | "low";
-  description: string;
-  agent: string | null;
+  buildTime: string;
 }
 
 export interface ActivityEntry {
   time: string;
-  agent: string;
   event: string;
+  app: string;
+}
+
+export interface Agent {
+  id: string;
+  name: string;
+  emoji: string;
+  status: "active" | "paused";
+  currentTask: string;
+}
+
+export interface RevenueHistoryEntry {
+  date: string;
+  total: number;
 }
 
 export interface DashboardData {
   lastUpdated: string;
-  system: {
-    status: string;
-    uptime: string;
-    activeAgents: number;
-    totalAgents: number;
+  portfolio: {
+    totalMRR: number;
+    target: number;
+    totalApps: number;
+    liveApps: number;
+    buildingApps: number;
+    queuedApps: number;
+    decisionsNeeded: number;
   };
-  agents: Agent[];
-  revenue: Revenue;
-  projects: Project[];
+  apps: App[];
   ideas: Idea[];
+  revenueHistory: RevenueHistoryEntry[];
   activity: ActivityEntry[];
-  footer: {
-    activeAgents: string;
-    pipelineStatus: string;
-    nextCron: string;
-    revenue: string;
-  };
+  agents: Agent[];
 }

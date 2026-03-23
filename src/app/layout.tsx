@@ -3,16 +3,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "APEX COMMAND CENTRE",
-  description: "AI Agent Squad Dashboard",
+  description: "App Factory Mission Control",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

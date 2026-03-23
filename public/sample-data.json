@@ -1,73 +1,152 @@
 {
-  "lastUpdated": "2026-03-23T07:48:00Z",
-  "system": {
-    "status": "operational",
-    "uptime": "96h 30m",
-    "activeAgents": 4,
-    "totalAgents": 8
-  },
-  "agents": [
-    { "id": "atlas", "name": "Atlas", "emoji": "🧭", "role": "CEO / Strategist", "status": "active", "lastSeen": "2026-03-23T06:48:00Z", "currentTask": "Morning brief + task planning", "model": "claude-opus-4" },
-    { "id": "darwin", "name": "Darwin", "emoji": "🔄", "role": "System Optimizer", "status": "active", "lastSeen": "2026-03-23T04:30:00Z", "currentTask": "Apex Studio strategy + content QA", "model": "claude-opus-4" },
-    { "id": "newton", "name": "Newton", "emoji": "🔬", "role": "Research & Intel", "status": "active", "lastSeen": "2026-03-23T02:30:00Z", "currentTask": "Reddit/FB drafts + funnel research", "model": "claude-sonnet-4" },
-    { "id": "jimmy", "name": "Jimmy", "emoji": "👀", "role": "Content Creation", "status": "active", "lastSeen": "2026-03-23T04:06:00Z", "currentTask": "CJC-1295 reel — awaiting review", "model": "claude-sonnet-4" },
-    { "id": "donald", "name": "Donald", "emoji": "🔥", "role": "Brand & Strategy", "status": "paused", "lastSeen": "2026-03-20T06:00:00Z", "currentTask": "—", "model": "gpt-4o" },
-    { "id": "elon", "name": "Elon", "emoji": "⚡", "role": "Operations", "status": "paused", "lastSeen": "2026-03-20T06:00:00Z", "currentTask": "—", "model": "gpt-4o-mini" },
-    { "id": "warren", "name": "Warren", "emoji": "💰", "role": "Financials", "status": "paused", "lastSeen": "2026-03-20T06:00:00Z", "currentTask": "—", "model": "gpt-4o-mini" },
-    { "id": "tau", "name": "Tau", "emoji": "🛤️", "role": "Pathfinder", "status": "paused", "lastSeen": "2026-03-20T06:00:00Z", "currentTask": "—", "model": "gpt-4o" }
-  ],
-  "revenue": {
+  "lastUpdated": "2026-03-23T08:05:00Z",
+  "portfolio": {
     "totalMRR": 0,
-    "currency": "£",
     "target": 10000,
-    "byProduct": [
-      { "name": "AI Agency", "mrr": 0, "target": 3000 },
-      { "name": "Caliber Peptides", "mrr": 0, "target": 2000 },
-      { "name": "RepostAI", "mrr": 0, "target": 5000 },
-      { "name": "StoryQuest", "mrr": 0, "target": 3000 },
-      { "name": "AI Identifier App", "mrr": 0, "target": 10000 },
-      { "name": "Todd's Site", "mrr": 0, "target": 50 }
-    ],
-    "monthly": [
-      { "month": "Mar 2026", "actual": 0, "projected": 0 },
-      { "month": "Apr 2026", "actual": 0, "projected": 200 },
-      { "month": "May 2026", "actual": 0, "projected": 800 },
-      { "month": "Jun 2026", "actual": 0, "projected": 2500 },
-      { "month": "Jul 2026", "actual": 0, "projected": 4500 },
-      { "month": "Aug 2026", "actual": 0, "projected": 7000 },
-      { "month": "Sep 2026", "actual": 0, "projected": 10000 }
-    ]
+    "totalApps": 6,
+    "liveApps": 2,
+    "buildingApps": 2,
+    "queuedApps": 1,
+    "decisionsNeeded": 0
   },
-  "projects": [
-    { "name": "RepostAI", "icon": "🔄", "status": "building", "progress": 60, "mrr": 0, "targetMRR": 5000, "lastActivity": "2026-03-23", "nextAction": "Claude Code finishing MVP" },
-    { "name": "Edge Automation", "icon": "🤖", "status": "live", "progress": 80, "mrr": 0, "targetMRR": 3000, "lastActivity": "2026-03-23", "nextAction": "Send Todd the landing page" },
-    { "name": "Caliber Peptides", "icon": "🧪", "status": "live", "progress": 40, "mrr": 0, "targetMRR": 2000, "lastActivity": "2026-03-23", "nextAction": "Reddit/FB Bible seeding" },
-    { "name": "StoryQuest", "icon": "🎮", "status": "paused", "progress": 30, "mrr": 0, "targetMRR": 3000, "lastActivity": "2026-03-22", "nextAction": "Fix bugs, add Stripe" },
-    { "name": "AI Identifier App", "icon": "🔍", "status": "idea", "progress": 5, "mrr": 0, "targetMRR": 10000, "lastActivity": "2026-03-23", "nextAction": "Newton researching market" },
-    { "name": "Todd's Site", "icon": "🌐", "status": "complete", "progress": 100, "mrr": 0, "targetMRR": 50, "lastActivity": "2026-03-23", "nextAction": "DNS propagation + SSL cert" }
+  "apps": [
+    {
+      "id": "edge-automation",
+      "name": "Edge Automation",
+      "icon": "🤖",
+      "url": "edge-automation.vercel.app",
+      "status": "live",
+      "launchDate": "2026-03-21",
+      "mrr": 0,
+      "targetMRR": 3000,
+      "dau": 0,
+      "conversionRate": 0,
+      "pricing": "Free audit → $97 DIY → $997/mo coaching → $3-5K done-for-you",
+      "techStack": "Next.js + Vercel",
+      "notes": "First client: Todd (safent.com.au). Send him the link.",
+      "competitors": "Morningside AI, generic AAA agencies",
+      "decisions": []
+    },
+    {
+      "id": "caliber-peptides",
+      "name": "Caliber Peptides",
+      "icon": "🧪",
+      "url": "instagram.com/caliber.peptides",
+      "status": "live",
+      "launchDate": "2026-03-18",
+      "mrr": 0,
+      "targetMRR": 2000,
+      "dau": 0,
+      "conversionRate": 0,
+      "pricing": "£75-150 per order",
+      "techStack": "Instagram + ManyChat + Telegram",
+      "notes": "Bible seeding on Reddit/FB next. ManyChat funnel live.",
+      "competitors": "UK peptide vendors, grey market",
+      "decisions": []
+    },
+    {
+      "id": "repostai",
+      "name": "RepostAI",
+      "icon": "🔄",
+      "url": "",
+      "status": "building",
+      "launchDate": null,
+      "mrr": 0,
+      "targetMRR": 5000,
+      "dau": 0,
+      "conversionRate": 0,
+      "pricing": "Free (3/day) / $9/mo Pro / $29/mo Agency",
+      "techStack": "Next.js + Vercel + Stripe + Claude API",
+      "notes": "Claude Code building MVP. Go-to-market strategy done.",
+      "competitors": "Repurpose.io ($35/mo), Lately.ai ($119/mo)",
+      "decisions": []
+    },
+    {
+      "id": "storyquest",
+      "name": "StoryQuest",
+      "icon": "🎮",
+      "url": "storyquest.ai",
+      "status": "paused",
+      "launchDate": "2026-03-15",
+      "mrr": 0,
+      "targetMRR": 3000,
+      "dau": 0,
+      "conversionRate": 0,
+      "pricing": "$7.99/mo",
+      "techStack": "Next.js + Vercel + Claude API",
+      "notes": "Needs bug fixes (character switching + story ending). Then Stripe + FB ads.",
+      "competitors": "AI bedtime story apps",
+      "decisions": []
+    },
+    {
+      "id": "ai-identifier",
+      "name": "AI Identifier App",
+      "icon": "🔍",
+      "url": "",
+      "status": "queued",
+      "launchDate": null,
+      "mrr": 0,
+      "targetMRR": 10000,
+      "dau": 0,
+      "conversionRate": 0,
+      "pricing": "TBD",
+      "techStack": "TBD",
+      "notes": "Newton researching market",
+      "competitors": "TBD",
+      "decisions": []
+    },
+    {
+      "id": "todds-site",
+      "name": "Todd's Site",
+      "icon": "🌐",
+      "url": "safent.com.au",
+      "status": "complete",
+      "launchDate": "2026-03-23",
+      "mrr": 0,
+      "targetMRR": 50,
+      "dau": 0,
+      "conversionRate": 0,
+      "pricing": "Hosting fee",
+      "techStack": "WordPress + Google Cloud",
+      "notes": "Migration complete. DNS propagating.",
+      "competitors": "N/A",
+      "decisions": []
+    }
   ],
   "ideas": [
-    { "id": "i1", "title": "Polymarket Signal Bot", "stage": "researching", "ev": "high", "description": "AI news → prediction market alerts. $20-40K/mo potential", "agent": "🔬" },
-    { "id": "i2", "title": "Riz Dating App", "stage": "researching", "ev": "high", "description": "AI dating assistant — poker pro teaches dating strategy", "agent": "🔬" },
-    { "id": "i3", "title": "Squad Playbook Product", "stage": "incoming", "ev": "high", "description": "Package our AI team system, sell for $49-99", "agent": null },
-    { "id": "i4", "title": "UK Parliament Tracker", "stage": "incoming", "ev": "medium", "description": "Track MP votes vs promises — newsletter product", "agent": null },
-    { "id": "i5", "title": "Online Comic Creator", "stage": "incoming", "ev": "medium", "description": "Consistent character gen + voices + animation", "agent": null },
-    { "id": "i6", "title": "Build a Game", "stage": "incoming", "ev": "low", "description": "Creative flex — test AI game dev capabilities", "agent": null }
+    {"id":"i1","name":"Polymarket Signal Bot","stage":"validating","niche":"Prediction markets","ev":"high","buildTime":"3 weeks"},
+    {"id":"i2","name":"Riz Dating App","stage":"validating","niche":"Dating assistance","ev":"high","buildTime":"2 weeks"},
+    {"id":"i3","name":"Squad Playbook","stage":"incoming","niche":"AI education","ev":"high","buildTime":"1 week"},
+    {"id":"i4","name":"UK Parliament Tracker","stage":"incoming","niche":"Political newsletter","ev":"medium","buildTime":"2 weeks"},
+    {"id":"i5","name":"Online Comic Creator","stage":"incoming","niche":"Creative tools","ev":"medium","buildTime":"3 weeks"},
+    {"id":"i6","name":"Build a Game","stage":"incoming","niche":"Gaming","ev":"low","buildTime":"4 weeks"}
+  ],
+  "revenueHistory": [
+    {"date":"2026-03-17","total":0},
+    {"date":"2026-03-18","total":0},
+    {"date":"2026-03-19","total":0},
+    {"date":"2026-03-20","total":0},
+    {"date":"2026-03-21","total":0},
+    {"date":"2026-03-22","total":0},
+    {"date":"2026-03-23","total":0}
   ],
   "activity": [
-    { "time": "2026-03-23T06:48:00Z", "agent": "🧭", "event": "Morning brief sent to Ginge" },
-    { "time": "2026-03-23T04:06:00Z", "agent": "👀", "event": "CJC-1295 reel content created — 5 images + caption" },
-    { "time": "2026-03-23T02:30:00Z", "agent": "🔄", "event": "Research review PASS — CJC-1295 reel" },
-    { "time": "2026-03-23T01:00:00Z", "agent": "🔬", "event": "CJC-1295 + Ipamorelin research delivered" },
-    { "time": "2026-03-22T17:16:00Z", "agent": "🔄", "event": "Apex Studio strategy defined — portfolio model" },
-    { "time": "2026-03-22T16:53:00Z", "agent": "🧭", "event": "Apex Command Centre deployed to Vercel" },
-    { "time": "2026-03-21T11:04:00Z", "agent": "🧭", "event": "Story posted to IG" },
-    { "time": "2026-03-21T08:35:00Z", "agent": "🧭", "event": "First carousel published to IG" }
+    {"time":"2026-03-23T08:05:00Z","event":"Apex v4 deployed","app":"apex"},
+    {"time":"2026-03-23T07:15:00Z","event":"GH Stack carousel v2 posted","app":"caliber-peptides"},
+    {"time":"2026-03-23T06:41:00Z","event":"Jimmy v1 images rejected — quality failure","app":"caliber-peptides"},
+    {"time":"2026-03-23T04:06:00Z","event":"CJC-1295 content created","app":"caliber-peptides"},
+    {"time":"2026-03-22T17:16:00Z","event":"Apex Studio strategy defined","app":"apex"},
+    {"time":"2026-03-21T11:04:00Z","event":"First IG story posted","app":"caliber-peptides"},
+    {"time":"2026-03-21T08:35:00Z","event":"First carousel posted to IG","app":"caliber-peptides"}
   ],
-  "footer": {
-    "activeAgents": "4/8",
-    "pipelineStatus": "QA Pending",
-    "nextCron": "1:30 PM (Darwin Review)",
-    "revenue": "£0"
-  }
+  "agents": [
+    {"id":"atlas","name":"Atlas","emoji":"🧭","status":"active","currentTask":"Dashboard rebuild"},
+    {"id":"darwin","name":"Darwin","emoji":"🔄","status":"active","currentTask":"Studio strategy"},
+    {"id":"newton","name":"Newton","emoji":"🔬","status":"active","currentTask":"Research pipeline"},
+    {"id":"jimmy","name":"Jimmy","emoji":"👀","status":"active","currentTask":"Content pipeline"},
+    {"id":"donald","name":"Donald","emoji":"🔥","status":"paused","currentTask":"—"},
+    {"id":"elon","name":"Elon","emoji":"⚡","status":"paused","currentTask":"—"},
+    {"id":"warren","name":"Warren","emoji":"💰","status":"paused","currentTask":"—"},
+    {"id":"tau","name":"Tau","emoji":"🛤️","status":"paused","currentTask":"—"}
+  ]
 }
