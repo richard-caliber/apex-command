@@ -4,12 +4,11 @@ import { useState } from "react";
 import useSWR from "swr";
 import type { DashboardData } from "@/types";
 import TopBar from "@/components/TopBar";
-import AgentGrid from "@/components/AgentGrid";
-import ProjectCards from "@/components/ProjectCards";
-import TaskList from "@/components/TaskList";
+import TasksByProject from "@/components/TasksByProject";
 import IdeaPipeline from "@/components/IdeaPipeline";
+import RevenueTracker from "@/components/RevenueTracker";
+import SquadStatus from "@/components/SquadStatus";
 import ActivityFeed from "@/components/ActivityFeed";
-import StatusBar from "@/components/StatusBar";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -31,8 +30,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-4 md:px-8 md:py-6 max-w-[1400px] mx-auto">
-      {/* 1. Top Bar */}
+    <main className="min-h-screen px-4 py-4 md:px-8 md:py-6 max-w-[900px] mx-auto">
       <TopBar
         systemStatus={data.system.status}
         lastUpdated={data.lastUpdated}
@@ -40,34 +38,20 @@ export default function Home() {
         onToggleDemo={() => setDemoMode(!demoMode)}
       />
 
-      {/* 2. Agent Grid */}
-      <AgentGrid agents={data.agents} />
+      {/* Daily Tasks — the main section */}
+      {data.tasksByProject && <TasksByProject groups={data.tasksByProject} />}
 
-      {/* 3. Project Cards */}
-      <section className="mb-6 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-        <ProjectCards projects={data.projects} />
-      </section>
-
-      {/* 4. Task List */}
-      {data.tasks && data.taskMetrics && (
-        <TaskList tasks={data.tasks} metrics={data.taskMetrics} />
-      )}
-
-      {/* 5. Idea Pipeline (collapsed by default) */}
+      {/* Idea Pipeline — collapsed */}
       {data.ideas && <IdeaPipeline ideas={data.ideas} />}
 
-      {/* 6. Activity Feed */}
-      <section className="mb-6 animate-fade-in" style={{ animationDelay: "0.25s" }}>
-        <ActivityFeed activity={data.activity} />
-      </section>
+      {/* Revenue Tracker — collapsed */}
+      {data.revenue && <RevenueTracker revenue={data.revenue} />}
 
-      {/* 7. Bottom Status Bar */}
-      <StatusBar
-        activeAgents={data.footer.activeAgents}
-        pipelineStatus={data.footer.pipelineStatus}
-        nextCron={data.footer.nextCron}
-        revenue={data.footer.revenue}
-      />
+      {/* Squad Status — collapsed */}
+      {data.agents && <SquadStatus agents={data.agents} />}
+
+      {/* Activity Feed — collapsed */}
+      {data.activity && <ActivityFeed activity={data.activity} />}
     </main>
   );
 }

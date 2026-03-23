@@ -9,44 +9,62 @@ export interface Agent {
   model: string;
 }
 
-export interface Project {
-  codename: string;
-  name: string;
-  icon?: string;
-  logo?: string;
-  progress: number;
-  status: "on-track" | "attention" | "blocked" | "paused";
-  stage: string;
-  lastAction: string;
-}
-
 export interface Task {
   id: string;
   task: string;
-  project: string;
   priority: "high" | "medium" | "low";
-  type: "human" | "approve" | "review" | "automated";
+  type: "one-off" | "recurring" | "automatable";
+  recurringNote?: string;
+  automatableNote?: string;
   status: "pending" | "done";
-  assignedBy: string;
 }
 
-export interface TaskMetrics {
-  doneToday: number;
-  totalToday: number;
-  automationLevel: number;
-  stepsToRevenue: {
-    closest: string;
-    remaining: number;
-  };
+export interface ProjectGroup {
+  project: string;
+  name: string;
+  icon: string;
+  stage: string;
+  stageColor: "green" | "yellow" | "red" | "grey";
+  blocker: string | null;
+  stepsToRevenue: number | null;
+  tasks: Task[];
 }
 
 export interface Idea {
   id: string;
   title: string;
-  stage: "incoming" | "researching" | "ready" | "in-progress" | "launched" | "killed";
+  stage: "incoming" | "researching" | "ready" | "building" | "live" | "killed";
   ev: "high" | "medium" | "low";
   description: string;
   agent: string | null;
+  daysInStage?: number;
+}
+
+export interface RevenueTarget {
+  label: string;
+  target: number;
+  deadline: string;
+}
+
+export interface ProductRevenue {
+  name: string;
+  mrr: number;
+  target: number;
+  basis: string;
+}
+
+export interface MonthlyRevenue {
+  month: string;
+  actual: number;
+  projected: number;
+}
+
+export interface Revenue {
+  totalMRR: number;
+  currency: string;
+  targets: RevenueTarget[];
+  byProduct: ProductRevenue[];
+  monthly: MonthlyRevenue[];
 }
 
 export interface ActivityEntry {
@@ -63,11 +81,10 @@ export interface DashboardData {
     activeAgents: number;
     totalAgents: number;
   };
-  agents: Agent[];
-  projects: Project[];
-  tasks: Task[];
-  taskMetrics: TaskMetrics;
+  tasksByProject: ProjectGroup[];
   ideas: Idea[];
+  revenue: Revenue;
+  agents: Agent[];
   activity: ActivityEntry[];
   pipeline: {
     date: string;

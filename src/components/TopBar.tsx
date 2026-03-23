@@ -11,7 +11,7 @@ interface TopBarProps {
 
 export default function TopBar({ systemStatus, lastUpdated, demoMode, onToggleDemo }: TopBarProps) {
   const [time, setTime] = useState("");
-  const [staleWarning, setStaleWarning] = useState(false);
+  const [updatedAgo, setUpdatedAgo] = useState("");
 
   useEffect(() => {
     const tick = () => {
@@ -22,70 +22,50 @@ export default function TopBar({ systemStatus, lastUpdated, demoMode, onToggleDe
           weekday: "short",
           day: "2-digit",
           month: "short",
-          year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-          second: "2-digit",
           hour12: false,
         })
       );
 
       if (lastUpdated) {
-        const diff = now.getTime() - new Date(lastUpdated).getTime();
-        setStaleWarning(diff > 60 * 60 * 1000);
+        const diff = Math.floor((now.getTime() - new Date(lastUpdated).getTime()) / 60000);
+        if (diff < 1) setUpdatedAgo("Just now");
+        else if (diff < 60) setUpdatedAgo(`${diff}m ago`);
+        else setUpdatedAgo(`${Math.floor(diff / 60)}h ago`);
       }
     };
     tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(tick, 10000);
     return () => clearInterval(id);
   }, [lastUpdated]);
 
-  const statusLabel = systemStatus === "operational" ? "ALL SYSTEMS OPERATIONAL" : systemStatus?.toUpperCase();
-
   return (
-    <header className="flex items-center justify-between px-6 py-4 glass-card mb-6 animate-fade-in">
+    <header className="flex items-center justify-between px-4 py-3 mb-6 border-b border-gray-800/50">
       <div className="flex items-center gap-3">
-        {/* Apex triangle icon */}
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" className="shrink-0">
-          <path d="M14 3L26 25H2L14 3Z" stroke="#06b6d4" strokeWidth="2" fill="none" />
-          <path d="M14 10L20 22H8L14 10Z" fill="#06b6d4" opacity="0.3" />
-        </svg>
-        <h1 className="text-lg font-semibold tracking-wider" style={{ fontFamily: "var(--font-inter)" }}>
-          APEX COMMAND CENTRE
-        </h1>
+        <h1 className="text-base font-semibold tracking-wider text-gray-200">APEX COMMAND CENTRE</h1>
+        <span className="text-xs text-gray-500" style={{ fontFamily: "var(--font-mono)" }}>{time}</span>
       </div>
-
-      <div className="flex items-center gap-6">
-        {/* Demo mode toggle */}
+      <div className="flex items-center gap-4">
+        <span className="text-[11px] text-gray-600" style={{ fontFamily: "var(--font-mono)" }}>
+          Updated {updatedAgo}
+        </span>
+        {systemStatus === "operational" && (
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 pulse-active" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+        )}
         <button
           onClick={onToggleDemo}
-          className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
             demoMode
-              ? "border-cyan-500 text-cyan-400 bg-cyan-500/10"
-              : "border-gray-600 text-gray-400 hover:border-gray-500"
+              ? "border-cyan-500/50 text-cyan-400 bg-cyan-500/10"
+              : "border-gray-700 text-gray-500 hover:border-gray-600"
           }`}
         >
-          {demoMode ? "DEMO ON" : "DEMO"}
+          {demoMode ? "DEMO" : "LIVE"}
         </button>
-
-        {/* System status */}
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 pulse-active" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-          </span>
-          <span className="text-xs text-emerald-400 font-medium tracking-wide">{statusLabel}</span>
-        </div>
-
-        {/* Last updated */}
-        {staleWarning && (
-          <span className="text-xs text-amber-400 font-medium">⚠ DATA STALE</span>
-        )}
-
-        {/* Clock */}
-        <span className="text-xs text-gray-400" style={{ fontFamily: "var(--font-mono)" }}>
-          {time}
-        </span>
       </div>
     </header>
   );
