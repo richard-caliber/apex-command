@@ -9,48 +9,21 @@ export interface Agent {
   model: string;
 }
 
-export interface Task {
-  id: string;
-  task: string;
-  priority: "high" | "medium" | "low";
-  type: "one-off" | "recurring" | "automatable";
-  recurringNote?: string;
-  automatableNote?: string;
-  status: "pending" | "done";
-}
-
-export interface ProjectGroup {
-  project: string;
+export interface Project {
   name: string;
   icon: string;
-  stage: string;
-  stageColor: "green" | "yellow" | "red" | "grey";
-  blocker: string | null;
-  stepsToRevenue: number | null;
-  tasks: Task[];
-}
-
-export interface Idea {
-  id: string;
-  title: string;
-  stage: "incoming" | "researching" | "ready" | "building" | "live" | "killed";
-  ev: "high" | "medium" | "low";
-  description: string;
-  agent: string | null;
-  daysInStage?: number;
-}
-
-export interface RevenueTarget {
-  label: string;
-  target: number;
-  deadline: string;
+  status: "live" | "building" | "blocked" | "paused" | "complete" | "idea";
+  progress: number;
+  mrr: number;
+  targetMRR: number;
+  lastActivity: string;
+  nextAction: string;
 }
 
 export interface ProductRevenue {
   name: string;
   mrr: number;
   target: number;
-  basis: string;
 }
 
 export interface MonthlyRevenue {
@@ -62,9 +35,18 @@ export interface MonthlyRevenue {
 export interface Revenue {
   totalMRR: number;
   currency: string;
-  targets: RevenueTarget[];
+  target: number;
   byProduct: ProductRevenue[];
   monthly: MonthlyRevenue[];
+}
+
+export interface Idea {
+  id: string;
+  title: string;
+  stage: "incoming" | "researching" | "building" | "live" | "killed";
+  ev: "high" | "medium" | "low";
+  description: string;
+  agent: string | null;
 }
 
 export interface ActivityEntry {
@@ -81,15 +63,11 @@ export interface DashboardData {
     activeAgents: number;
     totalAgents: number;
   };
-  tasksByProject: ProjectGroup[];
-  ideas: Idea[];
-  revenue: Revenue;
   agents: Agent[];
+  revenue: Revenue;
+  projects: Project[];
+  ideas: Idea[];
   activity: ActivityEntry[];
-  pipeline: {
-    date: string;
-    stages: { name: string; status: string }[];
-  };
   footer: {
     activeAgents: string;
     pipelineStatus: string;
