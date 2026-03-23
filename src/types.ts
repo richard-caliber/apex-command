@@ -44,6 +44,21 @@ export interface RevenueHistoryEntry {
   total: number;
 }
 
+export interface TaskItem {
+  id: string;
+  task: string;
+  priority: "high" | "medium" | "low";
+  type: "one-off" | "recurring" | "automatable";
+  status: "pending" | "done";
+}
+
+export interface TaskGroup {
+  project: string;
+  name: string;
+  icon: string;
+  tasks: TaskItem[];
+}
+
 export interface DashboardData {
   lastUpdated: string;
   portfolio: {
@@ -60,4 +75,5 @@ export interface DashboardData {
   revenueHistory: RevenueHistoryEntry[];
   activity: ActivityEntry[];
   agents: Agent[];
+  tasksByProject?: TaskGroup[];
 }

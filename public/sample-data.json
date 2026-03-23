@@ -113,6 +113,51 @@
       "decisions": []
     }
   ],
+  "tasksByProject": [
+    {
+      "project": "agency",
+      "name": "AI Automation Agency",
+      "icon": "🤖",
+      "tasks": [
+        {"id": "t1", "task": "Send Todd the landing page link", "priority": "high", "type": "one-off", "status": "pending"},
+        {"id": "t2", "task": "Review landing page funnel research from Newton", "priority": "medium", "type": "one-off", "status": "pending"},
+        {"id": "t3", "task": "Buy domain for agency", "priority": "low", "type": "one-off", "status": "pending"}
+      ]
+    },
+    {
+      "project": "caliber",
+      "name": "Caliber Peptides",
+      "icon": "🧪",
+      "tasks": [
+        {"id": "t4", "task": "Fix IG profile — change name to Caliber Peptides", "priority": "high", "type": "one-off", "status": "pending"},
+        {"id": "t5", "task": "Delete old bad GH Stack carousel from IG", "priority": "high", "type": "one-off", "status": "pending"},
+        {"id": "t6", "task": "Create Reddit account + start lurking", "priority": "medium", "type": "one-off", "status": "pending"},
+        {"id": "t7", "task": "Join top 5 Facebook groups", "priority": "medium", "type": "one-off", "status": "pending"},
+        {"id": "t8", "task": "Post Reddit comments from Newton's drafts", "priority": "medium", "type": "recurring", "status": "pending"},
+        {"id": "t9", "task": "Post FB group content from Newton's drafts", "priority": "medium", "type": "recurring", "status": "pending"},
+        {"id": "t10", "task": "Review Newton's Reddit/FB drafts", "priority": "low", "type": "one-off", "status": "pending"}
+      ]
+    },
+    {
+      "project": "storyquest",
+      "name": "StoryQuest.ai",
+      "icon": "🎮",
+      "tasks": [
+        {"id": "t11", "task": "QA test latest build from Claude Code", "priority": "medium", "type": "recurring", "status": "pending"},
+        {"id": "t12", "task": "Review story output for grammar and flow", "priority": "low", "type": "recurring", "status": "pending"}
+      ]
+    },
+    {
+      "project": "admin",
+      "name": "General Admin",
+      "icon": "📋",
+      "tasks": [
+        {"id": "t13", "task": "Check content pipeline ran correctly", "priority": "medium", "type": "recurring", "status": "pending"},
+        {"id": "t14", "task": "Review IG story from Saturday", "priority": "medium", "type": "one-off", "status": "pending"},
+        {"id": "t15", "task": "Check Newton's research deliveries", "priority": "low", "type": "recurring", "status": "pending"}
+      ]
+    }
+  ],
   "ideas": [
     {"id":"i1","name":"Polymarket Signal Bot","stage":"validating","niche":"Prediction markets","ev":"high","buildTime":"3 weeks"},
     {"id":"i2","name":"Riz Dating App","stage":"validating","niche":"Dating assistance","ev":"high","buildTime":"2 weeks"},

@@ -6,6 +6,7 @@ import { useDashboard } from "@/lib/data";
 import { getAction, daysLive, timeAgo } from "@/lib/utils";
 import Link from "next/link";
 
+import TaskList from "@/components/TaskList";
 const RevenueChart = dynamic(() => import("@/components/RevenueChart"), { ssr: false });
 
 function StatCard({
@@ -94,6 +95,16 @@ export default function MissionControl() {
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Revenue (30d)</h2>
           <RevenueChart data={revenueHistory} />
         </div>
+
+        {/* Today's Tasks */}
+        {data.tasksByProject && data.tasksByProject.length > 0 ? (
+          <TaskList tasksByProject={data.tasksByProject} />
+        ) : (
+          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+            <h2 className="text-base font-semibold text-zinc-200 mb-2">📋 Today&apos;s Tasks</h2>
+            <p className="text-sm text-zinc-500">No tasks yet — ask Atlas for today&apos;s list</p>
+          </div>
+        )}
 
         {/* App Portfolio Table */}
         <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden">
