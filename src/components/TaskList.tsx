@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { TaskGroup, TaskItem } from "@/types";
+
+const STORAGE_KEY = "apex-completed-tasks";
 
 const priorityColor: Record<string, string> = {
   high: "text-red-500",
@@ -31,19 +33,8 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function ProjectTaskGroup({ group }: { group: TaskGroup }) {
-  const [done, setDone] = useState<Set<string>>(new Set());
-
-  const toggle = (id: string) => {
-    setDone((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const isDone = (t: TaskItem) => done.has(t.id) || t.status === "done";
+function ProjectTaskGroup({ group, completedIds, onToggle }: { group: TaskGroup; completedIds: Set<string>; onToggle: (id: string) => void }) {
+  const isDone = (t: TaskItem) => completedIds.has(t.id) || t.status === "done";
 
   const sorted = [...group.tasks].sort((a, b) => {
     const ad = isDone(a) ? 1 : 0;
@@ -51,12 +42,17 @@ function ProjectTaskGroup({ group }: { group: TaskGroup }) {
     return ad - bd;
   });
 
+  const doneCount = group.tasks.filter(isDone).length;
+
   return (
     <div className="mb-5 last:mb-0">
-      <h3 className="text-lg font-bold text-zinc-200 mb-2 flex items-center gap-2">
-        <span>{group.icon}</span>
-        <span>{group.name}</span>
-      </h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-bold text-zinc-200 flex items-center gap-2">
+          <span>{group.icon}</span>
+          <span>{group.name}</span>
+        </h3>
+        <span className="text-[10px] text-zinc-600 font-mono">{doneCount}/{group.tasks.length}</span>
+      </div>
       <div className="flex flex-col">
         {sorted.map((t) => {
           const checked = isDone(t);
@@ -67,23 +63,9 @@ function ProjectTaskGroup({ group }: { group: TaskGroup }) {
                 checked ? "opacity-35" : ""
               }`}
             >
-              {/* Task text — colour = priority */}
-              <span
-                className={`flex-1 text-base leading-snug ${
-                  checked ? "line-through text-zinc-600" : priorityColor[t.priority] || "text-zinc-400"
-                }`}
-              >
-                {t.task}
-              </span>
-
-              {/* Type badge — hide on small screens */}
-              <div className="hidden sm:block shrink-0">
-                <TypeBadge type={t.type} />
-              </div>
-
               {/* Checkbox */}
               <button
-                onClick={() => toggle(t.id)}
+                onClick={() => onToggle(t.id)}
                 className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-all duration-150 ${
                   checked
                     ? "bg-green-500 border-green-500"
@@ -102,6 +84,20 @@ function ProjectTaskGroup({ group }: { group: TaskGroup }) {
                   </svg>
                 )}
               </button>
+
+              {/* Task text — colour = priority */}
+              <span
+                className={`flex-1 text-base leading-snug ${
+                  checked ? "line-through text-zinc-600" : priorityColor[t.priority] || "text-zinc-400"
+                }`}
+              >
+                {t.task}
+              </span>
+
+              {/* Type badge — hide on small screens */}
+              <div className="hidden sm:block shrink-0">
+                <TypeBadge type={t.type} />
+              </div>
             </div>
           );
         })}
@@ -113,14 +109,42 @@ function ProjectTaskGroup({ group }: { group: TaskGroup }) {
 export default function TaskList({ tasksByProject }: { tasksByProject: TaskGroup[] }) {
   const totalTasks = tasksByProject.reduce((sum, g) => sum + g.tasks.length, 0);
 
+  const [completedIds, setCompletedIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  const persist = useCallback((next: Set<string>) => {
+    setCompletedIds(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+  }, []);
+
+  const toggle = useCallback((id: string) => {
+    setCompletedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      persist(next);
+      return next;
+    });
+  }, [persist]);
+
+  const doneCount = tasksByProject.reduce(
+    (sum, g) => sum + g.tasks.filter((t) => completedIds.has(t.id) || t.status === "done").length,
+    0
+  );
+
   return (
     <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-zinc-200">📋 Today&apos;s Tasks</h2>
-        <span className="text-xs text-zinc-500">{totalTasks} tasks</span>
+        <span className="text-xs text-zinc-500">{doneCount}/{totalTasks} done</span>
       </div>
       {tasksByProject.map((g) => (
-        <ProjectTaskGroup key={g.project} group={g} />
+        <ProjectTaskGroup key={g.project} group={g} completedIds={completedIds} onToggle={toggle} />
       ))}
     </div>
   );

@@ -19,10 +19,15 @@ export interface App {
 export interface Idea {
   id: string;
   name: string;
-  stage: "incoming" | "validating" | "ready" | "building" | "live";
+  stage: "incoming" | "validating" | "ready" | "building" | "live" | "parked";
   niche: string;
   ev: "high" | "medium" | "low";
   buildTime: string;
+  owner?: string;
+  score?: number;
+  scoreBreakdown?: { label: string; value: number }[];
+  blocker?: string;
+  researchLink?: string;
 }
 
 export interface ActivityEntry {

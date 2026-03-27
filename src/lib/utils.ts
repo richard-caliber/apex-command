@@ -33,3 +33,31 @@ export function getAction(status: string, launchDate: string | null, mrr: number
   if (days < 14) return { label: "Measuring", color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/30", emoji: "🟡" };
   return { label: "Review", color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/30", emoji: "🟡" };
 }
+
+export function getHealthColor(status: string, mrr: number): { dot: string; label: string } {
+  if (status === "live" && mrr > 0) return { dot: "bg-green-500", label: "Healthy" };
+  if (status === "live" && mrr === 0) return { dot: "bg-amber-500", label: "No Revenue" };
+  if (status === "paused") return { dot: "bg-red-500", label: "Stalled" };
+  if (status === "building") return { dot: "bg-blue-500", label: "Building" };
+  return { dot: "bg-zinc-500", label: "Queued" };
+}
+
+export function emptyStateText(label: string, value: number | string): string {
+  if (typeof value === "number" && value === 0) {
+    switch (label) {
+      case "Total MRR": return "No revenue yet — first sale incoming 🎯";
+      case "Live Apps": return "No apps live yet — build mode 🔨";
+      case "Building": return "Nothing building — time to start 🚀";
+      case "Decisions Needed": return "All clear — keep shipping ✅";
+      default: return "—";
+    }
+  }
+  return "";
+}
+
+export function daysSinceActivity(appName: string, activity: { time: string; event: string; app: string }[]): number | null {
+  const appActivity = activity.filter((a) => a.app === appName);
+  if (appActivity.length === 0) return null;
+  const latest = appActivity.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())[0];
+  return Math.floor((Date.now() - new Date(latest.time).getTime()) / 86400000);
+}
