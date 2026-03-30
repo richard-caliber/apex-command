@@ -1,0 +1,109 @@
+{
+  "projects": [
+    {
+      "id": "gemsnap",
+      "name": "GemSnap",
+      "image": "/images/gemsnap-card.jpg",
+      "status": "urgent",
+      "statusLine": "237 clicks, 0 conversions — PostHog added, awaiting data",
+      "keyMetric": { "label": "MRR", "value": "$0" },
+      "tasks": [
+        { "text": "Review PostHog session recordings", "owner": "🧭", "priority": "red", "done": false },
+        { "text": "Verify phone on Meta ad account", "owner": "👤", "priority": "red", "done": false },
+        { "text": "Hit 300 clicks, evaluate conversion rate", "owner": "🧭", "priority": "amber", "done": false }
+      ]
+    },
+    {
+      "id": "caliber",
+      "name": "Caliber Peptides",
+      "image": "/images/caliber-card.jpg",
+      "status": "good",
+      "statusLine": "Content pipeline automated. TA-1 carousel + reel published.",
+      "keyMetric": { "label": "Orders", "value": "0" },
+      "tasks": [
+        { "text": "First sale — reach out to network", "owner": "👤", "priority": "amber", "done": false },
+        { "text": "BPC-157 SEO landing page (Antigravity)", "owner": "👤", "priority": "green", "done": false },
+        { "text": "Order UK hub stock before Apr 6", "owner": "👤", "priority": "amber", "done": false }
+      ]
+    },
+    {
+      "id": "edgeauto",
+      "name": "Edge Auto",
+      "image": "/images/edgeauto-card.jpg",
+      "status": "attention",
+      "statusLine": "Landing page live. Blocked on calendar + booking test.",
+      "keyMetric": { "label": "Customers", "value": "0" },
+      "tasks": [
+        { "text": "Add richard@edgeautomate.org to phone", "owner": "👤", "priority": "red", "done": false },
+        { "text": "Test booking page end-to-end", "owner": "👤", "priority": "red", "done": false },
+        { "text": "Close Todd + onboard Josh", "owner": "👤", "priority": "amber", "done": false },
+        { "text": "Darwin adversarial review of pricing", "owner": "🔄", "priority": "green", "done": false }
+      ]
+    },
+    {
+      "id": "storyquest",
+      "name": "StoryQuest",
+      "image": "/images/storyquest-card.jpg",
+      "status": "attention",
+      "statusLine": "Bugs fixed, features built. Needs SFX + Stripe + TTS.",
+      "keyMetric": { "label": "Users", "value": "0" },
+      "tasks": [
+        { "text": "Wire Stripe paywall (handleSubscribe)", "owner": "👤", "priority": "red", "done": false },
+        { "text": "Add SFX audio files to /public/audio/sfx/", "owner": "👤", "priority": "amber", "done": false },
+        { "text": "Integrate Gemini Flash Live TTS", "owner": "👤", "priority": "amber", "done": false },
+        { "text": "Generate book cover images for bookshelf", "owner": "👤", "priority": "green", "done": false }
+      ]
+    },
+    {
+      "id": "villas",
+      "name": "Phuket Villas",
+      "image": "/images/villas-card.jpg",
+      "status": "attention",
+      "statusLine": "3 villas, ~90M THB. Buyers delayed. Marketing to agents.",
+      "keyMetric": { "label": "Value", "value": "90M THB" },
+      "tasks": [
+        { "text": "Villa investor page (Antigravity build)", "owner": "👤", "priority": "amber", "done": false },
+        { "text": "Email top 4 Phuket agencies with prospectus", "owner": "🧭", "priority": "amber", "done": false }
+      ]
+    },
+    {
+      "id": "parliament",
+      "name": "Parliament Tracker",
+      "image": "/images/parliament-card.jpg",
+      "status": "parked",
+      "statusLine": "Research phase. Newton evaluating feasibility.",
+      "keyMetric": { "label": "Stage", "value": "Research" },
+      "tasks": [
+        { "text": "Email capture landing page (Antigravity)", "owner": "👤", "priority": "green", "done": false },
+        { "text": "Newton feasibility report", "owner": "🔬", "priority": "green", "done": false }
+      ]
+    },
+    {
+      "id": "squad",
+      "name": "The Squad",
+      "image": "/images/squad-card.jpg",
+      "status": "good",
+      "statusLine": "3 active bots. Pipeline automated. System stable.",
+      "keyMetric": { "label": "Active Bots", "value": "3" },
+      "tasks": [
+        { "text": "Dev-browser Chrome extension setup", "owner": "👤", "priority": "amber", "done": false },
+        { "text": "Explore Antigravity for landing page pipeline", "owner": "🧭", "priority": "green", "done": false },
+        { "text": "Inter-bot comms reliability fix", "owner": "🧭", "priority": "green", "done": false }
+      ]
+    },
+    {
+      "id": "repostai",
+      "name": "RepostAI",
+      "image": "/images/repostai-card.svg",
+      "status": "attention",
+      "statusLine": "Pre-launch. Go-to-market plan ready. Meta ads eligible.",
+      "keyMetric": { "label": "MRR", "value": "$0" },
+      "tasks": [
+        { "text": "Schedule Product Hunt launch date", "owner": "👤", "priority": "red", "done": false },
+        { "text": "Build landing page with email capture", "owner": "🧭", "priority": "red", "done": false },
+        { "text": "Meta ads campaign", "owner": "🧭", "priority": "amber", "done": false }
+      ]
+    }
+  ],
+  "lastUpdated": "2026-03-29T08:30:00Z"
+}

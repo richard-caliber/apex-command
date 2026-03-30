@@ -1,0 +1,12 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450'>
+  <defs>
+    <linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0%' stop-color='#0f172a'/>
+      <stop offset='50%' stop-color='#1e1b4b'/>
+      <stop offset='100%' stop-color='#0a0e1a'/>
+    </linearGradient>
+  </defs>
+  <rect width='800' height='450' fill='url(#g)'/>
+  <text x='400' y='200' text-anchor='middle' font-family='Arial,sans-serif' font-weight='bold' font-size='64' fill='#f1f5f9'>RepostAI</text>
+  <text x='400' y='250' text-anchor='middle' font-family='Arial,sans-serif' font-size='24' fill='#64748b'>Content Repurposing Engine</text>
+</svg>

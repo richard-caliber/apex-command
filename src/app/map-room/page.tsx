@@ -3,546 +3,567 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
-/* ── Types ── */
-interface MapTask {
-  id: string;
-  name: string;
-  project_id: string;
-  stage: string;
-  owner: string;
-  model: string;
-  timing: string;
-  mega_prompt: string;
-  success_criteria: string[];
-  dependencies_input: string[];
-  dependencies_output: string[];
-  last_run: string | null;
-  last_result: string;
-  execution_count: number;
-  status: "on-track" | "at-risk" | "blocked";
-  editable: boolean;
-  self_trigger: boolean;
-}
-
-interface MapProject {
-  id: string;
-  name: string;
-  current_stage: string;
-  blocker: string;
-  tasks: MapTask[];
-}
-
-interface MapRoomData {
-  projects: MapProject[];
-  lastUpdated: string;
-}
-
-/* ── Constants ── */
-const TOKEN = "apex-live-2026";
-
+/* ── Stages ── */
 const STAGES = [
-  { id: "idea", name: "Idea", desc: "Problem identified, opportunity spotted. Define the concept and validate demand." },
-  { id: "research", name: "Research", desc: "Deep dive — market analysis, competitor intel, technical feasibility, audience profiling." },
-  { id: "mvp-build", name: "MVP Build", desc: "Build the minimum viable product. Ship fast, get real users, collect data." },
-  { id: "review-optimize", name: "Review & Optimize", desc: "Analyze performance. Fix leaks. A/B test. Iterate until metrics hit targets." },
-  { id: "get-customer", name: "Get Customer", desc: "Outreach, ads, funnels, partnerships. Convert attention into paying customers." },
-  { id: "deliver-retain", name: "Deliver & Retain", desc: "Fulfill the promise. Onboard, support, delight. Reduce churn, increase LTV." },
-  { id: "scale-ascend", name: "Scale & Ascend", desc: "Systematize what works. Hire, automate, expand channels. Grow revenue 10x." },
-  { id: "automated-cash-flow", name: "Automated Cash Flow", desc: "Fully autonomous revenue engine. Agents run ops. Human oversight only." },
+  { id: -1, label: "Idea Inbox", short: "-1" },
+  { id: 0, label: "Idea", short: "0" },
+  { id: 1, label: "Validation", short: "1" },
+  { id: 2, label: "Design", short: "2" },
+  { id: 3, label: "MVP", short: "3" },
+  { id: 4, label: "Traffic", short: "4" },
+  { id: 5, label: "Conversion", short: "5" },
+  { id: 6, label: "Scale", short: "6" },
 ];
 
-const STAGE_INDEX: Record<string, number> = {};
-STAGES.forEach((s, i) => { STAGE_INDEX[s.id] = i; });
+/* ── Types ── */
+interface Project {
+  id: string;
+  name: string;
+  current_stage: number;
+  blocker: string | null;
+  blocker_severity: "amber" | "red" | null;
+  next_task_due: string | null;
+  next_task_name: string | null;
+  automation_score: number | null;
+  task_count: number;
+}
 
-const STATUS_BADGE: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  "on-track": { label: "On Track", color: "text-green-400", bg: "bg-green-500/10", dot: "bg-green-400" },
-  "at-risk": { label: "At Risk", color: "text-amber-400", bg: "bg-amber-500/10", dot: "bg-amber-400" },
-  "blocked": { label: "Blocked", color: "text-red-400", bg: "bg-red-500/10", dot: "bg-red-400" },
+interface UrgentTask {
+  id: string;
+  name: string;
+  project: string;
+  project_id: string;
+  owner: string;
+  urgency: "critical" | "high" | "medium";
+  due: string | null;
+}
+
+interface HeartbeatStatus {
+  last_run: string;
+  status: "healthy" | "issues" | "critical";
+  issue_count: number;
+  missing_data: number;
+  unreviewed_content: number;
+  stale_outputs: number;
+}
+
+/* ── Fallback Data ── */
+const FALLBACK_PROJECTS: Project[] = [
+  {
+    id: "caliber",
+    name: "Caliber Peptides",
+    current_stage: 4,
+    blocker: "Carousel copy scoring 6.5/10 — needs stronger hooks",
+    blocker_severity: "amber",
+    next_task_due: "2026-03-31",
+    next_task_name: "Carousel Quality Gate",
+    automation_score: null,
+    task_count: 8,
+  },
+  {
+    id: "parliament",
+    name: "Parliament Tracker",
+    current_stage: 3,
+    blocker: null,
+    blocker_severity: null,
+    next_task_due: "2026-04-02",
+    next_task_name: "Deploy contradiction engine v2",
+    automation_score: null,
+    task_count: 5,
+  },
+  {
+    id: "storyquest",
+    name: "StoryQuest",
+    current_stage: 2,
+    blocker: "Voice actor API integration delayed",
+    blocker_severity: "red",
+    next_task_due: "2026-04-01",
+    next_task_name: "Finalise character generation prompts",
+    automation_score: null,
+    task_count: 6,
+  },
+  {
+    id: "wingman",
+    name: "WingmanAI",
+    current_stage: 1,
+    blocker: null,
+    blocker_severity: null,
+    next_task_due: "2026-04-03",
+    next_task_name: "User interview analysis",
+    automation_score: null,
+    task_count: 4,
+  },
+  {
+    id: "gemsnap",
+    name: "GemSnap",
+    current_stage: 5,
+    blocker: "Conversion rate 1.2% — paywall UX needs iteration",
+    blocker_severity: "amber",
+    next_task_due: "2026-03-31",
+    next_task_name: "A/B test blurred paywall variants",
+    automation_score: null,
+    task_count: 7,
+  },
+];
+
+const FALLBACK_TASKS: UrgentTask[] = [
+  { id: "t1", name: "Fix carousel CTA format", project: "Caliber Peptides", project_id: "caliber", owner: "Atlas", urgency: "critical", due: "2026-03-31" },
+  { id: "t2", name: "Voice API fallback handler", project: "StoryQuest", project_id: "storyquest", owner: "Newton", urgency: "critical", due: "2026-04-01" },
+  { id: "t3", name: "A/B test paywall blur levels", project: "GemSnap", project_id: "gemsnap", owner: "Darwin", urgency: "high", due: "2026-03-31" },
+  { id: "t4", name: "Deploy contradiction engine v2", project: "Parliament Tracker", project_id: "parliament", owner: "Claude Code", urgency: "high", due: "2026-04-02" },
+  { id: "t5", name: "User interview synthesis", project: "WingmanAI", project_id: "wingman", owner: "Ginge", urgency: "medium", due: "2026-04-03" },
+];
+
+const FALLBACK_HEARTBEAT: HeartbeatStatus = {
+  last_run: "2026-03-30T14:20:00Z",
+  status: "issues",
+  issue_count: 3,
+  missing_data: 2,
+  unreviewed_content: 4,
+  stale_outputs: 1,
+};
+
+/* ── Helpers ── */
+const URGENCY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  critical: { bg: "rgba(239,68,68,0.12)", text: "#ef4444", label: "CRITICAL" },
+  high: { bg: "rgba(245,158,11,0.12)", text: "#f59e0b", label: "HIGH" },
+  medium: { bg: "rgba(0,212,212,0.12)", text: "#00d4d4", label: "MEDIUM" },
 };
 
 const OWNER_COLORS: Record<string, string> = {
-  Atlas: "text-blue-400",
-  Darwin: "text-emerald-400",
-  Newton: "text-purple-400",
-  "Claude Code": "text-orange-400",
-  Ginge: "text-pink-400",
+  Atlas: "#60a5fa",
+  Darwin: "#34d399",
+  Newton: "#a78bfa",
+  "Claude Code": "#fb923c",
+  Ginge: "#f472b6",
 };
 
-/* ── Main Page ── */
-export default function MapRoomPage() {
-  const [data, setData] = useState<MapRoomData | null>(null);
-  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(["idea"]));
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
-  const [selectedTask, setSelectedTask] = useState<MapTask | null>(null);
-  const [editingPrompt, setEditingPrompt] = useState(false);
-  const [promptDraft, setPromptDraft] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [now, setNow] = useState(new Date());
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+  healthy: { bg: "rgba(34,197,94,0.12)", text: "#22c55e", dot: "#22c55e" },
+  issues: { bg: "rgba(245,158,11,0.12)", text: "#f59e0b", dot: "#f59e0b" },
+  critical: { bg: "rgba(239,68,68,0.12)", text: "#ef4444", dot: "#ef4444" },
+};
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+/* ── Component ── */
+export default function OverviewPage() {
+  const [projects, setProjects] = useState<Project[]>(FALLBACK_PROJECTS);
+  const [tasks, setTasks] = useState<UrgentTask[]>(FALLBACK_TASKS);
+  const [heartbeat, setHeartbeat] = useState<HeartbeatStatus>(FALLBACK_HEARTBEAT);
 
   const fetchData = useCallback(async () => {
-    const res = await fetch("/api/map-room");
-    if (res.ok) setData(await res.json());
+    try {
+      const [projRes, taskRes, hbRes] = await Promise.allSettled([
+        fetch("/api/map-room/projects"),
+        fetch("/api/map-room/tasks"),
+        fetch("/api/map-room/heartbeat"),
+      ]);
+      if (projRes.status === "fulfilled" && projRes.value.ok) {
+        const d = await projRes.value.json();
+        // API returns { items: [...] } — map to our Project shape
+        const items = d?.items || d?.projects;
+        if (items?.length) {
+          setProjects(items.map((p: Record<string, unknown>) => ({
+            id: p.id,
+            name: p.name,
+            current_stage: typeof p.current_stage === "number" ? p.current_stage : 0,
+            blocker: Array.isArray(p.blockers) && p.blockers.length > 0 ? p.blockers[0] : null,
+            blocker_severity: Array.isArray(p.blockers) && p.blockers.length > 0 ? "amber" : null,
+            next_task_due: null,
+            next_task_name: null,
+            automation_score: null,
+            task_count: 0,
+          })));
+        }
+      }
+      if (taskRes.status === "fulfilled" && taskRes.value.ok) {
+        const d = await taskRes.value.json();
+        const items = d?.items || d?.tasks;
+        if (items?.length) {
+          setTasks(items
+            .filter((t: Record<string, unknown>) => t.status !== "done" && t.status !== "cancelled")
+            .sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+              const order: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+              return (order[a.urgency as string] ?? 3) - (order[b.urgency as string] ?? 3);
+            })
+            .slice(0, 5)
+            .map((t: Record<string, unknown>) => ({
+              id: t.id,
+              name: t.name,
+              project: t.project,
+              project_id: t.project_id,
+              owner: t.owner,
+              urgency: t.urgency || "medium",
+              due: t.due_date || t.due || null,
+            }))
+          );
+        }
+      }
+      if (hbRes.status === "fulfilled" && hbRes.value.ok) {
+        const d = await hbRes.value.json();
+        if (d?.status || d?.sections) {
+          // Map heartbeat API shape to our HeartbeatStatus
+          const sections = d.sections || [];
+          const missingData = sections.find((s: Record<string, unknown>) => s.id === "missing-data")?.items?.length || 0;
+          const unreviewed = sections.find((s: Record<string, unknown>) => s.id === "unreviewed-posts")?.items?.length || 0;
+          const stale = sections.find((s: Record<string, unknown>) => s.id === "stale-outputs")?.items?.length || 0;
+          const totalIssues = sections.reduce((sum: number, s: Record<string, unknown>) => sum + ((s.items as unknown[])?.length || 0), 0);
+          const statusMap: Record<string, string> = { "all-clear": "healthy", "issues-found": "issues", critical: "critical" };
+          setHeartbeat({
+            last_run: d.lastRun || d.last_run || new Date().toISOString(),
+            status: (statusMap[d.status] || d.status || "healthy") as "healthy" | "issues" | "critical",
+            issue_count: totalIssues,
+            missing_data: missingData,
+            unreviewed_content: unreviewed,
+            stale_outputs: stale,
+          });
+        }
+      }
+    } catch {
+      // fallback data already set
+    }
+    // data loaded
   }, []);
 
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60000);
-    const clock = setInterval(() => setNow(new Date()), 1000);
-    return () => { clearInterval(interval); clearInterval(clock); };
+    return () => clearInterval(interval);
   }, [fetchData]);
 
-  const toggleStage = (id: string) => {
-    setExpandedStages((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+  // Stage counts
+  const stageCounts = STAGES.map((s) => ({
+    ...s,
+    count: projects.filter((p) => p.current_stage === s.id).length,
+  }));
 
-  const toggleProject = (id: string) => {
-    setExpandedProjects((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const openTask = (task: MapTask) => {
-    setSelectedTask(task);
-    setPromptDraft(task.mega_prompt);
-    setEditingPrompt(false);
-    setCopied(false);
-  };
-
-  const copyPrompt = async () => {
-    await navigator.clipboard.writeText(promptDraft);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const savePrompt = async () => {
-    if (!selectedTask) return;
-    await fetch("/api/map-room", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-      body: JSON.stringify({ taskId: selectedTask.id, updates: { mega_prompt: promptDraft } }),
-    });
-    setSelectedTask({ ...selectedTask, mega_prompt: promptDraft });
-    setEditingPrompt(false);
-    fetchData();
-  };
-
-  const getProjectStageIndex = (stage: string) => STAGE_INDEX[stage] ?? -1;
-
-  const stageName = (id: string) => STAGES.find((s) => s.id === id)?.name ?? id;
-
-  const findTaskName = (taskId: string): string => {
-    if (!data) return taskId;
-    for (const p of data.projects) {
-      const t = p.tasks.find((t) => t.id === taskId);
-      if (t) return t.name;
-    }
-    return taskId;
-  };
-
-  const timeAgo = (iso: string | null): string => {
-    if (!iso) return "Never";
-    const diff = Date.now() - new Date(iso).getTime();
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 1) return "< 1 hour ago";
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
+  const hbStyle = STATUS_STYLES[heartbeat.status] || STATUS_STYLES.healthy;
 
   return (
-    <div className="min-h-dvh relative">
-      <Particles />
-
-      {/* Header */}
-      <header className="relative z-10 border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-4">
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-6">
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">APEX COMMAND CENTRE</h1>
-            <nav className="flex items-center gap-4">
-              <Link href="/" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">War Room</Link>
-              <Link href="/pipeline" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Pipeline</Link>
-              <Link href="/finance" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Finance</Link>
-              <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompts</Link>
-              <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
-              <Link href="/ideas" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Ideas</Link>
-              <span className="text-sm text-white font-medium">Map Room</span>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-[#94a3b8]">
-            <span className="font-mono">
-              {now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-              {" "}
-              {now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="refresh-dot" />
-              <span className="text-xs">LIVE</span>
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative z-10 max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-        {/* ── MASTER JOURNEY MAP ── */}
-        <section className="mb-10">
-          <h2 className="text-lg font-bold text-[#f1f5f9] mb-4 flex items-center gap-2">
-            <span className="text-[#64748b]">0 → 100</span> Master Journey
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* ── ZONE A: Stage Progress Rail ── */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "#6b6b80" }}>
+            Pipeline Stages
           </h2>
-          <div className="flex flex-wrap gap-1.5">
-            {STAGES.map((stage, i) => (
-              <button
-                key={stage.id}
-                onClick={() => toggleStage(stage.id)}
-                className={`group flex items-center gap-2 px-3 py-2 rounded-lg border text-left transition-all cursor-pointer ${
-                  expandedStages.has(stage.id)
-                    ? "bg-[#1e293b] border-[#334155] text-white"
-                    : "bg-[#111827] border-[#1e293b] text-[#94a3b8] hover:border-[#334155] hover:text-white"
-                }`}
-              >
-                <span className="text-xs font-mono text-[#475569] w-4">{i}</span>
-                <span className="text-sm font-medium">{stage.name}</span>
-                <span className="text-xs text-[#475569]">{expandedStages.has(stage.id) ? "▼" : "▶"}</span>
-              </button>
-            ))}
-          </div>
-          {STAGES.filter((s) => expandedStages.has(s.id)).map((stage) => (
-            <div key={stage.id} className="mt-3 ml-1 pl-4 border-l-2 border-[#1e293b]">
-              <p className="text-sm text-[#94a3b8]">
-                <span className="font-semibold text-[#cbd5e1]">{stage.name}:</span> {stage.desc}
-              </p>
-            </div>
-          ))}
-        </section>
-
-        {/* ── PROJECT JOURNEYS ── */}
-        <section>
-          <h2 className="text-lg font-bold text-[#f1f5f9] mb-4">Project Journeys</h2>
-
-          {!data && (
-            <div className="text-sm text-[#64748b] animate-pulse">Loading projects...</div>
-          )}
-
-          <div className="space-y-4">
-            {data?.projects.map((project) => {
-              const stageIdx = getProjectStageIndex(project.current_stage);
-              const isExpanded = expandedProjects.has(project.id);
-              const taskStats = {
-                total: project.tasks.length,
-                onTrack: project.tasks.filter((t) => t.status === "on-track").length,
-                atRisk: project.tasks.filter((t) => t.status === "at-risk").length,
-                blocked: project.tasks.filter((t) => t.status === "blocked").length,
-              };
-
-              return (
-                <div key={project.id} className="rounded-xl bg-[#111827] border border-[#1e293b] overflow-hidden">
-                  {/* Project Header */}
-                  <button
-                    onClick={() => toggleProject(project.id)}
-                    className="w-full px-5 py-4 flex items-center gap-4 hover:bg-[#1e293b]/30 transition-colors cursor-pointer text-left"
+        </div>
+        <div className="rounded-xl border overflow-hidden" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
+          <div className="flex items-stretch overflow-x-auto scrollbar-hide">
+            {stageCounts.map((stage, i) => (
+              <div key={stage.id} className="flex items-stretch flex-1 min-w-0">
+                <div
+                  className="flex-1 px-3 py-4 text-center transition-all hover:bg-white/[0.02] group cursor-default"
+                  style={{ minWidth: "100px" }}
+                >
+                  <div
+                    className="text-[10px] font-mono font-bold mb-1"
+                    style={{ color: stage.count > 0 ? "#00d4d4" : "#6b6b80" }}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-base font-bold text-white">{project.name}</h3>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#1e293b] text-[#94a3b8] font-medium">
-                          {stageName(project.current_stage)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#64748b] truncate">{project.blocker}</p>
-                    </div>
-
-                    {/* Task counts */}
-                    <div className="flex items-center gap-3 text-xs flex-shrink-0">
-                      {taskStats.onTrack > 0 && (
-                        <span className="flex items-center gap-1 text-green-400">
-                          <span className="w-2 h-2 rounded-full bg-green-400" />
-                          {taskStats.onTrack}
-                        </span>
-                      )}
-                      {taskStats.atRisk > 0 && (
-                        <span className="flex items-center gap-1 text-amber-400">
-                          <span className="w-2 h-2 rounded-full bg-amber-400" />
-                          {taskStats.atRisk}
-                        </span>
-                      )}
-                      {taskStats.blocked > 0 && (
-                        <span className="flex items-center gap-1 text-red-400">
-                          <span className="w-2 h-2 rounded-full bg-red-400" />
-                          {taskStats.blocked}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <div className="flex gap-0.5">
-                        {STAGES.map((s, i) => (
-                          <div
-                            key={s.id}
-                            className={`w-5 h-2 rounded-sm transition-colors ${
-                              i <= stageIdx
-                                ? i === stageIdx
-                                  ? "bg-blue-500"
-                                  : "bg-blue-500/40"
-                                : "bg-[#1e293b]"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-[#475569] w-4">{isExpanded ? "▲" : "▼"}</span>
-                    </div>
-                  </button>
-
-                  {/* Expanded: Task List */}
-                  {isExpanded && (
-                    <div className="border-t border-[#1e293b] px-5 py-3">
-                      <div className="space-y-2">
-                        {project.tasks.map((task) => {
-                          const badge = STATUS_BADGE[task.status];
-                          return (
-                            <button
-                              key={task.id}
-                              onClick={() => openTask(task)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#1e293b]/50 transition-colors cursor-pointer text-left group"
-                            >
-                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${badge.dot}`} />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm text-[#f1f5f9] group-hover:text-white font-medium">
-                                  {task.name}
-                                </span>
-                              </div>
-                              <span className={`text-xs font-medium ${OWNER_COLORS[task.owner] || "text-[#94a3b8]"}`}>
-                                {task.owner}
-                              </span>
-                              <span className="text-xs text-[#475569] font-mono w-16 text-right">
-                                {task.model.length > 12 ? task.model.slice(0, 12) + "…" : task.model}
-                              </span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${badge.bg} ${badge.color}`}>
-                                {badge.label}
-                              </span>
-                              <span className="text-xs text-[#475569]">→</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      </main>
-
-      <footer className="relative z-10 text-center text-xs text-[#475569] py-6">
-        Last updated: {data ? new Date(data.lastUpdated).toLocaleString("en-GB") : "—"}
-        {" · "}Auto-refreshes every 60s
-      </footer>
-
-      {/* ── TASK DETAIL MODAL ── */}
-      {selectedTask && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) { setSelectedTask(null); setEditingPrompt(false); } }}
-        >
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative bg-[#0d1117] border border-[#1e293b] rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-[#0d1117] border-b border-[#1e293b] px-6 py-4 flex items-start justify-between z-10">
-              <div>
-                <h3 className="text-lg font-bold text-white">{selectedTask.name}</h3>
-                <div className="flex items-center gap-3 mt-1 text-xs">
-                  <span className="text-[#64748b]">{stageName(selectedTask.stage)}</span>
-                  <span className="text-[#334155]">·</span>
-                  <span className={OWNER_COLORS[selectedTask.owner] || "text-[#94a3b8]"}>{selectedTask.owner}</span>
-                  <span className="text-[#334155]">·</span>
-                  <span className="text-[#94a3b8] font-mono">{selectedTask.model}</span>
-                  <span className="text-[#334155]">·</span>
-                  <span className="text-[#64748b]">{selectedTask.timing}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => { setSelectedTask(null); setEditingPrompt(false); }}
-                className="text-[#64748b] hover:text-white transition-colors text-xl leading-none cursor-pointer p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="px-6 py-5 space-y-6">
-              {/* Status & Execution */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {(() => {
-                  const badge = STATUS_BADGE[selectedTask.status];
-                  return (
-                    <div className="bg-[#111827] rounded-lg px-3 py-2">
-                      <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-1">Status</div>
-                      <div className={`text-sm font-medium flex items-center gap-1.5 ${badge.color}`}>
-                        <span className={`w-2 h-2 rounded-full ${badge.dot}`} />
-                        {badge.label}
-                      </div>
-                    </div>
-                  );
-                })()}
-                <div className="bg-[#111827] rounded-lg px-3 py-2">
-                  <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-1">Last Run</div>
-                  <div className="text-sm text-[#cbd5e1]">{timeAgo(selectedTask.last_run)}</div>
-                </div>
-                <div className="bg-[#111827] rounded-lg px-3 py-2">
-                  <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-1">Runs</div>
-                  <div className="text-sm text-[#cbd5e1]">{selectedTask.execution_count}</div>
-                </div>
-                <div className="bg-[#111827] rounded-lg px-3 py-2">
-                  <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-1">Timing</div>
-                  <div className="text-sm text-[#cbd5e1]">{selectedTask.timing}</div>
-                </div>
-              </div>
-
-              {/* Last Result */}
-              <div>
-                <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-2">Last Result</div>
-                <p className="text-sm text-[#cbd5e1] bg-[#111827] rounded-lg px-4 py-3">{selectedTask.last_result}</p>
-              </div>
-
-              {/* Mega Prompt */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[10px] text-[#64748b] uppercase tracking-wider">Mega Prompt</div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={copyPrompt}
-                      className={`text-xs px-3 py-1 rounded-lg border font-medium transition-all cursor-pointer ${
-                        copied
-                          ? "bg-green-500/10 border-green-500/30 text-green-400"
-                          : "bg-[#1e293b] border-[#334155] text-[#94a3b8] hover:text-white hover:border-[#475569]"
-                      }`}
-                    >
-                      {copied ? "Copied!" : "Copy"}
-                    </button>
-                    {!editingPrompt ? (
-                      <button
-                        onClick={() => setEditingPrompt(true)}
-                        className="text-xs px-3 py-1 rounded-lg border bg-[#1e293b] border-[#334155] text-[#94a3b8] hover:text-white hover:border-[#475569] cursor-pointer font-medium transition-all"
-                      >
-                        Edit
-                      </button>
-                    ) : (
-                      <button
-                        onClick={savePrompt}
-                        className="text-xs px-3 py-1 rounded-lg border bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 cursor-pointer font-medium transition-all"
-                      >
-                        Save
-                      </button>
-                    )}
+                    {stage.short}
+                  </div>
+                  <div className="text-xs font-medium mb-2" style={{ color: stage.count > 0 ? "#ffffff" : "#a0a0b0" }}>
+                    {stage.label}
+                  </div>
+                  <div
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold transition-all"
+                    style={{
+                      background: stage.count > 0 ? "rgba(0,212,212,0.15)" : "rgba(107,107,128,0.1)",
+                      color: stage.count > 0 ? "#00d4d4" : "#6b6b80",
+                    }}
+                  >
+                    {stage.count}
                   </div>
                 </div>
-                {editingPrompt ? (
-                  <textarea
-                    value={promptDraft}
-                    onChange={(e) => setPromptDraft(e.target.value)}
-                    className="w-full h-64 bg-[#0a0e1a] border border-[#334155] rounded-lg p-4 text-sm text-[#cbd5e1] font-mono leading-relaxed resize-y focus:outline-none focus:border-blue-500/50"
-                  />
-                ) : (
-                  <pre className="text-sm text-[#cbd5e1] whitespace-pre-wrap font-mono leading-relaxed bg-[#0a0e1a] rounded-lg p-4 max-h-64 overflow-y-auto border border-[#1e293b]">
-                    {selectedTask.mega_prompt}
-                  </pre>
+                {i < stageCounts.length - 1 && (
+                  <div className="flex items-center px-0">
+                    <svg width="16" height="24" viewBox="0 0 16 24" fill="none" className="flex-shrink-0">
+                      <path d="M4 4L12 12L4 20" stroke="#1e1e2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
                 )}
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* Success Criteria */}
-              <div>
-                <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-2">Success Criteria</div>
-                <ul className="space-y-1.5">
-                  {selectedTask.success_criteria.map((c, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-[#cbd5e1]">
-                      <span className="w-4 h-4 rounded border border-[#334155] flex items-center justify-center text-[10px] text-[#475569] flex-shrink-0">
-                        {i + 1}
+      {/* ── ZONE B + C: Main Content ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* ── ZONE B: Active Projects (60%) ── */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "#6b6b80" }}>
+              Active Projects
+            </h2>
+            <span className="text-xs font-mono" style={{ color: "#6b6b80" }}>
+              {projects.length} project{projects.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {projects.length === 0 && (
+            <div className="rounded-xl border p-8 text-center" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
+              <div className="text-2xl mb-2">🚀</div>
+              <p style={{ color: "#a0a0b0" }} className="text-sm">No active projects yet.</p>
+              <p style={{ color: "#6b6b80" }} className="text-xs mt-1">Head to Ideas to promote one to the pipeline.</p>
+            </div>
+          )}
+
+          {projects.map((project) => {
+            const stageInfo = STAGES.find((s) => s.id === project.current_stage);
+            return (
+              <Link
+                key={project.id}
+                href={`/map-room/pipeline?project=${project.id}`}
+                className="block rounded-xl border transition-all hover:border-[#2a2a3e] group"
+                style={{ background: "#111118", borderColor: "#1e1e2e" }}
+              >
+                <div className="p-5">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-base font-bold text-white group-hover:text-[#00d4d4] transition-colors">
+                        {project.name}
+                      </h3>
+                      <span
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"
+                        style={{ background: "rgba(0,212,212,0.12)", color: "#00d4d4" }}
+                      >
+                        Stage {stageInfo?.short} — {stageInfo?.label}
                       </span>
-                      {c}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                    </div>
+                    <svg
+                      className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="#6b6b80"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
 
-              {/* Dependencies */}
-              {(selectedTask.dependencies_input.length > 0 || selectedTask.dependencies_output.length > 0) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {selectedTask.dependencies_input.length > 0 && (
-                    <div>
-                      <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-2">Depends On</div>
-                      <div className="space-y-1">
-                        {selectedTask.dependencies_input.map((dep) => (
-                          <div key={dep} className="text-xs text-[#94a3b8] bg-[#111827] rounded px-3 py-1.5">
-                            ← {findTaskName(dep)}
-                          </div>
-                        ))}
+                  {/* Stage mini-bar */}
+                  <div className="flex gap-1 mb-3">
+                    {STAGES.map((s) => (
+                      <div
+                        key={s.id}
+                        className="h-1 flex-1 rounded-full transition-colors"
+                        style={{
+                          background:
+                            s.id < project.current_stage
+                              ? "rgba(0,212,212,0.3)"
+                              : s.id === project.current_stage
+                              ? "#00d4d4"
+                              : "rgba(30,30,46,0.8)",
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Info Row */}
+                  <div className="flex flex-wrap items-center gap-4 text-xs">
+                    {/* Blocker */}
+                    {project.blocker && (
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{
+                            background: project.blocker_severity === "red" ? "#ef4444" : "#f59e0b",
+                          }}
+                        />
+                        <span
+                          style={{
+                            color: project.blocker_severity === "red" ? "#ef4444" : "#f59e0b",
+                          }}
+                          className="truncate max-w-[300px]"
+                        >
+                          {project.blocker}
+                        </span>
                       </div>
-                    </div>
-                  )}
-                  {selectedTask.dependencies_output.length > 0 && (
-                    <div>
-                      <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-2">Feeds Into</div>
-                      <div className="space-y-1">
-                        {selectedTask.dependencies_output.map((dep) => (
-                          <div key={dep} className="text-xs text-[#94a3b8] bg-[#111827] rounded px-3 py-1.5">
-                            → {findTaskName(dep)}
-                          </div>
-                        ))}
+                    )}
+
+                    {/* Next task */}
+                    {project.next_task_name && (
+                      <div className="flex items-center gap-1.5" style={{ color: "#a0a0b0" }}>
+                        <span style={{ color: "#6b6b80" }}>Next:</span>
+                        <span>{project.next_task_name}</span>
+                        {project.next_task_due && (
+                          <span className="font-mono" style={{ color: "#6b6b80" }}>
+                            ({formatDate(project.next_task_due)})
+                          </span>
+                        )}
                       </div>
+                    )}
+
+                    {/* Automation score */}
+                    <div className="flex items-center gap-1.5 ml-auto" style={{ color: "#6b6b80" }}>
+                      <span className="text-[10px]" title="Automation Score (placeholder)">
+                        ⚙️
+                      </span>
+                      <span className="font-mono text-[10px]">
+                        {project.automation_score !== null ? `${project.automation_score}%` : "—"}
+                      </span>
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded ml-1"
+                        style={{ background: "rgba(107,107,128,0.15)", color: "#6b6b80" }}
+                        title="Placeholder for integration"
+                      >
+                        🔌
+                      </span>
                     </div>
-                  )}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* ── ZONE C: Urgency Panel (40%) ── */}
+        <div className="lg:col-span-2 space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "#6b6b80" }}>
+            Urgency Panel
+          </h2>
+
+          {/* Urgent Tasks */}
+          <div className="rounded-xl border" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
+            <div className="px-4 py-3 border-b" style={{ borderColor: "#1e1e2e" }}>
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#a0a0b0" }}>
+                Top Urgent Tasks
+              </span>
+            </div>
+            <div className="divide-y" style={{ borderColor: "#1e1e2e" }}>
+              {tasks.length === 0 && (
+                <div className="p-6 text-center">
+                  <p className="text-sm" style={{ color: "#22c55e" }}>All clear — no urgent tasks.</p>
                 </div>
               )}
+              {tasks.slice(0, 5).map((task) => {
+                const urg = URGENCY_STYLES[task.urgency];
+                return (
+                  <div
+                    key={task.id}
+                    className="px-4 py-3 hover:bg-white/[0.01] transition-colors"
+                    style={{ borderColor: "#1e1e2e" }}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <span className="text-sm font-medium text-white leading-tight">{task.name}</span>
+                      <span
+                        className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wider"
+                        style={{ background: urg.bg, color: urg.text }}
+                      >
+                        {urg.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px]">
+                      <span style={{ color: "#6b6b80" }}>{task.project}</span>
+                      <span style={{ color: OWNER_COLORS[task.owner] || "#a0a0b0" }}>{task.owner}</span>
+                      {task.due && (
+                        <span className="font-mono ml-auto" style={{ color: "#6b6b80" }}>
+                          {formatDate(task.due)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-[#1e293b]">
-                <button className="text-xs px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 transition-colors cursor-pointer">
-                  Run Task
-                </button>
-                <button
-                  onClick={() => setEditingPrompt(true)}
-                  className="text-xs px-4 py-2 rounded-lg bg-[#1e293b] text-[#94a3b8] font-medium hover:text-white transition-colors cursor-pointer"
-                >
-                  Edit Prompt
-                </button>
-                <button className="text-xs px-4 py-2 rounded-lg bg-[#1e293b] text-[#94a3b8] font-medium hover:text-white transition-colors cursor-pointer">
-                  View History
-                </button>
-                <button className="text-xs px-4 py-2 rounded-lg bg-[#1e293b] text-[#94a3b8] font-medium hover:text-white transition-colors cursor-pointer">
-                  Analyze Issue
-                </button>
+          {/* Alert Counts */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border p-3 text-center" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
+              <div className="text-lg font-bold" style={{ color: heartbeat.missing_data > 0 ? "#f59e0b" : "#22c55e" }}>
+                {heartbeat.missing_data}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: "#6b6b80" }}>
+                Missing Data
+              </div>
+            </div>
+            <div className="rounded-xl border p-3 text-center" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
+              <div className="text-lg font-bold" style={{ color: heartbeat.unreviewed_content > 0 ? "#f59e0b" : "#22c55e" }}>
+                {heartbeat.unreviewed_content}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: "#6b6b80" }}>
+                Unreviewed
+              </div>
+            </div>
+            <div className="rounded-xl border p-3 text-center" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
+              <div className="text-lg font-bold" style={{ color: heartbeat.stale_outputs > 0 ? "#f59e0b" : "#22c55e" }}>
+                {heartbeat.stale_outputs}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: "#6b6b80" }}>
+                Stale (&gt;7d)
               </div>
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
-}
+      </div>
 
-/* ── Particles ── */
-function Particles() {
-  return (
-    <div className="particles" aria-hidden="true">
-      {Array.from({ length: 30 }).map((_, i) => (
-        <span
-          key={i}
-          className="particle"
-          style={{
-            left: `${Math.random() * 100}%`,
-            animationDuration: `${8 + Math.random() * 12}s`,
-            animationDelay: `${Math.random() * 10}s`,
-            width: `${1 + Math.random() * 2}px`,
-            height: `${1 + Math.random() * 2}px`,
-          }}
-        />
-      ))}
+      {/* ── ZONE D: Heartbeat Status Bar ── */}
+      <Link
+        href="/map-room/heartbeat"
+        className="block rounded-xl border transition-all hover:border-[#2a2a3e] group"
+        style={{ background: "#111118", borderColor: "#1e1e2e" }}
+      >
+        <div className="px-5 py-3 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <span
+              className="w-2.5 h-2.5 rounded-full animate-pulse"
+              style={{ background: hbStyle.dot }}
+            />
+            <span className="text-sm font-semibold" style={{ color: hbStyle.text }}>
+              {heartbeat.status === "healthy" ? "Healthy" : heartbeat.status === "issues" ? "Issues Detected" : "Critical"}
+            </span>
+            <span className="text-xs" style={{ color: "#6b6b80" }}>
+              ·
+            </span>
+            <span className="text-xs" style={{ color: "#6b6b80" }}>
+              {heartbeat.issue_count} issue{heartbeat.issue_count !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <span style={{ color: "#6b6b80" }}>
+              Last heartbeat: <span className="font-mono">{timeAgo(heartbeat.last_run)}</span>
+            </span>
+            <svg
+              className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="#6b6b80"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </Link>
+
+      {/* Fade-in animation */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+          animation: fadeIn 0.5s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

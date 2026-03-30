@@ -1,33 +1,40 @@
-import { NextResponse } from "next/server";
-import { list, head } from "@vercel/blob";
+import { NextRequest, NextResponse } from "next/server";
+import { kv } from "@vercel/kv";
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-export const dynamic = "force-dynamic";
+const KV_KEY = "apex:projects";
+const TOKEN = "apex-live-2026";
+
+interface ProjectData {
+  projects: Record<string, unknown>[];
+  lastUpdated: string;
+}
+
+async function getData(): Promise<ProjectData> {
+  const cached = await kv.get<ProjectData>(KV_KEY);
+  if (cached) return cached;
+
+  // Seed from JSON file on first load
+  const raw = await readFile(join(process.cwd(), "data", "projects.json"), "utf-8");
+  const seed = JSON.parse(raw) as ProjectData;
+  await kv.set(KV_KEY, seed);
+  return seed;
+}
 
 export async function GET() {
-  // Try Vercel Blob first (live data)
-  try {
-    const { blobs } = await list({ prefix: "apex-data.json" });
-    if (blobs.length > 0) {
-      const blob = await head(blobs[0].url);
-      const res = await fetch(blob.url);
-      if (res.ok) {
-        const data = await res.json();
-        return NextResponse.json(data, {
-          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
-        });
-      }
-    }
-  } catch {
-    // Blob not configured or empty — fall through to sample data
+  const data = await getData();
+  return NextResponse.json(data);
+}
+
+export async function POST(req: NextRequest) {
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${TOKEN}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fall back to sample data
-  const filePath = join(process.cwd(), "public", "sample-data.json");
-  const raw = await readFile(filePath, "utf-8");
-  const data = JSON.parse(raw);
-  return NextResponse.json(data, {
-    headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
-  });
+  const body = (await req.json()) as ProjectData;
+  body.lastUpdated = new Date().toISOString();
+  await kv.set(KV_KEY, body);
+  return NextResponse.json({ ok: true });
 }

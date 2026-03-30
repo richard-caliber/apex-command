@@ -1,47 +1,146 @@
 @import "tailwindcss";
 
-@theme {
-  --font-inter: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  --color-background: #09090b;
-  --color-card: #18181b;
-  --color-border: #27272a;
-  --color-accent: #06b6d4;
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-card: #111827;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+}
 
 body {
-  background: var(--color-background);
-  min-height: 100vh;
-  color: #fafafa;
-  font-family: var(--font-inter);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  min-height: 100dvh;
 }
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
-
-@keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0); }
+/* Aura effects */
+.card-urgent {
+  box-shadow: 0 0 20px rgba(255, 50, 50, 0.6), 0 0 40px rgba(255, 50, 50, 0.3);
+  animation: pulse-red 2s ease-in-out infinite;
 }
-.pulse-green { animation: pulse-dot 2s ease-in-out infinite; }
-
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+.card-attention {
+  box-shadow: 0 0 15px rgba(255, 180, 50, 0.5), 0 0 30px rgba(255, 180, 50, 0.2);
 }
-.animate-fade-up { animation: fade-up 0.3s ease-out forwards; }
+.card-good {
+  box-shadow: 0 0 15px rgba(50, 255, 100, 0.4), 0 0 30px rgba(50, 255, 100, 0.15);
+}
+.card-parked {
+  box-shadow: 0 0 10px rgba(100, 100, 100, 0.3);
+  opacity: 0.7;
+}
 
-@keyframes flash {
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 50, 50, 0.6), 0 0 40px rgba(255, 50, 50, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 50, 50, 0.8), 0 0 60px rgba(255, 50, 50, 0.5);
+  }
+}
+
+/* Particle background */
+.particles {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 50%;
+  animation: float linear infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Priority dots */
+.dot-red {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+.dot-amber {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+}
+.dot-green {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+/* Checkbox */
+.task-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #475569;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.15s ease;
+}
+.task-checkbox:checked {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+.task-checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Refresh pulse */
+@keyframes refresh-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.4; }
 }
-.animate-flash { animation: flash 1.5s ease-in-out infinite; }
+.refresh-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: refresh-pulse 2s ease-in-out infinite;
+}
 
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
-.animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
