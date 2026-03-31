@@ -22,7 +22,6 @@ const TOP_NAV = [
   { name: "Finance", href: "/finance" },
   { name: "Prompts", href: "/prompts" },
   { name: "Squad", href: "/squad" },
-  { name: "Ideas", href: "/ideas" },
   { name: "Map Room", href: "/map-room", active: true },
 ];
 

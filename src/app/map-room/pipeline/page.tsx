@@ -69,7 +69,8 @@ const STAGES = [
   { id: 3, label: "MVP" },
   { id: 4, label: "Traffic" },
   { id: 5, label: "Conversion" },
-  { id: 6, label: "Scale" },
+  { id: 6, label: "Delivery" },
+  { id: 7, label: "Scale" },
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {

@@ -90,7 +90,6 @@ export default function PromptsPage() {
               <Link href="/finance" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Finance</Link>
               <span className="text-sm text-white font-medium">Prompts</span>
               <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
-              <Link href="/ideas" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Ideas</Link>
               <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Map Room</Link>
             </nav>
           </div>

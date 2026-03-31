@@ -39,7 +39,8 @@ const STAGES = [
   { id: 3, label: "MVP" },
   { id: 4, label: "Traffic" },
   { id: 5, label: "Conversion" },
-  { id: 6, label: "Scale" },
+  { id: 6, label: "Delivery" },
+  { id: 7, label: "Scale" },
 ];
 
 const OWNERS = ["Newton", "Darwin", "Atlas", "Claude Code", "Architect", "Founder", "Ginge", "Unassigned"];

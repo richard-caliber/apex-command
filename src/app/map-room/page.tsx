@@ -12,7 +12,8 @@ const STAGES = [
   { id: 3, label: "MVP", short: "3", description: "Building the minimum viable product" },
   { id: 4, label: "Traffic", short: "4", description: "Driving users — ads, content, SEO" },
   { id: 5, label: "Conversion", short: "5", description: "Optimising funnels and revenue capture" },
-  { id: 6, label: "Scale", short: "6", description: "Scaling what works — automation, growth loops" },
+  { id: 6, label: "Delivery", short: "6", description: "Fulfil the promise — onboard, support, delight, retain" },
+  { id: 7, label: "Scale", short: "7", description: "Scaling what works — automation, growth loops" },
 ];
 
 /* ── Types ── */

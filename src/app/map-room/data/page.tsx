@@ -189,6 +189,15 @@ function buildProjectMetrics(projectId: string): MetricSection[] {
         ],
       },
       {
+        id: "delivery", title: "Delivery", icon: "\uD83D\uDCE6",
+        fields: [
+          { key: "onboarding_time", label: "Avg Onboarding Time", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "support_tickets", label: "Support Tickets", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "csat", label: "CSAT Score", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "fulfilment_rate", label: "Fulfilment Rate", value: null, lastUpdated: null, source: "none", override: "" },
+        ],
+      },
+      {
         id: "revenue", title: "Revenue", icon: "\uD83D\uDCB0",
         fields: [
           { key: "total", label: "Total Revenue", value: "\u00A34,280", lastUpdated: "2026-03-30T08:00:00Z", source: "manual", override: "" },
@@ -270,6 +279,15 @@ function buildProjectMetrics(projectId: string): MetricSection[] {
         ],
       },
       {
+        id: "delivery", title: "Delivery", icon: "\uD83D\uDCE6",
+        fields: [
+          { key: "onboarding_time", label: "Avg Onboarding Time", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "support_tickets", label: "Support Tickets", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "csat", label: "CSAT Score", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "fulfilment_rate", label: "Fulfilment Rate", value: null, lastUpdated: null, source: "none", override: "" },
+        ],
+      },
+      {
         id: "revenue", title: "Revenue", icon: "\uD83D\uDCB0",
         fields: [
           { key: "total", label: "Total Revenue", value: "$1,240", lastUpdated: "2026-03-30T07:00:00Z", source: "api", override: "" },
@@ -348,6 +366,15 @@ function buildProjectMetrics(projectId: string): MetricSection[] {
           { key: "purchase_rate", label: "Purchase Rate", value: null, lastUpdated: null, source: "none", override: "" },
           { key: "funnel_steps", label: "Funnel Steps", value: "Audit Report \u2192 Call \u2192 Proposal \u2192 Close", lastUpdated: "2026-03-20T00:00:00Z", source: "manual", override: "" },
           { key: "drop_off", label: "Drop-off Point", value: null, lastUpdated: null, source: "none", override: "" },
+        ],
+      },
+      {
+        id: "delivery", title: "Delivery", icon: "\uD83D\uDCE6",
+        fields: [
+          { key: "onboarding_time", label: "Avg Onboarding Time", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "support_tickets", label: "Support Tickets", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "csat", label: "CSAT Score", value: null, lastUpdated: null, source: "none", override: "" },
+          { key: "fulfilment_rate", label: "Fulfilment Rate", value: null, lastUpdated: null, source: "none", override: "" },
         ],
       },
       {
