@@ -13,6 +13,7 @@ const TABS = [
   { name: "Social", href: "/map-room/social" },
   { name: "IP Vault", href: "/map-room/ip-vault" },
   { name: "Capabilities", href: "/map-room/capabilities" },
+  { name: "Flow Map", href: "/map-room/flow-map" },
   { name: "Heartbeat", href: "/map-room/heartbeat" },
 ];
 
