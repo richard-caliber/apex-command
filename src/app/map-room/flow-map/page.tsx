@@ -74,6 +74,21 @@ const OWNER_COLORS: Record<string, string> = {
   "Claude Code": C.orange, Ginge: C.pink, Architect: C.muted,
 };
 
+/* ── Fallback Data ── */
+const FALLBACK: FlowData = {
+  lastUpdated: new Date().toISOString(),
+  nodes: [
+    { id: "fb-t1", name: "Peptide Research Brief", type: "task", stage: 1, project_id: "caliber", owner: "Newton", status: "completed", source: "stage", next_node_id: "fb-p1", requires_founder_action: false, worked_state: "worked", last_updated: "2026-03-28T10:00:00Z" },
+    { id: "fb-p1", name: "Research Prompt v2", type: "prompt", stage: 1, project_id: "caliber", owner: "Newton", status: "completed", source: "manual", next_node_id: "fb-o1", requires_founder_action: false, worked_state: "worked", prompt_text: "You are a world-class biochemistry researcher. Research [PEPTIDE NAME] thoroughly...", last_updated: "2026-03-28T10:00:00Z" },
+    { id: "fb-o1", name: "BPC-157 Research Brief", type: "output", stage: 1, project_id: "caliber", owner: "Newton", status: "completed", source: "agent", next_node_id: "fb-r1", requires_founder_action: false, worked_state: "worked", output_text: "Comprehensive brief with 7 cited sources covering mechanism of action, clinical data, and competitor pricing.", last_updated: "2026-03-28T11:00:00Z" },
+    { id: "fb-r1", name: "Research Quality Review", type: "review", stage: 1, project_id: "caliber", owner: "Darwin", status: "completed", source: "agent", requires_founder_action: false, worked_state: "worked", review_score: 8.5, review_notes: "All sources verified. Strong content angles.", next_node_id: "fb-d1", last_updated: "2026-03-28T11:30:00Z" },
+    { id: "fb-d1", name: "Proceed to Carousel", type: "decision", stage: 1, project_id: "caliber", owner: "Atlas", status: "completed", source: "agent", requires_founder_action: false, worked_state: "worked", decision_notes: "Research approved. Proceeding to carousel generation.", last_updated: "2026-03-28T12:00:00Z" },
+    { id: "fb-t2", name: "Generate Carousel Copy", type: "task", stage: 4, project_id: "caliber", owner: "Atlas", status: "failed", source: "stage", requires_founder_action: false, worked_state: "failed", blocker: "Copy scored 6.5/10 — hook too long, CTA not approved", last_updated: "2026-03-30T06:00:00Z" },
+    { id: "fb-t3", name: "Scale Ad Spend Decision", type: "task", stage: 5, project_id: "gemsnap", owner: "Ginge", status: "waiting-founder", source: "stage", requires_founder_action: true, worked_state: "unknown", blocker: "A/B test running — need results before scaling", last_updated: "2026-03-31T07:00:00Z" },
+    { id: "fb-t4", name: "Approve Report Template", type: "decision", stage: 2, project_id: "edge-auto", owner: "Ginge", status: "waiting-founder", source: "review", requires_founder_action: true, worked_state: "unknown", decision_notes: "Report template scored 9/10. Needs founder sign-off.", last_updated: "2026-03-30T10:00:00Z" },
+  ],
+};
+
 /* ── Helpers ── */
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -95,8 +110,19 @@ export default function FlowMapPage() {
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/map-room/flow-map");
-      if (res.ok) setData(await res.json());
-    } catch { /* fallback below */ }
+      if (res.ok) {
+        const json = await res.json();
+        if (json && Array.isArray(json.nodes)) {
+          setData(json);
+        } else {
+          setData(FALLBACK);
+        }
+      } else {
+        setData(FALLBACK);
+      }
+    } catch {
+      setData(FALLBACK);
+    }
   }, []);
 
   useEffect(() => {
