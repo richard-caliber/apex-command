@@ -1,101 +1,130 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
-const KV_KEY = "maproom:capabilities";
+const KV_KEY = "maproom:capabilities-v2";
 const TOKEN = "apex-live-2026";
 
-interface Capability {
-  id: string;
-  name: string;
-  category: "ai" | "dev" | "marketing" | "sales" | "ops" | "research";
-  description: string;
-  tools: string[];
-  owner: string;
-  confidence: "proven" | "tested" | "experimental";
-  last_used: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface CapabilitiesData {
-  items: Capability[];
+  gaps: {
+    id: string;
+    name: string;
+    current_process: string;
+    impact: string;
+    approach: string;
+    priority: string;
+    status: string;
+  }[];
+  research: {
+    id: string;
+    tool_name: string;
+    what_it_does: string;
+    cost: string;
+    complexity: string;
+    notes: string;
+    decision: string;
+  }[];
+  boards: {
+    id: string;
+    title: string;
+    opportunities: {
+      id: string;
+      name: string;
+      description: string;
+      estimated_effort: string;
+      estimated_impact: string;
+      status: string;
+    }[];
+  }[];
   lastUpdated: string;
 }
 
 const SEED: CapabilitiesData = {
-  lastUpdated: "2026-03-30T12:00:00Z",
-  items: [
+  lastUpdated: "2026-03-31T06:00:00Z",
+  gaps: [
     {
-      id: "cap-001",
-      name: "AI Content Pipeline",
-      category: "ai",
-      description: "End-to-end content generation: research brief -> copy -> quality gate -> image gen -> publish",
-      tools: ["Claude Sonnet", "Claude Haiku", "DALL-E", "Meta Graph API"],
-      owner: "Atlas",
-      confidence: "proven",
-      last_used: "2026-03-30",
-      created_at: "2026-02-01",
-      updated_at: "2026-03-30",
+      id: "gap-1",
+      name: "Social posting automation",
+      current_process: "Manual copy-paste to Instagram",
+      impact: "Save 3+ hours/week, consistent posting schedule",
+      approach: "integrate",
+      priority: "high",
+      status: "identified",
     },
     {
-      id: "cap-002",
-      name: "Full-Stack Web Development",
-      category: "dev",
-      description: "Next.js apps with Vercel deployment, KV storage, API routes, responsive UI",
-      tools: ["Next.js", "Vercel", "Tailwind", "TypeScript", "Vercel KV"],
-      owner: "Claude Code",
-      confidence: "proven",
-      last_used: "2026-03-30",
-      created_at: "2026-01-15",
-      updated_at: "2026-03-30",
+      id: "gap-2",
+      name: "Competitor price monitoring",
+      current_process: "Manual weekly check of competitor sites",
+      impact: "Real-time pricing intelligence, faster reaction to market",
+      approach: "build",
+      priority: "medium",
+      status: "researching",
     },
     {
-      id: "cap-003",
-      name: "Funnel Analytics & A/B Testing",
-      category: "marketing",
-      description: "PostHog integration, funnel analysis, feature flags for A/B tests, statistical significance checks",
-      tools: ["PostHog", "Feature Flags", "Custom analytics"],
-      owner: "Darwin",
-      confidence: "tested",
-      last_used: "2026-03-30",
-      created_at: "2026-03-01",
-      updated_at: "2026-03-30",
+      id: "gap-3",
+      name: "Voice note transcription",
+      current_process: "No process exists — ideas lost",
+      impact: "Capture ideas on the go, feed into Ideas page automatically",
+      approach: "buy",
+      priority: "high",
+      status: "identified",
+    },
+  ],
+  research: [
+    {
+      id: "res-1",
+      tool_name: "Later.com",
+      what_it_does: "Social media scheduling with auto-publish to Instagram, TikTok, X",
+      cost: "$25/month",
+      complexity: "easy",
+      notes: "Good for scheduling but doesn't generate content. Could pair with our AI pipeline.",
+      decision: "revisit",
     },
     {
-      id: "cap-004",
-      name: "Automation Consulting",
-      category: "sales",
-      description: "Personalised audit reports, ROI projections, n8n workflow builds for small businesses",
-      tools: ["n8n", "Claude Sonnet", "Resend", "Vercel"],
-      owner: "Atlas",
-      confidence: "tested",
-      last_used: "2026-03-29",
-      created_at: "2026-03-01",
-      updated_at: "2026-03-29",
+      id: "res-2",
+      tool_name: "Whisper API",
+      what_it_does: "OpenAI speech-to-text — transcribe voice notes to text",
+      cost: "$0.006/minute",
+      complexity: "easy",
+      notes: "Fast, cheap, accurate. Could wire into Ideas page capture flow.",
+      decision: "use",
+    },
+  ],
+  boards: [
+    {
+      id: "board-social",
+      title: "Social automation opportunities",
+      opportunities: [
+        { id: "opp-1", name: "Auto-schedule approved carousels", description: "Once quality gate passes, auto-queue for optimal posting time", estimated_effort: "2 days", estimated_impact: "High — removes manual scheduling bottleneck", status: "identified" },
+      ],
     },
     {
-      id: "cap-005",
-      name: "Deep Research & Citation",
-      category: "research",
-      description: "Thorough research briefs with verified sources, dosing protocols, competitor analysis",
-      tools: ["Gemini 2.5 Pro", "Web search", "Manual verification"],
-      owner: "Newton",
-      confidence: "proven",
-      last_used: "2026-03-28",
-      created_at: "2026-02-15",
-      updated_at: "2026-03-28",
+      id: "board-data",
+      title: "Data automation opportunities",
+      opportunities: [
+        { id: "opp-2", name: "PostHog → Data page sync", description: "Pull conversion metrics from PostHog API into Data page automatically", estimated_effort: "1 day", estimated_impact: "High — eliminates manual metric entry", status: "identified" },
+      ],
     },
     {
-      id: "cap-006",
-      name: "Telegram Bot Development",
-      category: "dev",
-      description: "Full e-commerce bots with product catalogs, admin panels, payment integration",
-      tools: ["Node.js", "Telegram Bot API", "Railway"],
-      owner: "Claude Code",
-      confidence: "proven",
-      last_used: "2026-03-20",
-      created_at: "2026-02-20",
-      updated_at: "2026-03-20",
+      id: "board-content",
+      title: "Content automation opportunities",
+      opportunities: [
+        { id: "opp-3", name: "Research → Carousel pipeline", description: "Newton research brief auto-triggers Atlas carousel generation", estimated_effort: "3 days", estimated_impact: "High — full content pipeline without manual handoff", status: "identified" },
+      ],
+    },
+    {
+      id: "board-fulfilment",
+      title: "Fulfilment automation opportunities",
+      opportunities: [],
+    },
+    {
+      id: "board-external",
+      title: "External insight mapping",
+      opportunities: [],
+    },
+    {
+      id: "board-testing",
+      title: "Test automation bank",
+      opportunities: [],
     },
   ],
 };
@@ -121,16 +150,38 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const data = await getData();
   const now = new Date().toISOString();
+  const newId = Date.now().toString(36);
 
-  const item: Capability = {
-    id: Date.now().toString(36),
-    ...body,
-    created_at: body.created_at || now,
-    updated_at: now,
-  };
+  if (body.target === "gaps") {
+    if (body.action === "add") {
+      data.gaps.push({ id: newId, ...body.item });
+    } else if (body.action === "update" && body.item?.id) {
+      const idx = data.gaps.findIndex((g) => g.id === body.item.id);
+      if (idx >= 0) Object.assign(data.gaps[idx], body.item);
+    } else if (body.action === "delete" && body.itemId) {
+      data.gaps = data.gaps.filter((g) => g.id !== body.itemId);
+    }
+  } else if (body.target === "research") {
+    if (body.action === "add") {
+      data.research.push({ id: newId, ...body.item });
+    } else if (body.action === "update" && body.item?.id) {
+      const idx = data.research.findIndex((r) => r.id === body.item.id);
+      if (idx >= 0) Object.assign(data.research[idx], body.item);
+    } else if (body.action === "delete" && body.itemId) {
+      data.research = data.research.filter((r) => r.id !== body.itemId);
+    }
+  } else if (body.target === "boards") {
+    const board = data.boards.find((b) => b.id === body.boardId);
+    if (board) {
+      if (body.action === "add") {
+        board.opportunities.push({ id: newId, ...body.item });
+      } else if (body.action === "delete" && body.itemId) {
+        board.opportunities = board.opportunities.filter((o) => o.id !== body.itemId);
+      }
+    }
+  }
 
-  data.items.push(item);
   data.lastUpdated = now;
   await kv.set(KV_KEY, data);
-  return NextResponse.json(item, { status: 201 });
+  return NextResponse.json({ ok: true });
 }

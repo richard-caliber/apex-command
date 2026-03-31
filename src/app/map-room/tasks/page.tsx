@@ -21,6 +21,13 @@ interface TaskItem {
   due_date: string;
   completed_at: string | null;
   overdue: boolean;
+  next_action: string;
+  blocker_details: string | null;
+  expected_output: string;
+  prompt: string | null;
+  output_result: string | null;
+  dependencies: string[];
+  source_type: "Stage" | "Data" | "Heartbeat" | "Manual" | "Architect";
 }
 
 /* ── Constants ── */
@@ -59,6 +66,14 @@ const IMPACT_CONFIG: Record<string, { label: string; color: string; bg: string; 
   system: { label: "System", color: "#6b6b80", bg: "rgba(107,107,128,0.1)", icon: "⚙" },
 };
 
+const SOURCE_TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  Stage: { label: "Stage", color: "#00d4d4", bg: "rgba(0,212,212,0.12)" },
+  Data: { label: "Data", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
+  Heartbeat: { label: "Heartbeat", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
+  Manual: { label: "Manual", color: "#a0a0b0", bg: "rgba(160,160,176,0.12)" },
+  Architect: { label: "Architect", color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
+};
+
 const OWNER_COLORS: Record<string, string> = {
   Atlas: "#60a5fa",
   Darwin: "#34d399",
@@ -82,15 +97,29 @@ const FALLBACK_TASKS: TaskItem[] = [
     dependency: "PostHog tracking must be live", status: "open",
     notes: "PostHog is set up but needs 7 days of data before baseline is meaningful.",
     created_from: "Pipeline \u2014 Caliber Stage 4", due_date: "2026-04-02", completed_at: null, overdue: false,
+    next_action: "Verify PostHog events firing on checkout flow, wait for 7-day window",
+    blocker_details: null,
+    expected_output: "Baseline CVR report with funnel drop-off percentages",
+    prompt: "Analyze PostHog checkout funnel for caliberpeptides.com. Report: total sessions, add-to-cart rate, checkout starts, payment completions. Calculate CVR at each step. Flag any step with >40% drop-off.",
+    output_result: null,
+    dependencies: ["PostHog tracking live", "7 days of traffic data"],
+    source_type: "Stage",
   },
   {
     task_id: "TSK-002", task_name: "Fix carousel copy \u2014 hook too long, CTA wrong format", project: "Caliber Peptides",
     project_id: "caliber", source_stage: 4, owner: "Atlas",
-    why_this_matters: "Carousel scored 6.5/10 \u2014 failing quality gate. Cannot publish until fixed.",
+    why_this_matters: "Carousel copy failed quality gate \u2014 blocks all downstream content",
     impact_type: "growth", urgency: "high", estimated_value: "~450 reach per carousel",
     dependency: "None", status: "in-progress",
     notes: "Hook needs to be under 6 words. CTA must use approved format only.",
     created_from: "Pipeline \u2014 Caliber Quality Gate", due_date: "2026-03-29", completed_at: null, overdue: true,
+    next_action: "Rewrite hook under 6 words, use approved CTA format",
+    blocker_details: "Darwin rejected copy: hook 9 words (max 6), CTA not in approved list",
+    expected_output: "7-slide carousel copy with 8/10+ quality score",
+    prompt: "Write a 7-slide Instagram carousel for Caliber Peptides BPC-157 product.\n\nRules:\n- Slide 1 hook: MAX 6 words, pattern-interrupt style\n- Each slide: 1 key benefit, max 15 words\n- Final slide CTA: must use format 'Shop [product] \u2014 link in bio'\n- Tone: clinical authority, not bro-science\n- Include 1 stat per slide where possible",
+    output_result: null,
+    dependencies: [],
+    source_type: "Heartbeat",
   },
   {
     task_id: "TSK-003", task_name: "Analyze 7-day A/B test results", project: "GemSnap",
@@ -100,6 +129,13 @@ const FALLBACK_TASKS: TaskItem[] = [
     dependency: "A/B test must run full 7 days", status: "blocked",
     notes: "Test started March 30. Earliest we can call it: April 6. Do NOT touch ads until then.",
     created_from: "Pipeline \u2014 GemSnap Stage 5", due_date: "2026-04-04", completed_at: null, overdue: false,
+    next_action: "Wait for 7-day window to complete, then pull variant performance data",
+    blocker_details: "A/B test only 1 day in \u2014 need minimum 7 days for statistical significance (n>200 per variant)",
+    expected_output: "A/B test report: variant A vs B conversion rates, p-value, recommended winner",
+    prompt: "Pull A/B test results for GemSnap paywall experiment. Compare Variant A (full blur) vs Variant B (40% blur + price anchor). Report: impressions, taps, conversions, CVR per variant. Run chi-squared test. Declare winner only if p < 0.05.",
+    output_result: null,
+    dependencies: ["A/B test 7-day minimum", "200+ sessions per variant"],
+    source_type: "Stage",
   },
   {
     task_id: "TSK-004", task_name: "Design audit report page layout", project: "Edge Auto",
@@ -109,6 +145,13 @@ const FALLBACK_TASKS: TaskItem[] = [
     dependency: "9-section copy template (done)", status: "in-progress",
     notes: "Use dark premium theme. 9 sections already written by Atlas. Focus on visual wrapper.",
     created_from: "Pipeline \u2014 Edge Auto Stage 2", due_date: "2026-03-31", completed_at: null, overdue: false,
+    next_action: "Build responsive page component with 9-section layout using dark theme tokens",
+    blocker_details: null,
+    expected_output: "Fully styled audit report page matching premium dark theme, responsive, 9 sections",
+    prompt: "Build a Next.js page component for Edge Auto personalised audit reports. 9 sections: Executive Summary, Digital Presence Score, Website Analysis, SEO Health, Google Business Profile, Social Media Audit, Competitor Comparison, Quick Wins, Implementation Roadmap. Use dark premium theme (#0a0a0f bg, #111118 cards, #00d4d4 accent). Each section: icon, title, score bar, findings list, recommendation.",
+    output_result: null,
+    dependencies: ["9-section copy template"],
+    source_type: "Architect",
   },
   {
     task_id: "TSK-005", task_name: "Set up abandoned cart email sequence", project: "GemSnap",
@@ -118,6 +161,13 @@ const FALLBACK_TASKS: TaskItem[] = [
     dependency: "Email service provider needed", status: "open",
     notes: "",
     created_from: "Pipeline \u2014 GemSnap Funnel Analysis", due_date: "2026-04-08", completed_at: null, overdue: false,
+    next_action: "Choose email provider (Resend vs Loops) and wire up checkout abandon webhook",
+    blocker_details: null,
+    expected_output: "3-email abandon sequence: 1hr reminder, 24hr social proof, 72hr discount offer",
+    prompt: null,
+    output_result: null,
+    dependencies: ["Email service provider selection", "Checkout webhook integration"],
+    source_type: "Data",
   },
   {
     task_id: "TSK-006", task_name: "Write 5 SEO peptide info articles", project: "Caliber Peptides",
@@ -127,6 +177,13 @@ const FALLBACK_TASKS: TaskItem[] = [
     dependency: "Research briefs completed", status: "open",
     notes: "Start with BPC-157, TB-500, and CJC-1295. Use SEO Article Writer prompt v1.",
     created_from: "Pipeline \u2014 Caliber Stage 4", due_date: "2026-04-05", completed_at: null, overdue: false,
+    next_action: "Generate research brief for BPC-157, then run through SEO Article Writer v1",
+    blocker_details: null,
+    expected_output: "5 SEO-optimised articles (1500+ words each) with meta descriptions and internal links",
+    prompt: "Write a comprehensive SEO article about BPC-157 peptide for Caliber Peptides.\n\nRequirements:\n- 1500+ words\n- Target keyword: 'BPC-157 benefits'\n- Include: mechanism of action, research studies, dosage guidance, safety profile\n- Tone: clinical authority, evidence-based\n- Include meta title (60 chars) and meta description (155 chars)\n- Add 3 internal links to related peptide pages",
+    output_result: null,
+    dependencies: ["Research briefs for each peptide"],
+    source_type: "Stage",
   },
   {
     task_id: "TSK-007", task_name: "Set up Google Ads for branded keywords", project: "Caliber Peptides",
@@ -136,6 +193,13 @@ const FALLBACK_TASKS: TaskItem[] = [
     dependency: "Budget approval from Founder", status: "blocked",
     notes: "Was assigned to Ginge but needs re-evaluation. Budget not yet approved.",
     created_from: "Pipeline \u2014 Caliber Stage 4", due_date: "2026-03-30", completed_at: null, overdue: true,
+    next_action: "Get budget approval from Founder, then create branded campaign in Google Ads",
+    blocker_details: "Budget not approved \u2014 Founder needs to review monthly ad spend proposal (\u00a3200/mo branded, \u00a3500/mo generic)",
+    expected_output: "Live Google Ads branded campaign protecting 'Caliber Peptides' search terms",
+    prompt: null,
+    output_result: null,
+    dependencies: ["Budget approval from Founder"],
+    source_type: "Manual",
   },
   {
     task_id: "TSK-008", task_name: "Build PDF export for audit reports", project: "Edge Auto",
@@ -145,6 +209,13 @@ const FALLBACK_TASKS: TaskItem[] = [
     dependency: "Report page design must be done first", status: "open",
     notes: "Consider using Puppeteer or react-pdf. Must match the premium dark theme.",
     created_from: "Pipeline \u2014 Edge Auto Stage 2", due_date: "2026-04-05", completed_at: null, overdue: false,
+    next_action: "Evaluate Puppeteer vs react-pdf for dark-theme PDF generation",
+    blocker_details: null,
+    expected_output: "PDF export endpoint that generates branded audit report matching web version",
+    prompt: null,
+    output_result: "Early prototype tested with react-pdf \u2014 dark backgrounds render correctly but chart SVGs need rasterisation. Puppeteer approach recommended instead.",
+    dependencies: ["TSK-004 \u2014 Report page design"],
+    source_type: "Architect",
   },
 ];
 
@@ -162,16 +233,17 @@ export default function TasksPage() {
   const [ownerDropdown, setOwnerDropdown] = useState<string | null>(null);
   const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
   const [urgencyDropdown, setUrgencyDropdown] = useState<string | null>(null);
+  const [expandedPrompt, setExpandedPrompt] = useState<string | null>(null);
+  const [expandedOutput, setExpandedOutput] = useState<string | null>(null);
+  const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
 
   const fetchTasks = useCallback(async () => {
     try {
       const res = await fetch("/api/map-room/tasks");
       if (res.ok) {
         const data = await res.json();
-        // Handle both response shapes (direct tasks array or items array)
         if (data.tasks) setTasks(data.tasks);
         else if (data.items) {
-          // Map the KV shape to our TaskItem shape
           const mapped: TaskItem[] = data.items.map((item: Record<string, unknown>, i: number) => ({
             task_id: (item.id as string) || `TSK-${String(i + 1).padStart(3, "0")}`,
             task_name: (item.name as string) || "",
@@ -190,6 +262,13 @@ export default function TasksPage() {
             due_date: (item.due_date as string) || "",
             completed_at: null,
             overdue: Boolean(item.overdue),
+            next_action: (item.next_action as string) || "Review and determine next step",
+            blocker_details: (item.blocker_details as string) || null,
+            expected_output: (item.expected_output as string) || "",
+            prompt: (item.prompt as string) || null,
+            output_result: (item.output_result as string) || null,
+            dependencies: (item.dependencies as string[]) || [],
+            source_type: (item.source_type as string) || "Manual",
           }));
           setTasks(mapped);
         }
@@ -203,10 +282,8 @@ export default function TasksPage() {
     fetchTasks();
   }, [fetchTasks]);
 
-  // Compute unique projects for filter
   const projects = useMemo(() => [...new Set(tasks.map((t) => t.project))], [tasks]);
 
-  // Filter & Sort
   const filteredTasks = useMemo(() => {
     let result = [...tasks];
 
@@ -215,7 +292,7 @@ export default function TasksPage() {
     if (filterUrgency !== "all") result = result.filter((t) => t.urgency === filterUrgency);
     if (filterImpact !== "all") result = result.filter((t) => t.impact_type === filterImpact);
     if (filterStatus !== "all") result = result.filter((t) => t.status === filterStatus);
-    if (filterSource !== "all") result = result.filter((t) => t.created_from.includes(filterSource));
+    if (filterSource !== "all") result = result.filter((t) => t.source_type === filterSource);
 
     result.sort((a, b) => {
       switch (sortBy) {
@@ -271,7 +348,16 @@ export default function TasksPage() {
     setUrgencyDropdown(null);
   };
 
-  // Stats
+  const copyPrompt = async (taskId: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPrompt(taskId);
+      setTimeout(() => setCopiedPrompt(null), 2000);
+    } catch {
+      // clipboard not available
+    }
+  };
+
   const stats = useMemo(() => {
     const overdue = tasks.filter((t) => t.overdue).length;
     const critical = tasks.filter((t) => t.urgency === "critical" && t.status !== "done").length;
@@ -311,6 +397,7 @@ export default function TasksPage() {
         <FilterSelect label="Urgency" value={filterUrgency} onChange={setFilterUrgency} options={[{ value: "all", label: "All" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
         <FilterSelect label="Impact" value={filterImpact} onChange={setFilterImpact} options={[{ value: "all", label: "All" }, { value: "revenue", label: "Revenue" }, { value: "growth", label: "Growth" }, { value: "learning", label: "Learning" }, { value: "system", label: "System" }]} />
         <FilterSelect label="Status" value={filterStatus} onChange={setFilterStatus} options={[{ value: "all", label: "All" }, { value: "open", label: "Open" }, { value: "in-progress", label: "In Progress" }, { value: "blocked", label: "Blocked" }, { value: "done", label: "Done" }, { value: "cancelled", label: "Cancelled" }]} />
+        <FilterSelect label="Source" value={filterSource} onChange={setFilterSource} options={[{ value: "all", label: "All Sources" }, { value: "Stage", label: "Stage" }, { value: "Data", label: "Data" }, { value: "Heartbeat", label: "Heartbeat" }, { value: "Manual", label: "Manual" }, { value: "Architect", label: "Architect" }]} />
 
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs" style={{ color: "#6b6b80" }}>Sort:</span>
@@ -343,6 +430,7 @@ export default function TasksPage() {
           const urg = URGENCY_CONFIG[task.urgency];
           const st = STATUS_CONFIG[task.status];
           const imp = IMPACT_CONFIG[task.impact_type];
+          const srcType = SOURCE_TYPE_CONFIG[task.source_type] || SOURCE_TYPE_CONFIG.Manual;
           const isExpanded = expandedTask === task.task_id;
           const isUnassigned = task.owner === "Unassigned";
           const isDone = task.status === "done";
@@ -395,10 +483,31 @@ export default function TasksPage() {
                           OVERDUE
                         </span>
                       )}
+                      {/* Revenue $ indicator */}
+                      {task.impact_type === "revenue" && (
+                        <span
+                          className="text-[11px] font-bold"
+                          style={{ color: "#22c55e" }}
+                          title="Revenue impact"
+                        >
+                          $
+                        </span>
+                      )}
+                      {/* Source badge */}
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider"
+                        style={{ background: srcType.bg, color: srcType.color }}
+                      >
+                        {srcType.label}
+                      </span>
                     </div>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
                       <span className="text-xs" style={{ color: "#6b6b80" }}>{task.project}</span>
                       <span className="text-[10px]" style={{ color: "#6b6b80" }}>Stage {task.source_stage} — {stageLabel(task.source_stage)} ⚡</span>
+                      {/* Next Step inline */}
+                      <span className="text-[10px]" style={{ color: "#00d4d4" }}>
+                        → {task.next_action}
+                      </span>
                     </div>
                   </button>
 
@@ -564,12 +673,79 @@ export default function TasksPage() {
                 {/* Expanded Detail */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 space-y-4" style={{ borderTop: "1px solid #1e1e2e" }}>
-                    {/* Why This Matters */}
+                    {/* WHY */}
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-2" style={{ color: "#6b6b80" }}>
-                        Why This Matters <span className="text-[9px]" style={{ color: "#6b6b80" }}>✏️ Manual</span>
+                      <div className="text-[10px] uppercase tracking-wider mb-1.5 font-bold" style={{ color: "#ef4444" }}>
+                        Why
                       </div>
                       <p className="text-sm leading-relaxed" style={{ color: "#a0a0b0" }}>{task.why_this_matters}</p>
+                    </div>
+
+                    {/* NEXT ACTION */}
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider mb-1.5 font-bold" style={{ color: "#00d4d4" }}>
+                        Next Action
+                      </div>
+                      <p className="text-sm leading-relaxed font-medium" style={{ color: "#ffffff" }}>{task.next_action}</p>
+                    </div>
+
+                    {/* IMPACT + BLOCKER DETAILS row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Impact */}
+                      <div className="rounded-lg px-3 py-2.5" style={{ background: "#0a0a0f" }}>
+                        <div className="text-[10px] uppercase tracking-wider mb-1 font-bold" style={{ color: "#6b6b80" }}>
+                          Impact
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-lg font-bold"
+                            style={{ background: imp.bg, color: imp.color }}
+                          >
+                            {imp.icon} {imp.label}
+                          </span>
+                          <span className="text-xs" style={{ color: "#a0a0b0" }}>{task.estimated_value}</span>
+                        </div>
+                      </div>
+
+                      {/* Blocker Details */}
+                      <div className="rounded-lg px-3 py-2.5" style={{ background: task.blocker_details ? "rgba(239,68,68,0.05)" : "#0a0a0f" }}>
+                        <div className="text-[10px] uppercase tracking-wider mb-1 font-bold" style={{ color: task.blocker_details ? "#ef4444" : "#6b6b80" }}>
+                          Blocker Details
+                        </div>
+                        <div className="text-xs" style={{ color: task.blocker_details ? "#ef4444" : "#6b6b80" }}>
+                          {task.blocker_details || "No active blockers"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* DEPENDENCIES */}
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider mb-1.5 font-bold" style={{ color: "#6b6b80" }}>
+                        Dependencies
+                      </div>
+                      {task.dependencies.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {task.dependencies.map((dep, i) => (
+                            <span
+                              key={i}
+                              className="text-[11px] px-2 py-1 rounded-lg"
+                              style={{ background: "rgba(30,30,46,0.5)", color: "#a0a0b0", border: "1px solid #1e1e2e" }}
+                            >
+                              {dep}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs" style={{ color: "#6b6b80" }}>None</span>
+                      )}
+                    </div>
+
+                    {/* EXPECTED OUTPUT */}
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider mb-1.5 font-bold" style={{ color: "#6b6b80" }}>
+                        Expected Output
+                      </div>
+                      <p className="text-sm" style={{ color: "#a0a0b0" }}>{task.expected_output || "Not specified"}</p>
                     </div>
 
                     {/* Meta grid */}
@@ -579,6 +755,65 @@ export default function TasksPage() {
                       <MetaField label="Source" value={task.created_from} badge="⚡ Auto" />
                       <MetaField label="Completed" value={task.completed_at ? new Date(task.completed_at).toLocaleDateString("en-GB") : "Not yet"} badge="⚡ Auto" />
                     </div>
+
+                    {/* PROMPT (collapsible) */}
+                    {task.prompt && (
+                      <div>
+                        <button
+                          onClick={() => setExpandedPrompt(expandedPrompt === task.task_id ? null : task.task_id)}
+                          className="flex items-center gap-2 text-[10px] uppercase tracking-wider font-bold cursor-pointer transition-colors"
+                          style={{ color: "#a78bfa" }}
+                        >
+                          <span>{expandedPrompt === task.task_id ? "▼" : "▶"}</span>
+                          Prompt
+                        </button>
+                        {expandedPrompt === task.task_id && (
+                          <div className="mt-2 relative">
+                            <pre
+                              className="rounded-lg px-4 py-3 text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap"
+                              style={{ background: "#0a0a0f", color: "#a0a0b0", border: "1px solid #1e1e2e", fontFamily: "monospace" }}
+                            >
+                              {task.prompt}
+                            </pre>
+                            <button
+                              onClick={() => copyPrompt(task.task_id, task.prompt!)}
+                              className="absolute top-2 right-2 text-[10px] px-2 py-1 rounded font-semibold cursor-pointer transition-all"
+                              style={{
+                                background: copiedPrompt === task.task_id ? "rgba(34,197,94,0.2)" : "rgba(0,212,212,0.15)",
+                                color: copiedPrompt === task.task_id ? "#22c55e" : "#00d4d4",
+                                border: `1px solid ${copiedPrompt === task.task_id ? "rgba(34,197,94,0.3)" : "rgba(0,212,212,0.3)"}`,
+                              }}
+                            >
+                              {copiedPrompt === task.task_id ? "Copied!" : "Copy"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* OUTPUT RESULT (collapsible) */}
+                    {task.output_result && (
+                      <div>
+                        <button
+                          onClick={() => setExpandedOutput(expandedOutput === task.task_id ? null : task.task_id)}
+                          className="flex items-center gap-2 text-[10px] uppercase tracking-wider font-bold cursor-pointer transition-colors"
+                          style={{ color: "#22c55e" }}
+                        >
+                          <span>{expandedOutput === task.task_id ? "▼" : "▶"}</span>
+                          Output Result
+                        </button>
+                        {expandedOutput === task.task_id && (
+                          <div className="mt-2">
+                            <div
+                              className="rounded-lg px-4 py-3 text-sm leading-relaxed"
+                              style={{ background: "rgba(34,197,94,0.05)", color: "#a0a0b0", border: "1px solid rgba(34,197,94,0.15)" }}
+                            >
+                              {task.output_result}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Notes */}
                     <div>

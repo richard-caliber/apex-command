@@ -56,6 +56,19 @@ const PROMO_CHANNELS = [
   { id: "influencer", label: "Influencer" },
 ];
 
+/* ── Missing fields helper ── */
+function getMissingFields(idea: IdeaDetail): { field: string; severity: "amber" | "red" }[] {
+  const missing: { field: string; severity: "amber" | "red" }[] = [];
+  if (!idea.cleaned_summary) missing.push({ field: "Cleaned Summary", severity: "amber" });
+  if (!idea.image_url) missing.push({ field: "Cover Image", severity: "amber" });
+  if (!idea.tags || idea.tags.length === 0) missing.push({ field: "Tags", severity: "amber" });
+  if (!idea.expansion_ideas || idea.expansion_ideas.length === 0) missing.push({ field: "Expansion Ideas", severity: "amber" });
+  if (!idea.original_input) missing.push({ field: "Original Input", severity: "red" });
+  if (!idea.market_whisper) missing.push({ field: "Market Whisper", severity: "amber" });
+  if (!idea.capability_fit) missing.push({ field: "Capability Fit", severity: "amber" });
+  return missing;
+}
+
 /* ── Seed Data ── */
 const SEED_IDEAS: Record<string, IdeaDetail> = {
   "idea-repostai": {
@@ -109,14 +122,10 @@ const SEED_IDEAS: Record<string, IdeaDetail> = {
     title: "Comic Creator",
     status: "raw",
     original_input: "AI can now generate consistent characters across images. What if you could type a story and get a full comic book? Kids' stories, manga, graphic novels — all from a text prompt.",
-    cleaned_summary: "AI comic book generator that takes story prompts and produces full comic pages with consistent characters, panel layouts, speech bubbles, and visual storytelling. Targets indie creators and parents making stories for kids.",
+    cleaned_summary: "",
     image_url: null,
     extra_notes: "",
-    expansion_ideas: [
-      "Style transfer — make any story look like Marvel, manga, Tintin, etc.",
-      "Print-on-demand integration for physical comic books",
-      "Collaborative mode where kids can co-create stories",
-    ],
+    expansion_ideas: [],
     market_whisper: null,
     capability_fit: null,
     tags: ["Creative", "AI", "Consumer"],
@@ -153,17 +162,13 @@ const SEED_IDEAS: Record<string, IdeaDetail> = {
     title: "Villa Investor Platform",
     status: "raw",
     original_input: "People want to invest in holiday villas but managing them is a nightmare. What if there was a platform that matched investors with property managers and handled everything — fractional ownership, yield tracking, automated reporting?",
-    cleaned_summary: "Marketplace connecting villa investors with professional property managers. Features fractional ownership options, real-time yield tracking, automated financial reporting, and occupancy analytics.",
+    cleaned_summary: "",
     image_url: null,
     extra_notes: "",
-    expansion_ideas: [
-      "Fractional ownership tokenisation using blockchain",
-      "AI-powered pricing optimisation for rental yields",
-      "Virtual tours and property inspection reports",
-    ],
+    expansion_ideas: [],
     market_whisper: null,
     capability_fit: null,
-    tags: ["PropTech", "Marketplace", "Finance"],
+    tags: [],
     excitement: 3,
     practicality: { time_to_mvp: "2-3 months", capital_required: "$2K-$10K", revenue_model: "Marketplace commission", competition_level: "Moderate" },
     promotion_channels: ["paid", "email"],
@@ -204,6 +209,7 @@ export default function IdeaDetailPage() {
   const [saved, setSaved] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const [showEnrichTooltip, setShowEnrichTooltip] = useState(false);
 
   // Fetch idea
   const fetchIdea = useCallback(async () => {
@@ -308,6 +314,7 @@ export default function IdeaDetailPage() {
   }
 
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === idea.status) || STATUS_OPTIONS[0];
+  const missingFields = getMissingFields(idea);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -322,6 +329,85 @@ export default function IdeaDetailPage() {
         </svg>
         Back to Ideas
       </Link>
+
+      {/* ── Missing Fields Alert ── */}
+      {missingFields.length > 0 && (
+        <div
+          className="rounded-xl border p-4"
+          style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span style={{ color: "#f59e0b", fontSize: 16 }}>⚠</span>
+            <h3 className="text-sm font-semibold" style={{ color: "#f59e0b" }}>
+              {missingFields.length} missing field{missingFields.length !== 1 ? "s" : ""}
+            </h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {missingFields.map((m) => (
+              <span
+                key={m.field}
+                className="text-[10px] px-2 py-1 rounded-full font-medium"
+                style={{
+                  background: m.severity === "red" ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.15)",
+                  color: m.severity === "red" ? "#ef4444" : "#f59e0b",
+                }}
+              >
+                {m.field}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Auto-Enrich Button ── */}
+      {missingFields.length > 0 && (
+        <div className="relative">
+          <button
+            onClick={() => setShowEnrichTooltip(!showEnrichTooltip)}
+            className="px-4 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-all flex items-center gap-2"
+            style={{
+              background: "rgba(167,139,250,0.12)",
+              color: "#a78bfa",
+              border: "1px solid rgba(167,139,250,0.25)",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(167,139,250,0.2)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(167,139,250,0.12)"; }}
+          >
+            <span>🤖</span>
+            Auto-Enrich
+            <span
+              className="text-[8px] px-1.5 py-0.5 rounded ml-1"
+              style={{ background: "rgba(107,107,128,0.2)", color: "#6b6b80" }}
+            >
+              COMING SOON
+            </span>
+          </button>
+          {showEnrichTooltip && (
+            <div
+              className="mt-2 rounded-lg border p-4"
+              style={{ background: "#111118", borderColor: "#1e1e2e" }}
+            >
+              <p className="text-sm font-medium mb-1" style={{ color: "#a78bfa" }}>
+                Coming soon: Newton will auto-generate
+              </p>
+              <ul className="space-y-1 text-xs" style={{ color: "#a0a0b0" }}>
+                <li>- Summary from original input</li>
+                <li>- Relevant tags based on content</li>
+                <li>- Image prompt for cover generation</li>
+                <li>- Market whisper from trend data</li>
+                <li>- Capability fit analysis</li>
+              </ul>
+              <button
+                onClick={() => setShowEnrichTooltip(false)}
+                className="mt-3 text-[10px] px-2 py-1 rounded cursor-pointer"
+                style={{ color: "#6b6b80" }}
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Title + Status ── */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
@@ -551,21 +637,21 @@ export default function IdeaDetailPage() {
           <button
             onClick={handlePromote}
             className="px-5 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-all hover:brightness-110"
-            style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.3)" }}
+            style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.4)" }}
           >
             Promote to Stage 0 →
           </button>
           <button
             onClick={handlePark}
-            className="px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all"
-            style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}
+            className="px-4 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-all hover:brightness-110"
+            style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.4)" }}
           >
             Park
           </button>
           <button
             onClick={handleKill}
-            className="px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all"
-            style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
+            className="px-4 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-all hover:brightness-110"
+            style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.4)" }}
           >
             Kill
           </button>

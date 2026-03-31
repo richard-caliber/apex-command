@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 /* ── Design Tokens ── */
 const C = {
@@ -40,6 +40,13 @@ interface MissingItem {
   whyItMatters: string;
   expectedSource: string;
   taskNeeded: string;
+  impactOfMissing: string;
+}
+
+/* ── Decision Insight type ── */
+interface DecisionInsight {
+  severity: "critical" | "warning" | "info";
+  text: string;
 }
 
 /* ── Field Label Badges ── */
@@ -48,6 +55,115 @@ const SOURCE_BADGE: Record<string, { emoji: string; label: string; color: string
   api: { emoji: "\uD83D\uDD0C", label: "Placeholder", color: C.warn },
   agent: { emoji: "\uD83E\uDD16", label: "Agent-generated", color: C.success },
   none: { emoji: "\u26A1", label: "Missing", color: C.error },
+};
+
+/* ── Action Suggestions per section ── */
+const SECTION_ACTION_SUGGESTIONS: Record<string, string> = {
+  traffic: "Set up PostHog or GA4 tracking to populate these automatically",
+  conversion: "Install funnel tracking to identify drop-off points and conversion bottlenecks",
+  revenue: "Connect Stripe API for real-time revenue, MRR, and transaction data",
+  content: "Connect social platform APIs to auto-pull post metrics",
+  funnel: "Define funnel stages in your analytics tool and map events to each stage",
+  qualitative: "Set up a weekly review cadence to log customer feedback and objections",
+  payments: "Connect Stripe webhook for live fee tracking and chargeback alerts",
+  email: "Connect your email platform (Mailchimp/ConvertKit) API for automated metrics",
+  retention: "Build LTV and churn calculations from Stripe order history data",
+};
+
+/* ── Impact of Missing Data per field ── */
+const MISSING_IMPACT: Record<string, string> = {
+  referral: "Cannot attribute ROI to specific campaigns or channels",
+  funnel_steps: "Blind to where users get stuck — no optimisation possible",
+  mrr: "Cannot forecast revenue or detect subscription health decline",
+  list_size: "No way to calculate email channel ROI or growth rate",
+  open_rate: "Cannot A/B test subject lines or measure audience quality",
+  click_rate: "Cannot measure email-to-revenue pipeline effectiveness",
+  unsubscribes: "Risk of list decay going undetected until deliverability drops",
+  churn: "Revenue loss invisible until it compounds past recovery",
+  ltv: "Ad spend decisions are guesswork without knowing customer value",
+  repeat: "Cannot tell if product quality drives loyalty or one-time buyers",
+  comments: "Content strategy lacks voice-of-customer signal",
+  objections: "Sales friction unaddressed — conversion rate stays flat",
+  messages: "Inbound demand signal invisible — cannot measure interest",
+  published: "Cannot correlate content velocity with traffic or revenue",
+  engagement: "Cannot benchmark which content types actually perform",
+  reach: "Brand awareness growth unmeasured — no leading indicators",
+  top_post: "Cannot replicate winning content patterns",
+  visits: "Flying blind on acquisition — all growth metrics unreliable",
+  sources: "Cannot allocate budget across channels with confidence",
+  daily_trend: "Traffic anomalies go undetected until revenue is impacted",
+  signup_rate: "Cannot evaluate top-of-funnel marketing effectiveness",
+  purchase_rate: "Bottom-of-funnel conversion unknown — pricing and UX blind spots",
+  drop_off: "Users abandoning but you don't know where or why",
+  awareness: "Cannot size total addressable audience or measure share-of-voice",
+  interest: "Cannot measure consideration stage effectiveness",
+  decision: "Cannot measure how many interested users move to purchase intent",
+  processor: "Payment infrastructure not documented — risk during incidents",
+  fees: "True profit margin unknown — financial planning unreliable",
+  chargebacks: "Disputes could escalate to account suspension undetected",
+};
+
+/* ── Decision Insights (hardcoded but realistic) ── */
+const DECISION_INSIGHTS: DecisionInsight[] = [
+  { severity: "critical", text: "Caliber conversion rate partially tracked but funnel steps missing — cannot evaluate ad ROI end-to-end" },
+  { severity: "warning", text: "GemSnap checkout abandon rate at 62% — hold ad spend at $10/day until checkout UX is optimized (target: April 6)" },
+  { severity: "critical", text: "Edge Auto has almost no metrics tracked — prioritize analytics setup before any paid acquisition" },
+];
+
+/* ── Stale threshold (days) ── */
+const STALE_WARN_DAYS = 7;
+const STALE_POOR_DAYS = 14;
+
+function daysSince(isoDate: string | null): number | null {
+  if (!isoDate) return null;
+  const diff = Date.now() - new Date(isoDate).getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+/* ── Section Health helpers ── */
+type SectionState = "good" | "warning" | "poor";
+
+function getSectionState(section: MetricSection): SectionState {
+  const total = section.fields.length;
+  const missing = section.fields.filter((f) => f.value === null && f.source === "none").length;
+  const missingRatio = missing / total;
+
+  // Check for critical fields missing (>50% missing = poor)
+  if (missingRatio > 0.5) return "poor";
+
+  // Check for stale data
+  const staleFields = section.fields.filter((f) => {
+    if (!f.lastUpdated) return false;
+    const days = daysSince(f.lastUpdated);
+    return days !== null && days > STALE_POOR_DAYS;
+  });
+  if (staleFields.length > 0) return "poor";
+
+  // Warning conditions
+  if (missingRatio > 0) {
+    return "warning";
+  }
+  const warnStale = section.fields.filter((f) => {
+    if (!f.lastUpdated) return false;
+    const days = daysSince(f.lastUpdated);
+    return days !== null && days > STALE_WARN_DAYS;
+  });
+  if (warnStale.length > 0) return "warning";
+
+  return "good";
+}
+
+function getConfidenceScore(section: MetricSection): number {
+  const total = section.fields.length;
+  if (total === 0) return 100;
+  const populated = section.fields.filter((f) => f.value !== null || f.source !== "none").length;
+  return Math.round((populated / total) * 100);
+}
+
+const STATE_CONFIG: Record<SectionState, { label: string; color: string }> = {
+  good: { label: "Good", color: C.success },
+  warning: { label: "Warning", color: C.warn },
+  poor: { label: "Poor", color: C.error },
 };
 
 /* ── Seed Data Per Project ── */
@@ -351,6 +467,7 @@ function getMissingItems(projectId: string, sections: MetricSection[]): MissingI
           source: "TBD",
           task: `Connect ${field.label} data source`,
         };
+        const impact = MISSING_IMPACT[field.key] || "Decisions relying on this data point are blocked or based on guesswork";
         items.push({
           field: field.label,
           section: section.title,
@@ -358,6 +475,7 @@ function getMissingItems(projectId: string, sections: MetricSection[]): MissingI
           whyItMatters: reason.why,
           expectedSource: reason.source,
           taskNeeded: reason.task,
+          impactOfMissing: impact,
         });
       }
     }
@@ -375,6 +493,109 @@ function SourceBadge({ source }: { source: string }) {
     >
       {s.emoji} {s.label}
     </span>
+  );
+}
+
+function StaleBadge({ lastUpdated }: { lastUpdated: string | null }) {
+  if (!lastUpdated) return null;
+  const days = daysSince(lastUpdated);
+  if (days === null || days <= STALE_WARN_DAYS) return null;
+  const isPoor = days > STALE_POOR_DAYS;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold"
+      style={{
+        background: isPoor ? `${C.error}20` : `${C.warn}20`,
+        color: isPoor ? C.error : C.warn,
+      }}
+    >
+      STALE ({days}d)
+    </span>
+  );
+}
+
+function StateBadge({ state }: { state: SectionState }) {
+  const cfg = STATE_CONFIG[state];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide"
+      style={{ background: `${cfg.color}18`, color: cfg.color }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.color }} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function ConfidenceBar({ score }: { score: number }) {
+  const color = score >= 80 ? C.success : score >= 50 ? C.warn : C.error;
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className="h-1.5 rounded-full flex-1"
+        style={{ background: `${color}20`, maxWidth: "80px" }}
+      >
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${score}%`, background: color }}
+        />
+      </div>
+      <span className="text-xs font-mono font-medium" style={{ color }}>
+        {score}%
+      </span>
+    </div>
+  );
+}
+
+/* ── Decision Panel ── */
+function DecisionPanel({ insights }: { insights: DecisionInsight[] }) {
+  const severityConfig = {
+    critical: { color: C.error, icon: "\u26D4", borderColor: C.error },
+    warning: { color: C.warn, icon: "\u26A0\uFE0F", borderColor: C.warn },
+    info: { color: C.accent, icon: "\u2139\uFE0F", borderColor: C.accent },
+  };
+
+  return (
+    <div
+      className="rounded-lg border-2 overflow-hidden"
+      style={{ borderColor: C.accent, background: C.card }}
+    >
+      <div
+        className="flex items-center gap-3 px-5 py-4"
+        style={{ background: `${C.accent}08` }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.5">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+        <h3 className="text-lg font-bold" style={{ color: C.accent }}>
+          Decision Panel
+        </h3>
+        <span className="text-xs" style={{ color: C.muted }}>
+          Key insights from current data state
+        </span>
+      </div>
+      <div className="p-4 space-y-3">
+        {insights.map((insight, idx) => {
+          const cfg = severityConfig[insight.severity];
+          return (
+            <div
+              key={idx}
+              className="flex items-start gap-3 px-4 py-3 rounded-md border-l-4"
+              style={{
+                background: `${cfg.color}08`,
+                borderLeftColor: cfg.borderColor,
+              }}
+            >
+              <span className="text-sm flex-shrink-0 mt-0.5">{cfg.icon}</span>
+              <p className="text-sm leading-relaxed" style={{ color: C.body }}>
+                {insight.text}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -414,8 +635,9 @@ function MetricFieldRow({
             MISSING DATA
           </span>
         ) : (
-          <span className="text-sm" style={{ color: C.body }}>
+          <span className="text-sm flex items-center gap-2" style={{ color: C.body }}>
             {String(field.value)}
+            <StaleBadge lastUpdated={field.lastUpdated} />
           </span>
         )}
       </div>
@@ -498,6 +720,9 @@ function CollapsibleSection({
   const [open, setOpen] = useState(true);
   const missingCount = section.fields.filter((f) => f.value === null && f.source === "none").length;
   const totalCount = section.fields.length;
+  const sectionState = getSectionState(section);
+  const confidence = getConfidenceScore(section);
+  const actionSuggestion = SECTION_ACTION_SUGGESTIONS[section.id];
 
   return (
     <div className="rounded-lg border overflow-hidden" style={{ background: C.card, borderColor: C.border }}>
@@ -506,11 +731,12 @@ function CollapsibleSection({
         style={{ background: open ? `${C.accent}05` : "transparent" }}
         onClick={() => setOpen(!open)}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="text-lg">{section.icon}</span>
           <span className="text-base font-semibold" style={{ color: C.heading }}>
             {section.title}
           </span>
+          <StateBadge state={sectionState} />
           <span
             className="text-xs px-2 py-0.5 rounded-full font-medium"
             style={{
@@ -528,6 +754,7 @@ function CollapsibleSection({
               {missingCount} missing
             </span>
           )}
+          <ConfidenceBar score={confidence} />
         </div>
         <svg
           width="20"
@@ -536,13 +763,26 @@ function CollapsibleSection({
           fill="none"
           stroke={C.muted}
           strokeWidth="2"
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
+          className={`transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
       {open && (
         <div>
+          {/* Action Suggestion */}
+          {actionSuggestion && missingCount > 0 && (
+            <div
+              className="flex items-center gap-2 px-5 py-2 border-t text-xs"
+              style={{ borderColor: C.border, background: `${C.warn}06`, color: C.warn }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.warn} strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+              <span className="italic">{actionSuggestion}</span>
+            </div>
+          )}
           {/* Column Headers */}
           <div
             className="hidden sm:flex items-center gap-4 px-4 py-2 text-xs font-medium border-t border-b"
@@ -578,6 +818,7 @@ export default function DataPage() {
     return m;
   });
   const [taskCreated, setTaskCreated] = useState<Set<string>>(new Set());
+  const [batchConfirm, setBatchConfirm] = useState(false);
 
   const currentMetrics = metrics[selectedProject] || [];
   const missingItems = selectedProject === "all"
@@ -594,6 +835,13 @@ export default function DataPage() {
     0
   );
   const coveragePct = totalFields > 0 ? Math.round((populatedFields / totalFields) * 100) : 0;
+
+  const uncreatedMissing = useMemo(() => {
+    return missingItems.filter((item) => {
+      const key = `${item.project}-${item.field}`;
+      return !taskCreated.has(key);
+    });
+  }, [missingItems, taskCreated]);
 
   const handleOverride = useCallback(
     (sectionId: string, key: string, val: string) => {
@@ -620,6 +868,17 @@ export default function DataPage() {
     const key = `${item.project}-${item.field}`;
     setTaskCreated((prev) => new Set(prev).add(key));
   }, []);
+
+  const handleCreateAllTasks = useCallback(() => {
+    const newCreated = new Set(taskCreated);
+    for (const item of missingItems) {
+      const key = `${item.project}-${item.field}`;
+      newCreated.add(key);
+    }
+    setTaskCreated(newCreated);
+    setBatchConfirm(true);
+    setTimeout(() => setBatchConfirm(false), 4000);
+  }, [missingItems, taskCreated]);
 
   return (
     <div className="space-y-6">
@@ -656,6 +915,9 @@ export default function DataPage() {
           </div>
         </div>
       </div>
+
+      {/* Decision Panel — TOP of page */}
+      <DecisionPanel insights={DECISION_INSIGHTS} />
 
       {/* Project Selector */}
       <div
@@ -781,14 +1043,39 @@ export default function DataPage() {
                 : "All Data Points Tracked"}
             </h3>
           </div>
-          {missingItems.length > 0 && (
-            <span
-              className="text-xs px-3 py-1 rounded-full font-bold animate-pulse"
-              style={{ background: `${C.error}25`, color: C.error }}
-            >
-              URGENT
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Create All Tasks batch button */}
+            {uncreatedMissing.length > 0 && (
+              <button
+                className="text-xs font-bold px-4 py-2 rounded transition-all"
+                style={{
+                  background: batchConfirm ? `${C.success}20` : `${C.accent}20`,
+                  color: batchConfirm ? C.success : C.accent,
+                  border: `1px solid ${batchConfirm ? C.success : C.accent}40`,
+                }}
+                onClick={handleCreateAllTasks}
+              >
+                {batchConfirm ? (
+                  <span className="flex items-center gap-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {missingItems.length} Tasks Created
+                  </span>
+                ) : (
+                  `Create All Tasks (${uncreatedMissing.length})`
+                )}
+              </button>
+            )}
+            {missingItems.length > 0 && (
+              <span
+                className="text-xs px-3 py-1 rounded-full font-bold animate-pulse"
+                style={{ background: `${C.error}25`, color: C.error }}
+              >
+                URGENT
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Table */}
@@ -810,6 +1097,9 @@ export default function DataPage() {
                   </th>
                   <th className="text-left px-4 py-3 font-semibold" style={{ color: C.muted }}>
                     Why It Matters
+                  </th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: C.muted }}>
+                    Impact of Missing
                   </th>
                   <th className="text-left px-4 py-3 font-semibold" style={{ color: C.muted }}>
                     Expected Source
@@ -854,6 +1144,11 @@ export default function DataPage() {
                       </td>
                       <td className="px-4 py-3" style={{ color: C.body }}>
                         {item.whyItMatters}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs" style={{ color: C.error }}>
+                          {item.impactOfMissing}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <span

@@ -1,83 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
-const KV_KEY = "maproom:ip-vault";
+const KV_KEY = "maproom:ip-vault-v2";
 const TOKEN = "apex-live-2026";
 
-interface IPItem {
-  id: string;
-  name: string;
-  type: "framework" | "prompt" | "process" | "template" | "method" | "dataset";
-  project_id: string;
-  description: string;
-  content: string;
-  tags: string[];
-  reusable: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface IPVaultData {
-  items: IPItem[];
+interface VaultData {
+  sections: {
+    id: string;
+    title: string;
+    entries: Record<string, unknown>[];
+  }[];
   lastUpdated: string;
 }
 
-const SEED: IPVaultData = {
-  lastUpdated: "2026-03-30T12:00:00Z",
-  items: [
+const SEED: VaultData = {
+  lastUpdated: "2026-03-31T06:00:00Z",
+  sections: [
     {
-      id: "ip-001",
-      name: "7-Stage Project Pipeline",
-      type: "framework",
-      project_id: "apex",
-      description: "The core framework for tracking projects from idea to scale. Each stage has clear entry/exit criteria.",
-      content: "Stage -1: Idea Inbox | Stage 0: Idea | Stage 1: Validation | Stage 2: Design | Stage 3: MVP | Stage 4: Traffic | Stage 5: Conversion | Stage 6: Scale",
-      tags: ["framework", "core", "reusable"],
-      reusable: true,
-      created_at: "2026-01-01",
-      updated_at: "2026-03-30",
+      id: "winning-hooks",
+      title: "Winning Hooks",
+      entries: [
+        { id: "wh-1", text: "Your body makes this peptide. Most people don't have enough.", platform: "Instagram", post_id: "CAL-IG-001", metric: "4.2% engagement rate (3x average)" },
+        { id: "wh-2", text: "We scanned 10,000 gems. Here's what we found.", platform: "Instagram", post_id: "GEM-IG-001", metric: "6.1% CTR to checkout" },
+      ],
     },
     {
-      id: "ip-002",
-      name: "Carousel Quality Gate Checklist",
-      type: "process",
-      project_id: "caliber",
-      description: "Mandatory checklist before any carousel can be published. Prevents brand-damaging content going live.",
-      content: "1. Background deep teal? 2. Logo watermark present? 3. White bold caps text? 4. Teal accent colour? 5. Peptide name on cover? 6. Hook under 6 words? 7. CTA approved format? 8. No medical claims? 9. 3-5 hashtags?",
-      tags: ["quality", "content", "caliber"],
-      reusable: true,
-      created_at: "2026-03-15",
-      updated_at: "2026-03-29",
+      id: "winning-creatives",
+      title: "Winning Creatives",
+      entries: [],
     },
     {
-      id: "ip-003",
-      name: "Edge Auto Guarantee Formula",
-      type: "method",
-      project_id: "edge-auto",
-      description: "The guarantee structure that de-risks the offer: 12K minimum savings in Year 1 or the implementation is free.",
-      content: "Calculate: (hours_saved_per_week * hourly_rate * 52) + (leads_captured * avg_deal_value * close_rate). If projected > 12000, guarantee applies. If actual < 12000 after 12 months, full refund.",
-      tags: ["sales", "guarantee", "edge-auto"],
-      reusable: true,
-      created_at: "2026-03-01",
-      updated_at: "2026-03-28",
+      id: "prompt-versions",
+      title: "Prompt Versions",
+      entries: [],
     },
     {
-      id: "ip-004",
-      name: "AI Agent Squad Structure",
-      type: "framework",
-      project_id: "apex",
-      description: "The squad model: Atlas (strategy/content), Darwin (QA/analysis), Newton (research), Jimmy (chaos agent), with Ginge as founder/builder.",
-      content: "Atlas: Strategy, content generation, publishing. Darwin: Quality gates, analysis, reviews. Newton: Deep research, citations, data. Jimmy: Creative disruption, unconventional ideas. Ginge: Founder decisions, human tasks, final approvals.",
-      tags: ["framework", "core", "agents"],
-      reusable: true,
-      created_at: "2026-01-15",
-      updated_at: "2026-03-30",
+      id: "channel-learnings",
+      title: "Channel Learnings",
+      entries: [
+        { id: "cl-1", platform: "Instagram", learning: "Carousels outperform reels for education content by 3x engagement", evidence: "Compared 12 carousel posts vs 8 reels over Feb-Mar 2026. Avg carousel engagement 3.8%, avg reel engagement 1.2%.", date: "2026-03-25" },
+      ],
+    },
+    {
+      id: "funnel-learnings",
+      title: "Funnel Learnings",
+      entries: [],
+    },
+    {
+      id: "failed-experiments",
+      title: "Failed Experiments",
+      entries: [
+        { id: "fe-1", experiment_name: "Reddit organic for Caliber", hypothesis: "r/peptides community would engage with educational content and drive traffic", result: "3 posts removed for self-promotion, 1 shadowban warning. 0 conversions.", learning: "Reddit requires pure value-first approach. Need established account with karma. Not viable as primary channel for Caliber.", date: "2026-03-10" },
+      ],
+    },
+    {
+      id: "reusable-frameworks",
+      title: "Reusable Frameworks",
+      entries: [],
+    },
+    {
+      id: "system-learnings",
+      title: "System Learnings",
+      entries: [],
     },
   ],
 };
 
-async function getData(): Promise<IPVaultData> {
-  const cached = await kv.get<IPVaultData>(KV_KEY);
+async function getData(): Promise<VaultData> {
+  const cached = await kv.get<VaultData>(KV_KEY);
   if (cached) return cached;
   await kv.set(KV_KEY, SEED);
   return SEED;
@@ -97,16 +87,27 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const data = await getData();
   const now = new Date().toISOString();
+  const newId = Date.now().toString(36);
 
-  const item: IPItem = {
-    id: Date.now().toString(36),
-    ...body,
-    created_at: body.created_at || now,
-    updated_at: now,
-  };
+  if (body.action === "add" && body.sectionId) {
+    const section = data.sections.find((s) => s.id === body.sectionId);
+    if (section) {
+      section.entries.push({ id: newId, ...body.entry });
+    }
+  } else if (body.action === "update" && body.sectionId && body.entryId) {
+    const section = data.sections.find((s) => s.id === body.sectionId);
+    if (section) {
+      const idx = section.entries.findIndex((e) => e.id === body.entryId);
+      if (idx >= 0) Object.assign(section.entries[idx], body.entry);
+    }
+  } else if (body.action === "delete" && body.sectionId && body.entryId) {
+    const section = data.sections.find((s) => s.id === body.sectionId);
+    if (section) {
+      section.entries = section.entries.filter((e) => e.id !== body.entryId);
+    }
+  }
 
-  data.items.push(item);
   data.lastUpdated = now;
   await kv.set(KV_KEY, data);
-  return NextResponse.json(item, { status: 201 });
+  return NextResponse.json({ ok: true });
 }

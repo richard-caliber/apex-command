@@ -1,120 +1,123 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
-const KV_KEY = "maproom:heartbeat";
-
-interface HealthCheck {
-  id: string;
-  type: "failed_check" | "missed_task" | "missing_data" | "unreviewed_post" | "stale_output" | "bottleneck";
-  severity: "critical" | "warning" | "info";
-  project_id: string;
-  title: string;
-  detail: string;
-  suggested_action: string;
-  detected_at: string;
-}
+const KV_KEY = "maproom:heartbeat-v2";
+const TOKEN = "apex-live-2026";
 
 interface HeartbeatData {
-  items: HealthCheck[];
+  lastRun: string;
+  status: "all-clear" | "issues-found" | "critical";
+  nextRun: string | null;
+  sections: {
+    id: string;
+    title: string;
+    items: Record<string, unknown>[];
+  }[];
   lastUpdated: string;
-  system_status: "healthy" | "degraded" | "critical";
-  summary: {
-    total_issues: number;
-    critical: number;
-    warnings: number;
-    info: number;
-  };
 }
 
 const SEED: HeartbeatData = {
-  lastUpdated: "2026-03-30T12:00:00Z",
-  system_status: "degraded",
-  summary: {
-    total_issues: 8,
-    critical: 3,
-    warnings: 4,
-    info: 1,
-  },
-  items: [
+  lastRun: "2026-03-31T06:00:00Z",
+  status: "issues-found",
+  nextRun: null,
+  lastUpdated: "2026-03-31T06:00:00Z",
+  sections: [
     {
-      id: "hb-001",
-      type: "failed_check",
-      severity: "critical",
-      project_id: "caliber",
-      title: "Carousel quality gate failed",
-      detail: "BPC-157 carousel copy scored 6.5/10 -- below the 8/10 threshold. Hook too long (9 words vs 6 max), CTA uses unapproved format.",
-      suggested_action: "Atlas to rewrite carousel copy with shorter hook and approved CTA format.",
-      detected_at: "2026-03-30T06:30:00Z",
+      id: "failed-checks",
+      title: "Failed Checks",
+      items: [
+        {
+          id: "hb-fc-1",
+          name: "Caliber IG post frequency",
+          severity: "warning",
+          expected: "3 posts/week",
+          actual: "1 post/week",
+          suggested: "Increase carousel output or schedule backup content",
+        },
+      ],
     },
     {
-      id: "hb-002",
-      type: "missed_task",
-      severity: "critical",
-      project_id: "caliber",
-      title: "PostHog tracking setup overdue",
-      detail: "Task TSK-002 was due 2026-03-28. PostHog tracking still not confirmed live on all pages. Blocking conversion baseline measurement.",
-      suggested_action: "Darwin to verify PostHog installation and confirm data is flowing.",
-      detected_at: "2026-03-30T08:00:00Z",
+      id: "missed-tasks",
+      title: "Missed Tasks",
+      items: [
+        {
+          id: "hb-mt-1",
+          name: "Build Edge Auto report page",
+          severity: "critical",
+          project: "Edge Auto",
+          owner: "Claude Code",
+          due: "2026-03-28",
+          days_overdue: 3,
+        },
+        {
+          id: "hb-mt-2",
+          name: "Review GemSnap A/B test results",
+          severity: "warning",
+          project: "GemSnap",
+          owner: "Atlas",
+          due: "2026-03-29",
+          days_overdue: 2,
+        },
+      ],
     },
     {
-      id: "hb-003",
-      type: "missed_task",
-      severity: "warning",
-      project_id: "caliber",
-      title: "Google Ads setup overdue",
-      detail: "Task TSK-007 was due 2026-03-30. Blocked on budget approval -- no owner assigned.",
-      suggested_action: "Ginge to make budget decision or formally park this task.",
-      detected_at: "2026-03-30T09:00:00Z",
+      id: "missing-data",
+      title: "Missing Data",
+      items: [
+        {
+          id: "hb-md-1",
+          name: "Caliber website conversion rate",
+          needed_for: "Traffic stage decisions",
+          expected_source: "PostHog",
+        },
+        {
+          id: "hb-md-2",
+          name: "Edge Auto client list",
+          needed_for: "MVP stage progress",
+          expected_source: "Manual entry",
+        },
+      ],
     },
     {
-      id: "hb-004",
-      type: "missing_data",
-      severity: "critical",
-      project_id: "caliber",
-      title: "Conversion rate baseline missing",
-      detail: "Cannot evaluate traffic quality or ad ROI without conversion rate data. This is the primary blocker for the Caliber project.",
-      suggested_action: "Depends on PostHog being live. Once tracking confirmed, wait 7 days then calculate baseline.",
-      detected_at: "2026-03-30T08:00:00Z",
+      id: "unreviewed-posts",
+      title: "Unreviewed Posts",
+      items: [
+        {
+          id: "hb-up-1",
+          title: "BPC-157 The Healing Peptide",
+          platform: "Instagram",
+          posted: "2026-03-27",
+          days_since: 4,
+        },
+      ],
     },
     {
-      id: "hb-005",
-      type: "missing_data",
-      severity: "warning",
-      project_id: "gemsnap",
-      title: "A/B test results not yet available",
-      detail: "Pricing display A/B test started March 30. Need 7 full days before results are statistically significant. Earliest: April 6.",
-      suggested_action: "Wait. Do not make pricing decisions until test concludes. Hold ad spend at $10/day.",
-      detected_at: "2026-03-30T10:00:00Z",
+      id: "stale-outputs",
+      title: "Stale Outputs",
+      items: [
+        {
+          id: "hb-so-1",
+          name: "Caliber competitor pricing report",
+          project: "Caliber Peptides",
+          stage: "Research",
+          last_updated: "2026-03-20",
+          days_stale: 11,
+        },
+      ],
     },
     {
-      id: "hb-006",
-      type: "unreviewed_post",
-      severity: "warning",
-      project_id: "caliber",
-      title: "TikTok post drafted but not reviewed",
-      detail: "Post POST-003 ('3 signs your body is begging for this peptide') has been in drafted status since March 29 with no review.",
-      suggested_action: "Darwin to review post against content checklist before scheduling.",
-      detected_at: "2026-03-30T11:00:00Z",
-    },
-    {
-      id: "hb-007",
-      type: "stale_output",
-      severity: "warning",
-      project_id: "caliber",
-      title: "BPC-157 carousel copy marked stale",
-      detail: "Output OUT-001 scored 6.5/10 and is marked stale. It failed the quality gate and needs regeneration with the updated prompt.",
-      suggested_action: "Re-run Carousel Copy Generator prompt (v3) with corrected parameters.",
-      detected_at: "2026-03-30T07:00:00Z",
-    },
-    {
-      id: "hb-008",
-      type: "bottleneck",
-      severity: "info",
-      project_id: "edge-auto",
-      title: "Edge Auto blocked on report page build",
-      detail: "3 downstream tasks (interactive calculator, PDF export, client onboarding) are waiting on the audit report page design. Todd wants demo by April 3.",
-      suggested_action: "Claude Code to prioritise report page build this week. Consider reducing scope for initial demo.",
-      detected_at: "2026-03-30T08:00:00Z",
+      id: "unresolved-bottlenecks",
+      title: "Unresolved Bottlenecks",
+      items: [
+        {
+          id: "hb-bn-1",
+          name: "PostHog integration not configured",
+          project: "GemSnap",
+          stage: "Conversion",
+          flagged: "2026-03-25",
+          owner: "Claude Code",
+        },
+      ],
     },
   ],
 };
@@ -129,4 +132,30 @@ async function getData(): Promise<HeartbeatData> {
 export async function GET() {
   const data = await getData();
   return NextResponse.json(data);
+}
+
+export async function POST(req: NextRequest) {
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${TOKEN}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const data = await getData();
+  const now = new Date().toISOString();
+
+  if (body.action === "resolve" && body.itemId) {
+    for (const section of data.sections) {
+      section.items = section.items.filter((i) => i.id !== body.itemId);
+    }
+  }
+
+  if (body.action === "run") {
+    data.lastRun = now;
+    data.status = data.sections.some((s) => s.items.length > 0) ? "issues-found" : "all-clear";
+  }
+
+  data.lastUpdated = now;
+  await kv.set(KV_KEY, data);
+  return NextResponse.json({ ok: true });
 }
