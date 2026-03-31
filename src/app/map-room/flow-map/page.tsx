@@ -100,45 +100,29 @@ function timeAgo(iso: string): string {
 
 /* ── Main Page ── */
 export default function FlowMapPage() {
-  const [data, setData] = useState<FlowData | null>(null);
+  const [data, setData] = useState<FlowData>(FALLBACK);
   const [selectedNode, setSelectedNode] = useState<FlowNode | null>(null);
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [filterStage, setFilterStage] = useState<number | null>(null);
-  const [expandedStages, setExpandedStages] = useState<Set<number>>(new Set());
+  const [expandedStages, setExpandedStages] = useState<Set<number>>(new Set([1, 2, 4, 5]));
   const [copied, setCopied] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/map-room/flow-map");
-      if (res.ok) {
-        const json = await res.json();
-        if (json && Array.isArray(json.nodes)) {
-          setData(json);
-        } else {
-          setData(FALLBACK);
-        }
-      } else {
-        setData(FALLBACK);
-      }
-    } catch {
-      setData(FALLBACK);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
-
-  if (!data) {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold" style={{ color: C.heading }}>Flow Map</h2>
-        <div className="text-sm animate-pulse" style={{ color: C.muted }}>Loading execution map...</div>
-      </div>
-    );
-  }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/map-room/flow-map");
+        if (!res.ok) return;
+        const text = await res.text();
+        if (!text.startsWith("{")) return;
+        const json = JSON.parse(text);
+        if (!cancelled && json && Array.isArray(json.nodes)) {
+          setData(json);
+        }
+      } catch { /* keep fallback */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const nodes = data.nodes;
 
@@ -200,14 +184,6 @@ export default function FlowMapPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  // Auto-expand stages that have data
-  useEffect(() => {
-    if (data) {
-      const stagesWithData = new Set(filtered.map((c) => c.stage));
-      setExpandedStages(stagesWithData);
-    }
-  }, [data, filterProject, filterStage]);
 
   return (
     <div className="space-y-6">
