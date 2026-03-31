@@ -2,67 +2,40 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-/* ── Types ── */
-interface StageTask {
+/* ─────────────────────────── TYPES ─────────────────────────── */
+
+interface WorkflowTask {
   id: string;
   name: string;
+  lane: string;
   owner: string;
-  status: "open" | "in-progress" | "blocked" | "done" | "cancelled";
-  due: string;
-  urgency: "critical" | "high" | "medium" | "low";
+  why: string;
+  prompt?: { text: string; version: string };
+  expectedOutput?: string;
+  qualityGate?: string;
+  nextTask?: string;
+  loopTo?: string;
+  automationLevel: "Manual" | "Semi-Auto" | "Fully Auto";
+  founderRequired: boolean;
 }
 
-interface StagePrompt {
+interface ActiveProject {
   id: string;
   name: string;
-  version: string;
-  text: string;
-  updated_at: string;
-}
-
-interface StageOutput {
-  id: string;
-  name: string;
-  text: string;
-  timestamp: string;
-  status: "fresh" | "stale" | "failed";
-  linked_task_id: string;
-  quality_score: number | null;
-}
-
-interface MissingItem {
-  field_name: string;
-  why_it_matters: string;
-  expected_source: string;
-}
-
-interface DataMetric {
-  name: string;
-  value: string | null;
-  source: string;
-  status: "connected" | "pending" | "disconnected";
-}
-
-interface PipelineProject {
-  id: string;
-  name: string;
-  current_stage: number;
+  currentStage: number;
   status: "on-track" | "blocked" | "stalled";
-  owners: string[];
-  blocker_summary: string;
-  stage_objective: string;
-  stage_tasks: StageTask[];
-  stage_prompts: StagePrompt[];
-  outputs: StageOutput[];
-  missing_items: MissingItem[];
-  data_metrics: DataMetric[];
-  notes: string;
-  automation_score: { automated: number; total: number };
+  currentTaskId: string;
+  completedTaskIds: string[];
+  blockedTaskIds: string[];
+  blockerNote?: string;
+  missingOutputs: string[];
+  nextAction: string;
 }
 
-/* ── Constants ── */
+/* ─────────────────────────── CONSTANTS ─────────────────────── */
+
 const STAGES = [
-  { id: -1, label: "Idea Inbox" },
+  { id: -1, label: "Inbox" },
   { id: 0, label: "Idea" },
   { id: 1, label: "Validation" },
   { id: 2, label: "Design" },
@@ -73,1074 +46,722 @@ const STAGES = [
   { id: 7, label: "Scale" },
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  "on-track": { label: "On Track", color: "#22c55e", bg: "rgba(34,197,94,0.1)", dot: "#22c55e" },
-  blocked: { label: "Blocked", color: "#ef4444", bg: "rgba(239,68,68,0.1)", dot: "#ef4444" },
-  stalled: { label: "Stalled", color: "#f59e0b", bg: "rgba(245,158,11,0.1)", dot: "#f59e0b" },
+const TOKENS = {
+  bg: "#0a0a0f",
+  card: "#111118",
+  border: "#1e1e2e",
+  accent: "#00d4d4",
+  warn: "#f59e0b",
+  error: "#ef4444",
+  success: "#22c55e",
+  heading: "#ffffff",
+  body: "#a0a0b0",
+  muted: "#6b6b80",
+  purple: "#a78bfa",
+  blue: "#60a5fa",
+  pink: "#f472b6",
+  orange: "#fb923c",
 };
 
-const URGENCY_CONFIG: Record<string, { color: string; bg: string }> = {
-  critical: { color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
-  high: { color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
-  medium: { color: "#00d4d4", bg: "rgba(0,212,212,0.15)" },
-  low: { color: "#6b6b80", bg: "rgba(107,107,128,0.15)" },
+const LANE_COLORS: Record<string, string> = {
+  Research: TOKENS.blue,
+  Content: TOKENS.purple,
+  Design: TOKENS.pink,
+  Dev: TOKENS.accent,
+  QA: TOKENS.orange,
+  Data: TOKENS.blue,
+  Growth: TOKENS.success,
+  Distribution: TOKENS.purple,
+  Fulfilment: TOKENS.orange,
+  Support: TOKENS.pink,
+  Delivery: TOKENS.accent,
+  Ops: TOKENS.muted,
 };
 
-const TASK_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  open: { label: "Open", color: "#a0a0b0", bg: "rgba(160,160,176,0.1)" },
-  "in-progress": { label: "In Progress", color: "#00d4d4", bg: "rgba(0,212,212,0.1)" },
-  blocked: { label: "Blocked", color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
-  done: { label: "Done", color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
-  cancelled: { label: "Cancelled", color: "#6b6b80", bg: "rgba(107,107,128,0.1)" },
+const AUTO_COLORS: Record<string, { color: string; bg: string }> = {
+  Manual: { color: TOKENS.muted, bg: "rgba(107,107,128,0.15)" },
+  "Semi-Auto": { color: TOKENS.warn, bg: "rgba(245,158,11,0.15)" },
+  "Fully Auto": { color: TOKENS.success, bg: "rgba(34,197,94,0.15)" },
 };
 
-const OUTPUT_STATUS: Record<string, { color: string; bg: string }> = {
-  fresh: { color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
-  stale: { color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-  failed: { color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  "on-track": { label: "On Track", color: TOKENS.success, bg: "rgba(34,197,94,0.1)" },
+  blocked: { label: "Blocked", color: TOKENS.error, bg: "rgba(239,68,68,0.1)" },
+  stalled: { label: "Stalled", color: TOKENS.warn, bg: "rgba(245,158,11,0.1)" },
 };
 
-const OWNER_COLORS: Record<string, string> = {
-  Atlas: "#60a5fa",
-  Darwin: "#34d399",
-  Newton: "#a78bfa",
-  "Claude Code": "#fb923c",
-  Architect: "#f472b6",
-  Founder: "#fbbf24",
-  Ginge: "#f472b6",
-  Unassigned: "#f59e0b",
+/* ─────────────────────────── MASTER WORKFLOWS ─────────────────── */
+
+const MASTER_WORKFLOWS: Record<number, WorkflowTask[]> = {
+  [-1]: [
+    { id: "inbox-1", name: "Capture Idea", lane: "Ops", owner: "Ginge", why: "Raw ideas need a single capture point", expectedOutput: "Idea card", qualityGate: "None", nextTask: "Tag & Categorise", automationLevel: "Manual", founderRequired: true },
+    { id: "inbox-2", name: "Tag & Categorise", lane: "Ops", owner: "Atlas", why: "Categorisation enables prioritisation", expectedOutput: "Tagged idea", qualityGate: "None", nextTask: "Move to Idea stage", automationLevel: "Semi-Auto", founderRequired: false },
+  ],
+  [0]: [
+    { id: "idea-1", name: "Write Problem Statement", lane: "Research", owner: "Ginge", why: "Forces clarity on what problem we solve", expectedOutput: "1-paragraph problem statement", qualityGate: "Founder approval", nextTask: "Score Opportunity", automationLevel: "Manual", founderRequired: true },
+    { id: "idea-2", name: "Score Opportunity", lane: "Research", owner: "Newton", why: "Quantify potential before investing time", expectedOutput: "Opportunity score (1-10)", qualityGate: "Score 7+", nextTask: "Move to Validation", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "idea-3", name: "Kill or Proceed Decision", lane: "Ops", owner: "Ginge", why: "Gate prevents wasted effort on weak ideas", expectedOutput: "Go/No-go decision", qualityGate: "Founder decision", nextTask: "Move to Validation", automationLevel: "Manual", founderRequired: true },
+  ],
+  [1]: [
+    { id: "val-1", name: "Extract Pain Signals", lane: "Research", owner: "Newton", why: "Real language from real people validates demand", prompt: { text: "Analyze Reddit, forums, and review sites for the target niche. Extract:\n1. Exact phrases people use to describe their pain\n2. Frequency of complaints\n3. Emotional intensity (1-10)\n4. Existing solutions mentioned and why they fail\n\nFormat as a Pain Language Bank with columns:\n| Pain Phrase | Source | Frequency | Intensity | Failed Solution |", version: "v1.2" }, expectedOutput: "Pain Language Bank", qualityGate: "Darwin 8/10+", nextTask: "Generate Hooks", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "val-2", name: "Competitor Analysis", lane: "Research", owner: "Newton", why: "Know the landscape before entering it", prompt: { text: "Research the top 10 competitors in this space. For each:\n1. Product name & URL\n2. Pricing model & price points\n3. Key features (top 5)\n4. Weaknesses (from reviews)\n5. Traffic estimate (SimilarWeb)\n6. Content strategy summary\n\nFormat as structured competitor matrix.", version: "v1.0" }, expectedOutput: "Competitor Report", qualityGate: "None", nextTask: "Market Sizing", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "val-3", name: "Market Sizing", lane: "Research", owner: "Newton", why: "Size determines if the opportunity is worth pursuing", expectedOutput: "TAM/SAM/SOM estimate", qualityGate: "Founder review", nextTask: "Stage Decision", automationLevel: "Semi-Auto", founderRequired: true },
+    { id: "val-4", name: "Generate Hooks", lane: "Content", owner: "Atlas", why: "Hooks test whether pain translates to attention", prompt: { text: "Using the Pain Language Bank, generate 12 hook variants:\n- 4x Question hooks\n- 4x Statement hooks  \n- 4x Story hooks\n\nEach hook must:\n1. Use exact pain language from the bank\n2. Be under 15 words\n3. Create curiosity gap\n4. Feel native to the platform (Instagram/TikTok)\n\nRank by predicted engagement.", version: "v2.1" }, expectedOutput: "Hook Bank", qualityGate: "Darwin selects top 3", nextTask: "Test Hooks", automationLevel: "Fully Auto", founderRequired: false },
+  ],
+  [2]: [
+    { id: "des-1", name: "Define User Journey", lane: "Design", owner: "Atlas", why: "Map the complete experience before building anything", expectedOutput: "User flow diagram", qualityGate: "Founder approval", nextTask: "Write Report Template", automationLevel: "Semi-Auto", founderRequired: true },
+    { id: "des-2", name: "Write Report Template", lane: "Content", owner: "Atlas", why: "Personalised reports convert browsers to buyers", prompt: { text: "Generate a personalised audit report template with:\n1. Dynamic greeting using {name}\n2. 9 scored sections with {score}/10 ratings\n3. Personalised recommendations per section\n4. Executive summary paragraph\n5. Call-to-action with urgency element\n\nTone: Professional but direct. No fluff.\nFormat: HTML template with Tailwind classes.", version: "v1.3" }, expectedOutput: "Report template", qualityGate: "Darwin 8/10+", nextTask: "Build Report Page", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "des-3", name: "Build Report Page", lane: "Dev", owner: "Claude Code", why: "The report page IS the product for audit-style businesses", prompt: { text: "Build a modern Next.js page that renders personalised audit reports.\n\nRequirements:\n- Server-side rendering with dynamic data\n- 9-section layout with animated score reveals\n- Mobile-first responsive design\n- Print-friendly CSS\n- < 1 second LCP\n- Tailwind + inline styles only (no CSS files)\n\nStack: Next.js 14, TypeScript, Tailwind CSS", version: "v2.0" }, expectedOutput: "Deployed page", qualityGate: "<1s LCP", nextTask: "Client Demo", automationLevel: "Semi-Auto", founderRequired: false },
+  ],
+  [3]: [
+    { id: "mvp-1", name: "Define MVP Scope", lane: "Dev", owner: "Ginge", why: "Scope creep kills MVPs — define the minimum", expectedOutput: "MVP feature list", qualityGate: "Founder sign-off", nextTask: "Build Core Feature", automationLevel: "Manual", founderRequired: true },
+    { id: "mvp-2", name: "Build Core Feature", lane: "Dev", owner: "Claude Code", why: "Ship the one thing that matters", expectedOutput: "Deployed feature", qualityGate: "Works end-to-end", nextTask: "User Test", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "mvp-3", name: "User Test", lane: "QA", owner: "Ginge", why: "Real users find real problems", expectedOutput: "Feedback log", qualityGate: "5 users tested", nextTask: "Iterate or Advance", automationLevel: "Manual", founderRequired: true },
+  ],
+  [4]: [
+    { id: "traf-1", name: "Create Carousel Copy", lane: "Content", owner: "Atlas", why: "Carousels drive saves and shares — the growth engine", prompt: { text: "Write a 7-slide Instagram carousel:\n\nSlide 1: Hook (use top hook from Hook Bank)\nSlide 2: Problem amplification\nSlide 3: Common mistake #1\nSlide 4: Common mistake #2  \nSlide 5: The shift / insight\nSlide 6: The solution framework\nSlide 7: CTA with urgency\n\nRules:\n- Max 30 words per slide\n- Each slide must standalone\n- Use power words from Pain Language Bank\n- End every slide with a reason to swipe", version: "v3.0" }, expectedOutput: "Carousel copy", qualityGate: "Darwin 8/10+", nextTask: "Quality Gate Review", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "traf-2", name: "Quality Gate Review", lane: "QA", owner: "Darwin", why: "Catch weak content before it goes live and wastes reach", prompt: { text: "Review this carousel against the quality checklist:\n\n1. Hook score (1-10): Does slide 1 stop the scroll?\n2. Flow score (1-10): Does each slide compel a swipe?\n3. Value score (1-10): Would someone save this?\n4. CTA score (1-10): Is the action clear?\n5. Brand score (1-10): Consistent voice and visual?\n\nOverall: Calculate average. Below 8 = FAIL with specific fixes.\nAbove 8 = PASS with optional improvements.", version: "v2.0" }, expectedOutput: "Rating + fixes", qualityGate: "8/10+ pass", nextTask: "Generate Images", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "traf-3", name: "Generate Images", lane: "Content", owner: "Atlas", why: "Visual content gets 2x engagement vs text-only", expectedOutput: "7 carousel images", qualityGate: "Brand check", nextTask: "Publish Content", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "traf-4", name: "Publish Content", lane: "Distribution", owner: "Atlas", why: "Consistent publishing builds algorithmic trust", prompt: { text: "Publish the carousel via Instagram Graph API:\n1. Upload images to container\n2. Create carousel container\n3. Publish with caption\n4. Verify post is live\n5. Log post ID, timestamp, and URL\n\nCaption rules:\n- First line = hook (no hashtags)\n- Line break after hook\n- 3-5 value bullets\n- CTA on final line\n- 20-30 hashtags in first comment", version: "v1.5" }, expectedOutput: "Live post", qualityGate: "Post confirmed", nextTask: "Analyze Performance", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "traf-5", name: "Analyze Performance", lane: "Data", owner: "Darwin", why: "Data-driven iteration beats guessing", expectedOutput: "Engagement metrics", qualityGate: "None", nextTask: "Create Carousel Copy", loopTo: "Create Carousel Copy", automationLevel: "Fully Auto", founderRequired: false },
+  ],
+  [5]: [
+    { id: "conv-1", name: "Funnel Analysis", lane: "Data", owner: "Atlas", why: "Find the biggest leak before optimising", prompt: { text: "Analyze the full conversion funnel:\n1. Landing page views -> CTA clicks (% drop-off)\n2. CTA clicks -> Form starts (% drop-off)\n3. Form starts -> Form completes (% drop-off)\n4. Form completes -> Payment page (% drop-off)\n5. Payment page -> Purchase (% drop-off)\n\nFor each stage:\n- Current conversion rate\n- Industry benchmark\n- Gap analysis\n- Top 3 hypotheses for drop-off\n- Recommended fix (quick win vs structural)", version: "v1.0" }, expectedOutput: "Drop-off report", qualityGate: "None", nextTask: "Design A/B Test", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "conv-2", name: "Design A/B Test", lane: "Growth", owner: "Ginge", why: "Test before you invest — data beats opinions", expectedOutput: "Test spec", qualityGate: "Founder approval", nextTask: "Implement Test", automationLevel: "Manual", founderRequired: true },
+    { id: "conv-3", name: "Implement Test", lane: "Dev", owner: "Claude Code", why: "Ship the variant fast so data starts flowing", expectedOutput: "Deployed variant", qualityGate: "Feature flag active", nextTask: "Wait for Results", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "conv-4", name: "Wait for Results", lane: "Data", owner: "System", why: "Statistical significance requires patience", expectedOutput: "Statistical results", qualityGate: "1000 visitors/variant", nextTask: "Scale Decision", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "conv-5", name: "Scale Decision", lane: "Growth", owner: "Ginge", why: "Only scale what is proven to work", expectedOutput: "Spend decision", qualityGate: "Founder", nextTask: "Funnel Analysis", loopTo: "Funnel Analysis", automationLevel: "Manual", founderRequired: true },
+  ],
+  [6]: [
+    { id: "del-1", name: "Ship Order", lane: "Fulfilment", owner: "Atlas", why: "Fast delivery builds trust and repeat business", expectedOutput: "Tracking number", qualityGate: "None", nextTask: "Collect Feedback", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "del-2", name: "Collect Feedback", lane: "Support", owner: "Darwin", why: "Feedback reveals what metrics miss", expectedOutput: "Feedback log", qualityGate: "7-day window", nextTask: "Review Support Issues", automationLevel: "Fully Auto", founderRequired: false },
+    { id: "del-3", name: "Review Support Issues", lane: "Support", owner: "Darwin", why: "Patterns in complaints reveal systemic problems", expectedOutput: "Issue report", qualityGate: "Weekly", nextTask: "Improve Onboarding", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "del-4", name: "Improve Onboarding", lane: "Delivery", owner: "Atlas", why: "Better onboarding reduces support load and churn", expectedOutput: "Updated process", qualityGate: "None", nextTask: "Monitor Satisfaction", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "del-5", name: "Monitor Satisfaction", lane: "Data", owner: "Darwin", why: "CSAT is the leading indicator of retention", expectedOutput: "CSAT score", qualityGate: "Weekly", nextTask: "Ship Order", loopTo: "Ship Order", automationLevel: "Fully Auto", founderRequired: false },
+  ],
+  [7]: [
+    { id: "scale-1", name: "Identify Scale Levers", lane: "Growth", owner: "Newton", why: "Not everything scales — find what does", expectedOutput: "Scale lever map", qualityGate: "Founder review", nextTask: "Automate Processes", automationLevel: "Manual", founderRequired: true },
+    { id: "scale-2", name: "Automate Processes", lane: "Dev", owner: "Claude Code", why: "Automation removes the founder from the critical path", expectedOutput: "Automation deployed", qualityGate: "End-to-end test", nextTask: "Monitor & Iterate", automationLevel: "Semi-Auto", founderRequired: false },
+    { id: "scale-3", name: "Monitor & Iterate", lane: "Data", owner: "Darwin", why: "Scale breaks things — monitor continuously", expectedOutput: "Performance dashboard", qualityGate: "Weekly review", nextTask: "Identify Scale Levers", loopTo: "Identify Scale Levers", automationLevel: "Fully Auto", founderRequired: false },
+  ],
 };
 
-const ALL_OWNERS = ["Ginge", "Atlas", "Darwin", "Newton", "Claude Code", "Architect", "Unassigned"];
+const COMING_SOON_STAGES = new Set([-1, 0, 3, 7]);
 
-/* ── Fallback Data ── */
-const FALLBACK_PROJECTS: PipelineProject[] = [
+/* ─────────────────────────── ACTIVE PROJECTS SEED ─────────────── */
+
+const SEED_PROJECTS: ActiveProject[] = [
   {
-    id: "caliber", name: "Caliber Peptides", current_stage: 4, status: "blocked",
-    owners: ["Atlas", "Darwin", "Ginge"], blocker_summary: "Website conversion rate unknown",
-    stage_objective: "Drive qualified traffic to website and measure conversion funnel.",
-    stage_tasks: [
-      { id: "cal-t1", name: "Set up PostHog tracking", owner: "Claude Code", status: "done", due: "2026-03-25", urgency: "critical" },
-      { id: "cal-t2", name: "Launch carousel campaign", owner: "Atlas", status: "in-progress", due: "2026-03-28", urgency: "high" },
-      { id: "cal-t3", name: "Write SEO articles", owner: "Newton", status: "open", due: "2026-04-05", urgency: "medium" },
-    ],
-    stage_prompts: [{ id: "cal-p1", name: "Carousel Copy Generator", version: "v3 — 2026-03-29", text: "You are the #1 scientific copywriter...", updated_at: "2026-03-29T14:30:00Z" }],
-    outputs: [{ id: "cal-o1", name: "BPC-157 Carousel Copy", text: "Slide 1: 'Your Gut Has a Secret Weapon'...", timestamp: "2026-03-30T06:00:00Z", status: "stale", linked_task_id: "cal-t2", quality_score: 6.5 }],
-    missing_items: [{ field_name: "Conversion rate baseline", why_it_matters: "Cannot evaluate traffic quality", expected_source: "PostHog (Darwin)" }],
-    data_metrics: [
-      { name: "Daily visitors", value: null, source: "PostHog", status: "pending" },
-      { name: "Conversion rate", value: null, source: "PostHog", status: "disconnected" },
-    ],
-    notes: "Focus on PostHog data this week.", automation_score: { automated: 2, total: 5 },
+    id: "caliber",
+    name: "Caliber Peptides",
+    currentStage: 4,
+    status: "blocked",
+    currentTaskId: "traf-1",
+    completedTaskIds: [],
+    blockedTaskIds: ["traf-1"],
+    blockerNote: "Copy scored 6.5/10 — needs rewrite",
+    missingOutputs: [],
+    nextAction: "Rewrite carousel copy to hit 8/10+ quality gate",
   },
   {
-    id: "gemsnap", name: "GemSnap", current_stage: 5, status: "blocked",
-    owners: ["Claude Code", "Ginge", "Atlas"], blocker_summary: "PostHog data pending",
-    stage_objective: "Achieve 5% checkout conversion rate. Currently at 2.1%.",
-    stage_tasks: [
-      { id: "gem-t1", name: "A/B test pricing display", owner: "Claude Code", status: "done", due: "2026-03-28", urgency: "critical" },
-      { id: "gem-t2", name: "Analyze A/B test results", owner: "Darwin", status: "blocked", due: "2026-04-04", urgency: "critical" },
-    ],
-    stage_prompts: [{ id: "gem-p1", name: "Funnel Analysis Prompt", version: "v2 — 2026-03-29", text: "Analyze the GemSnap funnel...", updated_at: "2026-03-29T09:00:00Z" }],
-    outputs: [{ id: "gem-o1", name: "Funnel Analysis Report", text: "Checkout is biggest leak (62% drop-off)...", timestamp: "2026-03-29T09:00:00Z", status: "fresh", linked_task_id: "gem-t1", quality_score: 8.0 }],
-    missing_items: [{ field_name: "A/B test results", why_it_matters: "Cannot decide pricing without data", expected_source: "PostHog" }],
-    data_metrics: [
-      { name: "Checkout conversion", value: "2.1%", source: "PostHog", status: "connected" },
-      { name: "A/B test variant", value: null, source: "PostHog", status: "pending" },
-    ],
-    notes: "Variant B live. 50/50 split running.", automation_score: { automated: 1, total: 5 },
+    id: "gemsnap",
+    name: "GemSnap",
+    currentStage: 5,
+    status: "stalled",
+    currentTaskId: "conv-4",
+    completedTaskIds: ["conv-1", "conv-2", "conv-3"],
+    blockedTaskIds: [],
+    blockerNote: undefined,
+    missingOutputs: ["Statistical results"],
+    nextAction: "Waiting for 1000 visitors per variant — passive",
   },
   {
-    id: "edge-auto", name: "Edge Auto", current_stage: 2, status: "blocked",
-    owners: ["Ginge", "Claude Code", "Atlas"], blocker_summary: "Report page not built",
-    stage_objective: "Complete personalised audit report page design.",
-    stage_tasks: [
-      { id: "edge-t1", name: "Design report page", owner: "Claude Code", status: "in-progress", due: "2026-03-31", urgency: "critical" },
-      { id: "edge-t2", name: "Write report copy template", owner: "Atlas", status: "done", due: "2026-03-28", urgency: "high" },
-    ],
-    stage_prompts: [{ id: "edge-p1", name: "Audit Report Generator", version: "v2 — 2026-03-29", text: "Generate a personalized automation audit...", updated_at: "2026-03-29T14:00:00Z" }],
-    outputs: [{ id: "edge-o1", name: "Sample Audit Report", text: "Your business is losing £18,200/year...", timestamp: "2026-03-29T14:00:00Z", status: "fresh", linked_task_id: "edge-t2", quality_score: 9.0 }],
-    missing_items: [{ field_name: "Report page design", why_it_matters: "Client cannot visualise the product", expected_source: "Claude Code" }],
-    data_metrics: [],
-    notes: "Todd wants demo by April 3.", automation_score: { automated: 1, total: 4 },
+    id: "edgeauto",
+    name: "Edge Auto",
+    currentStage: 2,
+    status: "blocked",
+    currentTaskId: "des-3",
+    completedTaskIds: ["des-1"],
+    blockedTaskIds: ["des-3"],
+    blockerNote: "Design spec pending founder review",
+    missingOutputs: ["Report template"],
+    nextAction: "Complete report template before build can start",
   },
 ];
 
-/* ── Page Component ── */
-export default function PipelinePage() {
-  const [projects, setProjects] = useState<PipelineProject[]>(FALLBACK_PROJECTS);
-  const [activeStage, setActiveStage] = useState<number | null>(null);
-  const [expandedProject, setExpandedProject] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
-  const [expandedOutputs, setExpandedOutputs] = useState<Set<string>>(new Set());
-  const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
-  const [promptDrafts, setPromptDrafts] = useState<Record<string, string>>({});
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [editingNotes, setEditingNotes] = useState<string | null>(null);
-  const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>({});
-  const [editingObjective, setEditingObjective] = useState<string | null>(null);
-  const [objectiveDrafts, setObjectiveDrafts] = useState<Record<string, string>>({});
-  const [addingTask, setAddingTask] = useState<string | null>(null);
-  const [newTaskForm, setNewTaskForm] = useState<{ name: string; owner: string; urgency: string; due: string }>({
-    name: "", owner: "Unassigned", urgency: "medium", due: "",
-  });
+/* ─────────────────────────── COMPONENT ─────────────────────────── */
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      const res = await fetch("/api/map-room/projects");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.projects) setProjects(data.projects);
-      }
-    } catch {
-      // Use fallback data
-    }
+export default function PipelinePage() {
+  const [activeStage, setActiveStage] = useState(4);
+  const [projects, setProjects] = useState<ActiveProject[]>(SEED_PROJECTS);
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Try to fetch live projects, fall back to seed data
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/map-room/projects", { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error("API error");
+        return r.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProjects(data);
+        }
+      })
+      .catch(() => {
+        // Silently fall back to seed data
+      });
+    return () => controller.abort();
   }, []);
 
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
-
-  const filteredProjects = activeStage !== null
-    ? projects.filter((p) => p.current_stage === activeStage)
-    : projects;
-
-  const toggleSection = (key: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  };
-
-  const togglePrompt = (id: string) => {
+  const togglePrompt = useCallback((taskId: string) => {
     setExpandedPrompts((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
       return next;
     });
-  };
+  }, []);
 
-  const toggleOutput = (id: string) => {
-    setExpandedOutputs((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  const copyPrompt = useCallback((taskId: string, text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(taskId);
+      setTimeout(() => setCopiedId(null), 2000);
     });
-  };
+  }, []);
 
-  const copyPromptText = async (id: string, text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+  const stageWorkflow = MASTER_WORKFLOWS[activeStage] || [];
+  const stageProjects = projects.filter((p) => p.currentStage === activeStage);
+  const isComingSoon = COMING_SOON_STAGES.has(activeStage);
+  const currentStageLabel = STAGES.find((s) => s.id === activeStage)?.label ?? "";
 
-  const startEditPrompt = (id: string, text: string) => {
-    setEditingPrompt(id);
-    setPromptDrafts((prev) => ({ ...prev, [id]: text }));
-  };
-
-  const savePromptEdit = (id: string) => {
-    // In production, this would POST to the API
-    setEditingPrompt(null);
-  };
-
-  const handleAddTask = (projectId: string) => {
-    if (!newTaskForm.name.trim()) return;
-    setProjects((prev) => prev.map((p) => {
-      if (p.id !== projectId) return p;
-      const newTask: StageTask = {
-        id: `${projectId}-t${Date.now()}`,
-        name: newTaskForm.name.trim(),
-        owner: newTaskForm.owner,
-        status: "open",
-        due: newTaskForm.due || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
-        urgency: newTaskForm.urgency as StageTask["urgency"],
-      };
-      return { ...p, stage_tasks: [...p.stage_tasks, newTask] };
-    }));
-    setNewTaskForm({ name: "", owner: "Unassigned", urgency: "medium", due: "" });
-    setAddingTask(null);
-  };
-
-  const stageLabel = (id: number) => STAGES.find((s) => s.id === id)?.label ?? `Stage ${id}`;
-
-  const timeAgo = (iso: string): string => {
-    const diff = Date.now() - new Date(iso).getTime();
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 1) return "< 1h ago";
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
-  };
-
-  const isOverdue = (due: string, status: string) => {
-    if (status === "done" || status === "cancelled") return false;
-    return new Date(due) < new Date();
-  };
+  // Count active projects per stage
+  const projectCounts: Record<number, number> = {};
+  for (const p of projects) {
+    projectCounts[p.currentStage] = (projectCounts[p.currentStage] || 0) + 1;
+  }
 
   return (
-    <div>
-      {/* Page Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold" style={{ color: "#ffffff" }}>Pipeline</h2>
-        <p className="text-sm mt-1" style={{ color: "#6b6b80" }}>
-          Stage-by-stage execution view — the operational core
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* ── Page Title ── */}
+      <div>
+        <h2 style={{ color: TOKENS.heading, fontSize: 22, fontWeight: 800, margin: 0 }}>
+          Pipeline
+        </h2>
+        <p style={{ color: TOKENS.body, fontSize: 14, margin: "4px 0 0" }}>
+          Stage playbook + prompt library + live execution workspace
         </p>
       </div>
 
       {/* ── Stage Rail ── */}
-      <div className="mb-8 overflow-x-auto scrollbar-hide">
-        <div className="flex items-center gap-2 min-w-max pb-2">
-          <button
-            onClick={() => setActiveStage(null)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: activeStage === null ? "rgba(0,212,212,0.15)" : "transparent",
-              color: activeStage === null ? "#00d4d4" : "#6b6b80",
-              border: `1px solid ${activeStage === null ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`,
-            }}
-          >
-            All
-          </button>
-          {STAGES.map((stage) => {
-            const count = projects.filter((p) => p.current_stage === stage.id).length;
-            const isActive = activeStage === stage.id;
+      <div
+        style={{
+          display: "flex",
+          gap: 6,
+          overflowX: "auto",
+          paddingBottom: 4,
+        }}
+      >
+        {STAGES.map((stage) => {
+          const isActive = stage.id === activeStage;
+          const count = projectCounts[stage.id] || 0;
+          return (
+            <button
+              key={stage.id}
+              onClick={() => setActiveStage(stage.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: `1px solid ${isActive ? TOKENS.accent : TOKENS.border}`,
+                background: isActive ? "rgba(0,212,212,0.1)" : TOKENS.card,
+                color: isActive ? TOKENS.accent : TOKENS.body,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: isActive ? 700 : 500,
+                whiteSpace: "nowrap",
+                transition: "all 0.15s",
+              }}
+            >
+              <span style={{ opacity: 0.5, fontSize: 11 }}>{stage.id === -1 ? "—" : stage.id}</span>
+              {stage.label}
+              {count > 0 && (
+                <span
+                  style={{
+                    background: TOKENS.accent,
+                    color: "#000",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    borderRadius: 99,
+                    padding: "1px 7px",
+                    minWidth: 18,
+                    textAlign: "center",
+                  }}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── VIEW 1: Master Workflow ── */}
+      <div
+        style={{
+          background: TOKENS.card,
+          border: `1px solid ${TOKENS.border}`,
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: `1px solid ${TOKENS.border}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 16 }}>📋</span>
+            <h3 style={{ color: TOKENS.heading, fontSize: 16, fontWeight: 700, margin: 0 }}>
+              Stage {activeStage === -1 ? "—" : activeStage}: {currentStageLabel} — Master Workflow
+            </h3>
+          </div>
+          {isComingSoon && (
+            <span
+              style={{
+                background: "rgba(245,158,11,0.15)",
+                color: TOKENS.warn,
+                fontSize: 11,
+                fontWeight: 600,
+                padding: "3px 10px",
+                borderRadius: 6,
+              }}
+            >
+              COMING SOON — Placeholder tasks
+            </span>
+          )}
+          <span style={{ color: TOKENS.muted, fontSize: 12 }}>
+            {stageWorkflow.length} task{stageWorkflow.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Task Rows */}
+        <div>
+          {stageWorkflow.map((task, idx) => {
+            const isPromptOpen = expandedPrompts.has(task.id);
+            const laneColor = LANE_COLORS[task.lane] || TOKENS.body;
+            const autoStyle = AUTO_COLORS[task.automationLevel];
+
             return (
-              <button
-                key={stage.id}
-                onClick={() => setActiveStage(isActive ? null : stage.id)}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                style={{
-                  background: isActive ? "rgba(0,212,212,0.15)" : "#111118",
-                  color: isActive ? "#00d4d4" : "#a0a0b0",
-                  border: `1px solid ${isActive ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`,
-                }}
-              >
-                <span className="font-mono text-xs" style={{ color: "#6b6b80" }}>{stage.id}</span>
-                <span>{stage.label}</span>
-                {count > 0 && (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded-full font-mono"
-                    style={{ background: "rgba(0,212,212,0.2)", color: "#00d4d4" }}
+              <div key={task.id}>
+                {/* Main row */}
+                <div
+                  style={{
+                    padding: "14px 20px",
+                    borderBottom: `1px solid ${TOKENS.border}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                  }}
+                >
+                  {/* Row Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <span style={{ color: TOKENS.muted, fontSize: 12, fontWeight: 600, minWidth: 20 }}>
+                      {idx + 1}.
+                    </span>
+                    <span style={{ color: TOKENS.heading, fontSize: 14, fontWeight: 600 }}>
+                      {task.name}
+                    </span>
+                    {/* Lane pill */}
+                    <span
+                      style={{
+                        background: `${laneColor}22`,
+                        color: laneColor,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        padding: "2px 8px",
+                        borderRadius: 99,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      {task.lane}
+                    </span>
+                    {/* Owner */}
+                    <span style={{ color: TOKENS.body, fontSize: 12 }}>
+                      {task.owner}
+                    </span>
+                    {/* Automation badge */}
+                    <span
+                      style={{
+                        background: autoStyle.bg,
+                        color: autoStyle.color,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                      }}
+                    >
+                      {task.automationLevel}
+                    </span>
+                    {/* Founder badge */}
+                    {task.founderRequired && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          background: "rgba(167,139,250,0.15)",
+                          color: TOKENS.purple,
+                        }}
+                      >
+                        👤 Founder Required
+                      </span>
+                    )}
+                    {/* Loop badge */}
+                    {task.loopTo && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          background: "rgba(0,212,212,0.1)",
+                          color: TOKENS.accent,
+                        }}
+                      >
+                        🔁 loops to {task.loopTo}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Details Row */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                      gap: 12,
+                      paddingLeft: 30,
+                      fontSize: 12,
+                    }}
                   >
-                    {count}
-                  </span>
-                )}
-              </button>
+                    {/* Why */}
+                    <div>
+                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                        Why
+                      </span>
+                      <span style={{ color: TOKENS.body }}>{task.why}</span>
+                    </div>
+                    {/* Expected Output */}
+                    <div>
+                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                        Output
+                      </span>
+                      {task.expectedOutput ? (
+                        <span style={{ color: TOKENS.body }}>{task.expectedOutput}</span>
+                      ) : (
+                        <span
+                          style={{
+                            background: "rgba(245,158,11,0.15)",
+                            color: TOKENS.warn,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                          }}
+                        >
+                          ⚠ Missing Output Definition
+                        </span>
+                      )}
+                    </div>
+                    {/* Quality Gate */}
+                    <div>
+                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                        Quality Gate
+                      </span>
+                      <span style={{ color: TOKENS.body }}>{task.qualityGate || "None"}</span>
+                    </div>
+                    {/* Next Task */}
+                    <div>
+                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                        Next
+                      </span>
+                      <span style={{ color: TOKENS.accent }}>{task.nextTask || "—"}</span>
+                    </div>
+                  </div>
+
+                  {/* Prompt Row */}
+                  <div style={{ paddingLeft: 30 }}>
+                    {task.prompt ? (
+                      <div>
+                        <button
+                          onClick={() => togglePrompt(task.id)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: TOKENS.accent,
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "4px 0",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <span style={{ fontSize: 10, transition: "transform 0.15s", transform: isPromptOpen ? "rotate(90deg)" : "rotate(0deg)" }}>
+                            ▶
+                          </span>
+                          {isPromptOpen ? "Hide Prompt" : "Show Prompt"}
+                          <span style={{ color: TOKENS.muted, fontWeight: 400, marginLeft: 4 }}>
+                            {task.prompt.version}
+                          </span>
+                        </button>
+                        {isPromptOpen && (
+                          <div
+                            style={{
+                              marginTop: 8,
+                              background: "#0a0a12",
+                              border: `1px solid ${TOKENS.border}`,
+                              borderRadius: 8,
+                              padding: 16,
+                              position: "relative",
+                            }}
+                          >
+                            <pre
+                              style={{
+                                margin: 0,
+                                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                                fontSize: 12,
+                                lineHeight: 1.6,
+                                color: TOKENS.body,
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {task.prompt.text}
+                            </pre>
+                            <button
+                              onClick={() => copyPrompt(task.id, task.prompt!.text)}
+                              style={{
+                                position: "absolute",
+                                top: 10,
+                                right: 10,
+                                background: copiedId === task.id ? "rgba(34,197,94,0.2)" : "rgba(0,212,212,0.1)",
+                                border: `1px solid ${copiedId === task.id ? TOKENS.success : TOKENS.border}`,
+                                color: copiedId === task.id ? TOKENS.success : TOKENS.accent,
+                                cursor: "pointer",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                padding: "4px 10px",
+                                borderRadius: 6,
+                                transition: "all 0.15s",
+                              }}
+                            >
+                              {copiedId === task.id ? "Copied!" : "Copy"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span
+                        style={{
+                          background: "rgba(239,68,68,0.12)",
+                          color: TOKENS.error,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: "3px 8px",
+                          borderRadius: 4,
+                        }}
+                      >
+                        ❌ Missing Prompt
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* ── Project Pipeline Cards ── */}
-      <div className="space-y-4">
-        {filteredProjects.length === 0 && (
-          <div className="text-center py-16" style={{ color: "#6b6b80" }}>
-            No projects at this stage
+      {/* ── VIEW 2: Active Projects ── */}
+      <div
+        style={{
+          background: TOKENS.card,
+          border: `1px solid ${TOKENS.border}`,
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: `1px solid ${TOKENS.border}`,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>🚀</span>
+          <h3 style={{ color: TOKENS.heading, fontSize: 16, fontWeight: 700, margin: 0 }}>
+            Active Projects at {currentStageLabel}
+          </h3>
+          <span style={{ color: TOKENS.muted, fontSize: 12 }}>
+            {stageProjects.length} project{stageProjects.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {stageProjects.length === 0 ? (
+          <div
+            style={{
+              padding: "40px 20px",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ color: TOKENS.muted, fontSize: 14, margin: 0 }}>
+              No active projects at this stage. The workflow above is ready when a project arrives.
+            </p>
           </div>
-        )}
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {stageProjects.map((project) => {
+              const statusCfg = STATUS_CONFIG[project.status];
+              const workflowTasks = MASTER_WORKFLOWS[project.currentStage] || [];
 
-        {filteredProjects.map((project) => {
-          const isExpanded = expandedProject === project.id;
-          const sc = STATUS_CONFIG[project.status];
-          const sectionKey = (section: string) => `${project.id}-${section}`;
-          const autoPercent = project.automation_score.total > 0
-            ? Math.round((project.automation_score.automated / project.automation_score.total) * 100)
-            : 0;
-          const incompleteTasks = project.stage_tasks.filter((t) => t.status !== "done" && t.status !== "cancelled").length;
-          const blockedTasks = project.stage_tasks.filter((t) => t.status === "blocked").length;
-          const missingCount = project.missing_items.length;
-
-          return (
-            <div
-              key={project.id}
-              className="rounded-xl overflow-hidden"
-              style={{ background: "#111118", border: "1px solid #1e1e2e" }}
-            >
-              {/* Card Header — Always Visible */}
-              <button
-                onClick={() => setExpandedProject(isExpanded ? null : project.id)}
-                className="w-full px-6 py-5 flex items-center gap-4 transition-colors text-left cursor-pointer"
-                style={{ borderBottom: isExpanded ? "1px solid #1e1e2e" : "none" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(30,30,46,0.3)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >
-                {/* Project Name + Stage Badge */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1.5 flex-wrap">
-                    <h3 className="text-lg font-bold" style={{ color: "#ffffff" }}>{project.name}</h3>
-                    <span
-                      className="text-xs px-2.5 py-1 rounded-full font-semibold"
-                      style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4" }}
-                    >
-                      Stage {project.current_stage} — {stageLabel(project.current_stage)}
+              return (
+                <div
+                  key={project.id}
+                  style={{
+                    padding: "16px 20px",
+                    borderBottom: `1px solid ${TOKENS.border}`,
+                  }}
+                >
+                  {/* Project Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                    <span style={{ color: TOKENS.heading, fontSize: 15, fontWeight: 700 }}>
+                      {project.name}
                     </span>
                     <span
-                      className="text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5"
-                      style={{ background: sc.bg, color: sc.color }}
+                      style={{
+                        background: statusCfg.bg,
+                        color: statusCfg.color,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: "2px 10px",
+                        borderRadius: 99,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                      }}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: sc.dot }} />
-                      {sc.label}
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: 99,
+                          background: statusCfg.color,
+                          display: "inline-block",
+                        }}
+                      />
+                      {statusCfg.label}
                     </span>
                   </div>
-                  {/* Owners */}
-                  <div className="flex items-center gap-2 mb-1">
-                    {project.owners.map((o) => (
-                      <span key={o} className="text-xs font-medium" style={{ color: OWNER_COLORS[o] || "#a0a0b0" }}>
-                        {o}
-                      </span>
-                    ))}
-                  </div>
-                  {/* Blocker */}
-                  <p className="text-xs" style={{ color: "#ef4444" }}>
-                    <span style={{ color: "#6b6b80" }}>Blocker:</span> {project.blocker_summary}
-                  </p>
-                </div>
 
-                {/* Quick stats */}
-                <div className="flex-shrink-0 flex items-center gap-4">
-                  {incompleteTasks > 0 && (
-                    <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "rgba(0,212,212,0.1)", color: "#00d4d4" }}>
-                      {incompleteTasks} tasks
-                    </span>
-                  )}
-                  {blockedTasks > 0 && (
-                    <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
-                      {blockedTasks} blocked
-                    </span>
-                  )}
-                  {missingCount > 0 && (
-                    <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
-                      {missingCount} missing
-                    </span>
-                  )}
-                </div>
+                  {/* Task Progress */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+                    {workflowTasks.map((task) => {
+                      const isCurrent = task.id === project.currentTaskId;
+                      const isCompleted = project.completedTaskIds.includes(task.id);
+                      const isBlocked = project.blockedTaskIds.includes(task.id);
 
-                {/* Expand indicator */}
-                <div className="flex-shrink-0 text-lg" style={{ color: "#6b6b80" }}>
-                  {isExpanded ? "▲" : "▼"}
-                </div>
-              </button>
+                      let icon = "○";
+                      let textColor = TOKENS.muted;
+                      let bgColor = "transparent";
 
-              {/* Card Expanded — Accordion Sections */}
-              {isExpanded && (
-                <div className="px-6 py-4 space-y-3">
+                      if (isCompleted) {
+                        icon = "✅";
+                        textColor = TOKENS.success;
+                      } else if (isBlocked) {
+                        icon = "🚩";
+                        textColor = TOKENS.error;
+                      } else if (isCurrent) {
+                        icon = "▶";
+                        textColor = TOKENS.accent;
+                        bgColor = "rgba(0,212,212,0.06)";
+                      }
 
-                  {/* ── Stage Objective ── */}
-                  <AccordionSection
-                    title="Stage Objective"
-                    badge="✏️ Manual"
-                    isOpen={expandedSections.has(sectionKey("objective"))}
-                    onToggle={() => toggleSection(sectionKey("objective"))}
-                  >
-                    {editingObjective === project.id ? (
-                      <div className="space-y-3">
-                        <textarea
-                          value={objectiveDrafts[project.id] ?? project.stage_objective}
-                          onChange={(e) => setObjectiveDrafts((d) => ({ ...d, [project.id]: e.target.value }))}
-                          className="w-full rounded-lg px-4 py-3 text-sm resize-y focus:outline-none"
-                          style={{ background: "#0a0a0f", border: "1px solid #1e1e2e", color: "#a0a0b0", minHeight: 80 }}
-                          placeholder="What must be true to pass this stage?"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setEditingObjective(null)}
-                            className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                            style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4" }}
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingObjective(null)}
-                            className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                            style={{ color: "#6b6b80" }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <p className="text-sm leading-relaxed mb-2" style={{ color: "#a0a0b0" }}>
-                            {project.stage_objective || "No objective set."}
-                          </p>
-                          <p className="text-[10px] italic" style={{ color: "#6b6b80" }}>
-                            What must be true to pass this stage?
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setEditingObjective(project.id);
-                            setObjectiveDrafts((d) => ({ ...d, [project.id]: project.stage_objective }));
+                      return (
+                        <div
+                          key={task.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "5px 10px",
+                            borderRadius: 6,
+                            background: bgColor,
+                            fontSize: 13,
                           }}
-                          className="flex-shrink-0 text-xs px-2 py-1 rounded"
-                          style={{ color: "#6b6b80" }}
                         >
-                          Edit
-                        </button>
-                      </div>
-                    )}
-                  </AccordionSection>
-
-                  {/* ── Stage Tasks ── */}
-                  <AccordionSection
-                    title="Stage Tasks"
-                    badge="✏️ Manual + 🤖 Agent"
-                    count={project.stage_tasks.length}
-                    isOpen={expandedSections.has(sectionKey("tasks"))}
-                    onToggle={() => toggleSection(sectionKey("tasks"))}
-                  >
-                    <div className="space-y-2">
-                      {project.stage_tasks.map((task) => {
-                        const ts = TASK_STATUS_CONFIG[task.status];
-                        const urg = URGENCY_CONFIG[task.urgency];
-                        const overdue = isOverdue(task.due, task.status);
-                        return (
-                          <div
-                            key={task.id}
-                            className="flex items-center gap-3 px-4 py-3 rounded-lg"
-                            style={{
-                              background: "#0a0a0f",
-                              borderLeft: overdue ? "3px solid #f59e0b" : "3px solid transparent",
-                            }}
-                          >
-                            <div
-                              className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 cursor-pointer"
+                          <span style={{ fontSize: 12, width: 20, flexShrink: 0 }}>{icon}</span>
+                          <span style={{ color: isCurrent ? TOKENS.heading : textColor, fontWeight: isCurrent ? 600 : 400 }}>
+                            {task.name}
+                          </span>
+                          {isCurrent && (
+                            <span
                               style={{
-                                borderColor: task.status === "done" ? "#22c55e" : "#1e1e2e",
-                                background: task.status === "done" ? "rgba(34,197,94,0.2)" : "transparent",
+                                fontSize: 10,
+                                fontWeight: 600,
+                                padding: "1px 6px",
+                                borderRadius: 4,
+                                background: "rgba(0,212,212,0.15)",
+                                color: TOKENS.accent,
+                                marginLeft: 4,
                               }}
                             >
-                              {task.status === "done" && <span style={{ color: "#22c55e", fontSize: 10 }}>✓</span>}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span
-                                className="text-sm font-medium"
-                                style={{
-                                  color: task.status === "done" ? "#6b6b80" : "#ffffff",
-                                  textDecoration: task.status === "done" ? "line-through" : "none",
-                                }}
-                              >
-                                {task.name}
-                              </span>
-                            </div>
-                            <span className="text-xs font-medium flex-shrink-0" style={{ color: OWNER_COLORS[task.owner] || "#a0a0b0" }}>
-                              {task.owner}
+                              CURRENT
                             </span>
-                            <span
-                              className="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0"
-                              style={{ background: urg.bg, color: urg.color }}
-                            >
-                              {task.urgency}
-                            </span>
-                            <span
-                              className="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0"
-                              style={{ background: ts.bg, color: ts.color }}
-                            >
-                              {ts.label}
-                            </span>
-                            <span
-                              className="text-xs font-mono flex-shrink-0"
-                              style={{ color: overdue ? "#f59e0b" : "#6b6b80" }}
-                            >
-                              {new Date(task.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                              {overdue && " ⚠"}
-                            </span>
-                          </div>
-                        );
-                      })}
-
-                      {/* Inline Add Task Form */}
-                      {addingTask === project.id ? (
-                        <div
-                          className="rounded-lg px-4 py-4 space-y-3"
-                          style={{ background: "#0a0a0f", border: "1px solid #1e1e2e" }}
-                        >
-                          <div className="text-xs font-semibold mb-2" style={{ color: "#a0a0b0" }}>
-                            New Task
-                          </div>
-                          <input
-                            type="text"
-                            placeholder="Task name..."
-                            value={newTaskForm.name}
-                            onChange={(e) => setNewTaskForm((f) => ({ ...f, name: e.target.value }))}
-                            autoFocus
-                            className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
-                            style={{ background: "#111118", border: "1px solid #1e1e2e", color: "#ffffff" }}
-                            onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(project.id); }}
-                          />
-                          <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <label className="text-[10px] block mb-1" style={{ color: "#6b6b80" }}>Owner</label>
-                              <select
-                                value={newTaskForm.owner}
-                                onChange={(e) => setNewTaskForm((f) => ({ ...f, owner: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded text-xs focus:outline-none cursor-pointer"
-                                style={{ background: "#111118", border: "1px solid #1e1e2e", color: "#a0a0b0" }}
-                              >
-                                {ALL_OWNERS.map((o) => (
-                                  <option key={o} value={o}>{o}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="text-[10px] block mb-1" style={{ color: "#6b6b80" }}>Urgency</label>
-                              <select
-                                value={newTaskForm.urgency}
-                                onChange={(e) => setNewTaskForm((f) => ({ ...f, urgency: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded text-xs focus:outline-none cursor-pointer"
-                                style={{ background: "#111118", border: "1px solid #1e1e2e", color: "#a0a0b0" }}
-                              >
-                                <option value="critical">Critical</option>
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="text-[10px] block mb-1" style={{ color: "#6b6b80" }}>Due Date</label>
-                              <input
-                                type="date"
-                                value={newTaskForm.due}
-                                onChange={(e) => setNewTaskForm((f) => ({ ...f, due: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded text-xs focus:outline-none"
-                                style={{ background: "#111118", border: "1px solid #1e1e2e", color: "#a0a0b0" }}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleAddTask(project.id)}
-                              disabled={!newTaskForm.name.trim()}
-                              className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all disabled:opacity-30"
-                              style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.3)" }}
-                            >
-                              Add Task
-                            </button>
-                            <button
-                              onClick={() => {
-                                setAddingTask(null);
-                                setNewTaskForm({ name: "", owner: "Unassigned", urgency: "medium", due: "" });
-                              }}
-                              className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                              style={{ color: "#6b6b80" }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setAddingTask(project.id)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-                          style={{ border: "1px dashed #1e1e2e", color: "#6b6b80" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "#00d4d4";
-                            e.currentTarget.style.color = "#00d4d4";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = "#1e1e2e";
-                            e.currentTarget.style.color = "#6b6b80";
-                          }}
-                        >
-                          + Add Task
-                        </button>
-                      )}
-                    </div>
-                  </AccordionSection>
-
-                  {/* ── Stage Prompts ── */}
-                  <AccordionSection
-                    title="Stage Prompts"
-                    badge="✏️ Manual"
-                    count={project.stage_prompts.length}
-                    isOpen={expandedSections.has(sectionKey("prompts"))}
-                    onToggle={() => toggleSection(sectionKey("prompts"))}
-                    critical
-                  >
-                    <div className="space-y-3">
-                      {project.stage_prompts.map((prompt) => {
-                        const isPromptExpanded = expandedPrompts.has(prompt.id);
-                        const isEditing = editingPrompt === prompt.id;
-                        return (
-                          <div
-                            key={prompt.id}
-                            className="rounded-lg overflow-hidden"
-                            style={{ background: "#0a0a0f", border: "1px solid #1e1e2e" }}
-                          >
-                            {/* Prompt Header */}
-                            <button
-                              onClick={() => togglePrompt(prompt.id)}
-                              className="w-full px-4 py-3 flex items-center justify-between text-left cursor-pointer"
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(30,30,46,0.3)")}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm font-medium" style={{ color: "#ffffff" }}>
-                                  {prompt.name}
-                                </span>
-                                <span
-                                  className="text-[10px] px-2 py-0.5 rounded-full font-mono"
-                                  style={{ background: "rgba(0,212,212,0.1)", color: "#00d4d4" }}
-                                >
-                                  {prompt.version}
-                                </span>
-                              </div>
-                              <span style={{ color: "#6b6b80", fontSize: 12 }}>
-                                {isPromptExpanded ? "▲" : "▼"}
-                              </span>
-                            </button>
-
-                            {/* Prompt Body — Hidden by Default */}
-                            {isPromptExpanded && (
-                              <div className="px-4 pb-4">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <button
-                                    onClick={() => copyPromptText(prompt.id, isEditing ? (promptDrafts[prompt.id] ?? prompt.text) : prompt.text)}
-                                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
-                                    style={{
-                                      background: copiedId === prompt.id ? "rgba(34,197,94,0.15)" : "rgba(30,30,46,0.5)",
-                                      color: copiedId === prompt.id ? "#22c55e" : "#a0a0b0",
-                                      border: `1px solid ${copiedId === prompt.id ? "rgba(34,197,94,0.3)" : "#1e1e2e"}`,
-                                    }}
-                                  >
-                                    {copiedId === prompt.id ? "Copied!" : "Copy"}
-                                  </button>
-                                  {!isEditing ? (
-                                    <button
-                                      onClick={() => startEditPrompt(prompt.id, prompt.text)}
-                                      className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                                      style={{ background: "rgba(30,30,46,0.5)", color: "#a0a0b0", border: "1px solid #1e1e2e" }}
-                                    >
-                                      Edit
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => savePromptEdit(prompt.id)}
-                                      className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                                      style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.3)" }}
-                                    >
-                                      Save
-                                    </button>
-                                  )}
-                                </div>
-                                {isEditing ? (
-                                  <textarea
-                                    value={promptDrafts[prompt.id] ?? prompt.text}
-                                    onChange={(e) => setPromptDrafts((d) => ({ ...d, [prompt.id]: e.target.value }))}
-                                    className="w-full rounded-lg px-4 py-3 text-sm font-mono leading-relaxed resize-y focus:outline-none"
-                                    style={{
-                                      background: "#070710",
-                                      border: "1px solid rgba(0,212,212,0.3)",
-                                      color: "#a0a0b0",
-                                      minHeight: 200,
-                                    }}
-                                  />
-                                ) : (
-                                  <pre
-                                    className="text-sm font-mono leading-relaxed whitespace-pre-wrap rounded-lg px-4 py-3 max-h-64 overflow-y-auto"
-                                    style={{ background: "#070710", color: "#a0a0b0", border: "1px solid #1e1e2e" }}
-                                  >
-                                    {prompt.text}
-                                  </pre>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </AccordionSection>
-
-                  {/* ── Outputs ── */}
-                  <AccordionSection
-                    title="Outputs"
-                    badge="🤖 Agent-generated"
-                    count={project.outputs.length}
-                    isOpen={expandedSections.has(sectionKey("outputs"))}
-                    onToggle={() => toggleSection(sectionKey("outputs"))}
-                  >
-                    <div className="space-y-3">
-                      {project.outputs.map((output) => {
-                        const isOutputExpanded = expandedOutputs.has(output.id);
-                        const os = OUTPUT_STATUS[output.status];
-                        return (
-                          <div
-                            key={output.id}
-                            className="rounded-lg overflow-hidden"
-                            style={{ background: "#0a0a0f", border: "1px solid #1e1e2e" }}
-                          >
-                            <button
-                              onClick={() => toggleOutput(output.id)}
-                              className="w-full px-4 py-3 flex items-center justify-between text-left cursor-pointer"
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(30,30,46,0.3)")}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                            >
-                              <div className="flex items-center gap-3 flex-wrap">
-                                <span className="text-sm font-medium" style={{ color: "#ffffff" }}>{output.name}</span>
-                                <span
-                                  className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                                  style={{ background: os.bg, color: os.color }}
-                                >
-                                  {output.status}
-                                </span>
-                                {output.quality_score !== null && (
-                                  <span className="text-[10px] font-mono" style={{ color: "#6b6b80" }}>
-                                    🤖 Darwin: {output.quality_score}/10
-                                  </span>
-                                )}
-                                <span className="text-[10px]" style={{ color: "#6b6b80" }}>
-                                  {timeAgo(output.timestamp)}
-                                </span>
-                              </div>
-                              <span style={{ color: "#6b6b80", fontSize: 12 }}>
-                                {isOutputExpanded ? "▲" : "▼"}
-                              </span>
-                            </button>
-                            {isOutputExpanded && (
-                              <div className="px-4 pb-4">
-                                <div className="flex items-center gap-3 mb-3 flex-wrap">
-                                  <span className="text-[10px]" style={{ color: "#6b6b80" }}>
-                                    Task: {output.linked_task_id}
-                                  </span>
-                                  <span className="text-[10px] font-mono" style={{ color: "#6b6b80" }}>
-                                    {new Date(output.timestamp).toLocaleString("en-GB")}
-                                  </span>
-                                  {output.quality_score !== null && (
-                                    <span className="text-[10px]" style={{ color: "#6b6b80" }}>
-                                      Quality: {output.quality_score}/10
-                                    </span>
-                                  )}
-                                  <button
-                                    className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                                    style={{ background: "rgba(30,30,46,0.5)", color: "#6b6b80", border: "1px solid #1e1e2e" }}
-                                  >
-                                    ⚙️ Rerun
-                                  </button>
-                                </div>
-                                <pre
-                                  className="text-sm font-mono leading-relaxed whitespace-pre-wrap rounded-lg px-4 py-3 max-h-48 overflow-y-auto"
-                                  style={{ background: "#070710", color: "#a0a0b0", border: "1px solid #1e1e2e" }}
-                                >
-                                  {output.text}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </AccordionSection>
-
-                  {/* ── Data Metrics ── */}
-                  <AccordionSection
-                    title="Data Metrics"
-                    badge="🔌 Placeholder"
-                    count={project.data_metrics.length}
-                    isOpen={expandedSections.has(sectionKey("metrics"))}
-                    onToggle={() => toggleSection(sectionKey("metrics"))}
-                  >
-                    {project.data_metrics.length === 0 ? (
-                      <div className="rounded-lg px-4 py-6 text-center" style={{ background: "#0a0a0f", border: "1px solid #1e1e2e" }}>
-                        <p className="text-xs" style={{ color: "#6b6b80" }}>No data connected</p>
-                        <span className="inline-block mt-2 text-[9px] px-2 py-0.5 rounded" style={{ background: "rgba(107,107,128,0.15)", color: "#6b6b80" }}>
-                          🔌 Awaiting integration
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {project.data_metrics.map((metric, i) => {
-                          const statusColor = metric.status === "connected" ? "#22c55e" : metric.status === "pending" ? "#f59e0b" : "#ef4444";
-                          return (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between px-4 py-3 rounded-lg"
-                              style={{ background: "#0a0a0f" }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
-                                <span className="text-sm font-medium" style={{ color: "#ffffff" }}>{metric.name}</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm font-mono" style={{ color: metric.value ? "#a0a0b0" : "#6b6b80" }}>
-                                  {metric.value ?? "—"}
-                                </span>
-                                <span className="text-[10px]" style={{ color: "#6b6b80" }}>
-                                  {metric.source}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </AccordionSection>
-
-                  {/* ── Missing Items ── */}
-                  <AccordionSection
-                    title="Missing Items"
-                    badge="⚙️ Future automation"
-                    count={project.missing_items.length}
-                    isOpen={expandedSections.has(sectionKey("missing"))}
-                    onToggle={() => toggleSection(sectionKey("missing"))}
-                    warning={project.missing_items.length > 0}
-                  >
-                    <div className="space-y-2">
-                      {/* Categorised missing items */}
-                      {project.missing_items.length > 0 && (
-                        <div
-                          className="rounded-lg px-4 py-3 mb-2"
-                          style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)" }}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <span style={{ color: "#f59e0b", fontSize: 12 }}>⚠</span>
-                            <span className="text-xs font-semibold" style={{ color: "#f59e0b" }}>
-                              {project.missing_items.length} item{project.missing_items.length !== 1 ? "s" : ""} blocking progress
-                            </span>
-                          </div>
-                          {/* Show incomplete tasks count */}
-                          {incompleteTasks > 0 && (
-                            <p className="text-[10px] mb-1" style={{ color: "#a0a0b0" }}>
-                              {incompleteTasks} incomplete task{incompleteTasks !== 1 ? "s" : ""}
-                              {blockedTasks > 0 && (
-                                <span style={{ color: "#ef4444" }}> ({blockedTasks} blocked)</span>
-                              )}
-                            </p>
                           )}
                         </div>
-                      )}
-                      {project.missing_items.map((item, i) => (
-                        <div
-                          key={i}
-                          className="flex items-start gap-3 px-4 py-3 rounded-lg"
-                          style={{ background: "#0a0a0f", borderLeft: "3px solid #f59e0b" }}
-                        >
-                          <span style={{ color: "#f59e0b", fontSize: 14 }}>⚠</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium block" style={{ color: "#ffffff" }}>
-                              {item.field_name}
-                            </span>
-                            <span className="text-xs block mt-0.5" style={{ color: "#a0a0b0" }}>
-                              {item.why_it_matters}
-                            </span>
-                            <span className="text-[10px] block mt-1" style={{ color: "#6b6b80" }}>
-                              Source: {item.expected_source}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionSection>
+                      );
+                    })}
+                  </div>
 
-                  {/* ── Bottleneck Details ── */}
-                  {project.status === "blocked" && (
-                    <AccordionSection
-                      title="Bottleneck Details"
-                      badge="🔴 Blocked"
-                      isOpen={expandedSections.has(sectionKey("bottleneck"))}
-                      onToggle={() => toggleSection(sectionKey("bottleneck"))}
-                      warning
-                    >
-                      <div
-                        className="rounded-lg px-4 py-4"
-                        style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <span style={{ color: "#ef4444", fontSize: 16 }}>🚧</span>
-                          <div>
-                            <p className="text-sm font-semibold" style={{ color: "#ef4444" }}>
-                              {project.blocker_summary}
-                            </p>
-                            <div className="mt-2 space-y-1">
-                              {project.stage_tasks.filter((t) => t.status === "blocked").map((t) => (
-                                <div key={t.id} className="flex items-center gap-2 text-xs">
-                                  <span style={{ color: "#ef4444" }}>•</span>
-                                  <span style={{ color: "#a0a0b0" }}>{t.name}</span>
-                                  <span className="font-medium" style={{ color: OWNER_COLORS[t.owner] || "#a0a0b0" }}>
-                                    ({t.owner})
-                                  </span>
-                                </div>
-                              ))}
-                              {project.missing_items.map((m, i) => (
-                                <div key={`m-${i}`} className="flex items-center gap-2 text-xs">
-                                  <span style={{ color: "#f59e0b" }}>•</span>
-                                  <span style={{ color: "#a0a0b0" }}>Missing: {m.field_name}</span>
-                                  <span className="font-medium" style={{ color: "#6b6b80" }}>
-                                    (from {m.expected_source})
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionSection>
-                  )}
-
-                  {/* ── Notes ── */}
-                  <AccordionSection
-                    title="Notes"
-                    badge="✏️ Manual"
-                    isOpen={expandedSections.has(sectionKey("notes"))}
-                    onToggle={() => toggleSection(sectionKey("notes"))}
-                  >
-                    {editingNotes === project.id ? (
-                      <div className="space-y-3">
-                        <textarea
-                          value={notesDrafts[project.id] ?? project.notes}
-                          onChange={(e) => setNotesDrafts((d) => ({ ...d, [project.id]: e.target.value }))}
-                          className="w-full rounded-lg px-4 py-3 text-sm resize-y focus:outline-none"
-                          style={{ background: "#0a0a0f", border: "1px solid #1e1e2e", color: "#a0a0b0", minHeight: 100 }}
-                          placeholder="Add notes for this stage..."
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setEditingNotes(null)}
-                            className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                            style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4" }}
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingNotes(null)}
-                            className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                            style={{ color: "#6b6b80" }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-4">
-                        <p className="text-sm leading-relaxed" style={{ color: "#a0a0b0" }}>
-                          {project.notes || "No notes yet."}
-                        </p>
-                        <button
-                          onClick={() => {
-                            setEditingNotes(project.id);
-                            setNotesDrafts((d) => ({ ...d, [project.id]: project.notes }));
-                          }}
-                          className="flex-shrink-0 text-xs px-2 py-1 rounded"
-                          style={{ color: "#6b6b80" }}
-                        >
-                          Edit
-                        </button>
+                  {/* Blocker + Missing Outputs + Next Action */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 10 }}>
+                    {project.blockerNote && (
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
+                        <span style={{ color: TOKENS.error, fontWeight: 600, flexShrink: 0 }}>BLOCKER:</span>
+                        <span style={{ color: TOKENS.error }}>{project.blockerNote}</span>
                       </div>
                     )}
-                  </AccordionSection>
-
-                  {/* ── Automation Score ── */}
-                  <AccordionSection
-                    title="Automation Score"
-                    badge="🔌 Placeholder"
-                    isOpen={expandedSections.has(sectionKey("automation"))}
-                    onToggle={() => toggleSection(sectionKey("automation"))}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <div className="h-4 rounded-full overflow-hidden" style={{ background: "#0a0a0f" }}>
-                            <div
-                              className="h-full rounded-full transition-all relative"
-                              style={{
-                                width: `${autoPercent}%`,
-                                background: autoPercent >= 60
-                                  ? "linear-gradient(90deg, #00d4d4, #22c55e)"
-                                  : autoPercent >= 30
-                                    ? "linear-gradient(90deg, #f59e0b, #00d4d4)"
-                                    : "linear-gradient(90deg, #ef4444, #f59e0b)",
-                                minWidth: autoPercent > 0 ? "2rem" : "0",
-                              }}
-                            >
-                              {autoPercent > 0 && (
-                                <span
-                                  className="absolute inset-0 flex items-center justify-center text-[9px] font-bold"
-                                  style={{ color: "#0a0a0f" }}
-                                >
-                                  {autoPercent}%
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <span className="text-sm font-mono font-medium flex-shrink-0" style={{ color: "#00d4d4" }}>
-                          {project.automation_score.automated}/{project.automation_score.total}
-                        </span>
+                    {project.missingOutputs.length > 0 && (
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
+                        <span style={{ color: TOKENS.warn, fontWeight: 600, flexShrink: 0 }}>MISSING:</span>
+                        <span style={{ color: TOKENS.warn }}>{project.missingOutputs.join(", ")}</span>
                       </div>
-                      <p className="text-[10px]" style={{ color: "#6b6b80" }}>
-                        {project.automation_score.automated} of {project.automation_score.total} tasks automated
-                        {autoPercent < 50 && " — aim for 50%+ to reduce manual overhead"}
-                      </p>
+                    )}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
+                      <span style={{ color: TOKENS.accent, fontWeight: 600, flexShrink: 0 }}>NEXT:</span>
+                      <span style={{ color: TOKENS.accent }}>{project.nextAction}</span>
                     </div>
-                  </AccordionSection>
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
-  );
-}
-
-/* ── Accordion Section Component ── */
-function AccordionSection({
-  title,
-  badge,
-  count,
-  isOpen,
-  onToggle,
-  children,
-  critical,
-  warning,
-}: {
-  title: string;
-  badge: string;
-  count?: number;
-  isOpen: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-  critical?: boolean;
-  warning?: boolean;
-}) {
-  return (
-    <div
-      className="rounded-lg overflow-hidden"
-      style={{
-        background: isOpen ? "rgba(17,17,24,0.5)" : "transparent",
-        border: `1px solid ${isOpen ? "#1e1e2e" : "transparent"}`,
-      }}
-    >
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between text-left cursor-pointer transition-colors"
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(30,30,46,0.2)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold" style={{ color: "#ffffff" }}>{title}</span>
-          {count !== undefined && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono" style={{ background: "#1e1e2e", color: "#a0a0b0" }}>
-              {count}
-            </span>
-          )}
-          {warning && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
-              Needs attention
-            </span>
-          )}
-          {critical && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
-              Sensitive
-            </span>
-          )}
-          <span className="text-[10px]" style={{ color: "#6b6b80" }}>{badge}</span>
-        </div>
-        <span style={{ color: "#6b6b80", fontSize: 12 }}>{isOpen ? "▲" : "▼"}</span>
-      </button>
-      {isOpen && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
