@@ -24,6 +24,7 @@ const TOP_NAV = [
   { name: "Keys", href: "/vault" },
   { name: "Map Room", href: "/map-room", active: true },
   { name: "Content Factory", href: "/content-factory" },
+  { name: "Action Room", href: "/action-room" },
 ];
 
 export default function MapRoomLayout({ children }: { children: React.ReactNode }) {

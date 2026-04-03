@@ -49,6 +49,7 @@ export default function VaultPage() {
               <span className="text-sm text-white font-medium">Keys</span>
               <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Map Room</Link>
               <Link href="/content-factory" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Content Factory</Link>
+              <Link href="/action-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Action Room</Link>
             </nav>
           </div>
         </div>
