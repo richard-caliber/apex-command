@@ -156,43 +156,28 @@ export default function WarRoom() {
         }
       } catch { /* ignore */ }
 
+      // Build a map of project -> latest Darwin gate score
+      // Gate tasks follow pattern T-X.8 or T-X.9 — pick the highest stage score
+      const stageOrder = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
+      const scoreMap: Record<string, { score: number; verdict: string; stageIdx: number }> = {};
+      for (const t of allTasks) {
+        if (!t.output || t.project_id === "_template") continue;
+        try {
+          const parsed = JSON.parse(t.output);
+          if (typeof parsed.score === "number") {
+            const si = stageOrder.indexOf(t.stage);
+            const existing = scoreMap[t.project_id];
+            if (!existing || si > existing.stageIdx) {
+              scoreMap[t.project_id] = { score: parsed.score, verdict: parsed.verdict || "", stageIdx: si };
+            }
+          }
+        } catch { /* not JSON */ }
+      }
+
       const apiProjects: Project[] = (store.projects || []).map((p: Record<string, unknown>) => {
         const projectId = p.id as string;
-        // Find gate score: get project tasks, group by stage, find second-to-last in each
-        const projectTasks = allTasks.filter((t) => t.project_id === projectId);
-        let darwinScore: DarwinScore | null = null;
-
-        if (projectTasks.length > 0) {
-          // Group by stage, check each from current stage backwards
-          const stages = [...new Set(projectTasks.map((t) => t.stage))];
-          for (const stage of stages) {
-            const stageTasks = projectTasks.filter((t) => t.stage === stage).sort((a, b) => a.order - b.order);
-            if (stageTasks.length >= 2) {
-              const gateTask = stageTasks[stageTasks.length - 2];
-              if (gateTask.output) {
-                try {
-                  const parsed = JSON.parse(gateTask.output);
-                  if (typeof parsed.score === "number") {
-                    darwinScore = { score: parsed.score, verdict: parsed.verdict || "" };
-                  }
-                } catch { /* not JSON */ }
-              }
-            }
-          }
-          // Also check the last task in case it's a gate
-          if (!darwinScore) {
-            for (const t of projectTasks) {
-              if (t.output) {
-                try {
-                  const parsed = JSON.parse(t.output);
-                  if (typeof parsed.score === "number") {
-                    darwinScore = { score: parsed.score, verdict: parsed.verdict || "" };
-                  }
-                } catch { /* not JSON */ }
-              }
-            }
-          }
-        }
+        const entry = scoreMap[projectId];
+        const darwinScore: DarwinScore | null = entry ? { score: entry.score, verdict: entry.verdict } : null;
 
         return {
           id: projectId,
