@@ -52,16 +52,18 @@ const LOOP_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
 export default function FlowMapPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
-  const [selectedProject, setSelectedProject] = useState("_template");
+  const [selectedProject, setSelectedProject] = useState("_blockers");
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [hoveredStage, setHoveredStage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
+      const h = { "Content-Type": "application/json" };
       const [tR, pR] = await Promise.all([
-        fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list" }) }),
-        fetch("/api/status"),
+        fetch("/api/tasks", { method: "POST", headers: h, body: JSON.stringify({ action: "list" }) }),
+        fetch("/api/projects", { method: "POST", headers: h, body: JSON.stringify({ action: "list" }) }),
       ]);
       if (tR.ok) { const d = await tR.json(); setTasks(d.tasks || []); }
       if (pR.ok) { const d = await pR.json(); setProjects((d.projects || []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))); }
@@ -71,7 +73,12 @@ export default function FlowMapPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filtered = useMemo(() => tasks.filter((t) => t.project_id === selectedProject), [tasks, selectedProject]);
+  const filtered = useMemo(() => {
+    if (selectedProject === "_blockers") {
+      return tasks.filter((t) => t.status === "blocked" && t.project_id !== "_template");
+    }
+    return tasks.filter((t) => t.project_id === selectedProject);
+  }, [tasks, selectedProject]);
 
   const stageStats = useMemo(() => STAGES.map((stage) => {
     const st = filtered.filter((t) => t.stage === stage.id);
@@ -97,11 +104,14 @@ export default function FlowMapPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-white">Flow Map</h1>
-        <select value={selectedProject} onChange={(e) => { setSelectedProject(e.target.value); setExpandedStage(null); }}
-          className="text-sm bg-[#111827] border border-[#1e293b] rounded-lg px-3 py-2 text-white cursor-pointer focus:outline-none focus:border-[#00d4d4]">
-          <option value="_template">Blueprint (Template)</option>
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <div className="flex items-center gap-3">
+          <select value={selectedProject} onChange={(e) => { setSelectedProject(e.target.value); setExpandedStage(null); }}
+            className="text-sm bg-[#111827] border border-[#1e293b] rounded-lg px-3 py-2 text-white cursor-pointer focus:outline-none focus:border-[#00d4d4]">
+            <option value="_blockers">{"\uD83D\uDED1"} Blockers Only</option>
+            <option value="_template">Blueprint (Template)</option>
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
       </div>
 
       {loading ? (

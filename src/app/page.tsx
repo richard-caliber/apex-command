@@ -194,15 +194,35 @@ export default function WarRoom() {
         };
       });
 
-      // Fetch ideas from old endpoint for now
+      // Fetch ideas
       let ideas: Idea[] = [];
       try {
-        const ideasRes = await fetch("/api/status");
+        const ideasRes = await fetch("/api/map-room/ideas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "list" }),
+        });
         if (ideasRes.ok) {
-          const old = await ideasRes.json();
-          ideas = old.ideas || [];
+          const ideasData = await ideasRes.json();
+          ideas = (Array.isArray(ideasData) ? ideasData : []).map((i: Record<string, unknown>) => ({
+            id: i.id as string,
+            title: i.title as string,
+            image: (i.image_url as string) || undefined,
+            summary: (i.description as string) || "",
+            status: (i.status as string) || "raw",
+            tags: (i.tags as string[]) || [],
+          }));
         }
-      } catch { /* ignore */ }
+      } catch {
+        // Fallback to old endpoint
+        try {
+          const oldRes = await fetch("/api/status");
+          if (oldRes.ok) {
+            const old = await oldRes.json();
+            ideas = old.ideas || [];
+          }
+        } catch { /* ignore */ }
+      }
       setData({
         projects: apiProjects,
         ideas,
@@ -439,6 +459,7 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
               fill
               className="object-cover"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              unoptimized={idea.image.startsWith("http")}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
           </>

@@ -226,10 +226,26 @@ export default function ActionRoom() {
   }, []);
 
   useEffect(() => {
-    if (selectedId) {
+    if (selectedId && selectedId !== "_ginge_actions") {
       fetchProjectData(selectedId);
       const interval = setInterval(() => fetchProjectData(selectedId), 30000);
       return () => clearInterval(interval);
+    }
+    if (selectedId === "_ginge_actions") {
+      // Fetch all tasks for Ginge Actions view
+      (async () => {
+        try {
+          const res = await fetch("/api/pipeline-tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "list" }),
+          });
+          if (res.ok) {
+            const store = await res.json();
+            setTasks(store.tasks || []);
+          }
+        } catch { /* silent */ }
+      })();
     }
   }, [selectedId, fetchProjectData]);
 
@@ -320,6 +336,8 @@ export default function ActionRoom() {
             className="text-sm bg-[#111827] border border-[#1e293b] rounded-lg px-4 py-2.5 text-white min-w-[280px] cursor-pointer focus:outline-none focus:border-[#00d4d4]"
           >
             <option value="">Select a project...</option>
+            <option value="_ginge_actions">{"\uD83D\uDD25"} Ginge Actions</option>
+            <option disabled>{"─".repeat(20)}</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -335,6 +353,8 @@ export default function ActionRoom() {
               <p className="text-[#475569] text-sm">Select a project to enter Action Room</p>
             </div>
           </div>
+        ) : selectedId === "_ginge_actions" ? (
+          <GingeActionsView allTasks={tasks} projects={projects} />
         ) : selected ? (
           <div className="space-y-6">
             {/* ── Project Hero ── */}
@@ -557,6 +577,135 @@ export default function ActionRoom() {
           </div>
         ) : null}
       </main>
+    </div>
+  );
+}
+
+/* ── Ginge Actions View ── */
+
+function GingeActionsView({ allTasks, projects }: { allTasks: PipelineTask[]; projects: Project[] }) {
+  const projectMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of projects) m[p.id] = p.name;
+    return m;
+  }, [projects]);
+
+  const gingeTasks = useMemo(
+    () => allTasks.filter((t) => t.owner === "ginge" && t.status !== "done" && t.project_id !== "_template"),
+    [allTasks]
+  );
+  const blockedTasks = useMemo(
+    () => allTasks.filter((t) => t.status === "blocked" && t.owner !== "ginge" && t.project_id !== "_template"),
+    [allTasks]
+  );
+
+  // Group by project
+  const gingeByProject = useMemo(() => {
+    const g: Record<string, PipelineTask[]> = {};
+    for (const t of gingeTasks) {
+      if (!g[t.project_id]) g[t.project_id] = [];
+      g[t.project_id].push(t);
+    }
+    return g;
+  }, [gingeTasks]);
+
+  const blockedByProject = useMemo(() => {
+    const g: Record<string, PipelineTask[]> = {};
+    for (const t of blockedTasks) {
+      if (!g[t.project_id]) g[t.project_id] = [];
+      g[t.project_id].push(t);
+    }
+    return g;
+  }, [blockedTasks]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="rounded-2xl border border-[#1e293b] p-6" style={{ background: "#111827" }}>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-3xl">{"\uD83D\uDD25"}</span>
+          <h2 className="text-2xl font-extrabold text-white">Ginge Actions</h2>
+        </div>
+        <p className="text-sm text-[#94a3b8]">
+          Tasks assigned to you + everything that&apos;s blocked across all projects
+        </p>
+        <div className="flex items-center gap-6 mt-4">
+          <div>
+            <div className="text-lg font-extrabold text-[#f59e0b]">{gingeTasks.length}</div>
+            <div className="text-[10px] text-[#64748b] uppercase">Your tasks</div>
+          </div>
+          <div>
+            <div className="text-lg font-extrabold text-[#ef4444]">{blockedTasks.length}</div>
+            <div className="text-[10px] text-[#64748b] uppercase">Blocked tasks</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Your Tasks */}
+      {gingeTasks.length > 0 && (
+        <div className="rounded-2xl border border-[#f59e0b]/20 p-5" style={{ background: "rgba(245,158,11,0.03)" }}>
+          <h3 className="text-sm font-bold tracking-widest uppercase text-[#f59e0b] mb-4">{"\uD83D\uDC51"} Your Tasks</h3>
+          <div className="space-y-4">
+            {Object.entries(gingeByProject).map(([pid, tasks]) => (
+              <div key={pid}>
+                <div className="text-[10px] font-bold tracking-wider uppercase text-[#00d4d4] mb-2">
+                  {projectMap[pid] || pid}
+                </div>
+                <div className="space-y-1">
+                  {tasks.map((t) => (
+                    <div key={t.id} className="flex items-start gap-3 px-3 py-2 rounded-lg bg-white/[0.02]">
+                      <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                        t.status === "blocked" ? "bg-red-400" : t.status === "in_progress" ? "bg-amber-400 animate-pulse" : "bg-slate-600"
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-white">{t.id} {t.name}</div>
+                        {t.description && <p className="text-[11px] text-[#94a3b8] mt-0.5">{t.description}</p>}
+                        {t.output && <p className="text-[11px] text-[#64748b] mt-0.5 truncate">{t.output}</p>}
+                      </div>
+                      <span className="text-[9px] text-[#475569] flex-shrink-0">{t.status.replace(/_/g, " ")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Blocked Tasks */}
+      {blockedTasks.length > 0 && (
+        <div className="rounded-2xl border border-[#ef4444]/20 p-5" style={{ background: "rgba(239,68,68,0.03)" }}>
+          <h3 className="text-sm font-bold tracking-widest uppercase text-[#ef4444] mb-4">{"\uD83D\uDED1"} Blocked Across Projects</h3>
+          <div className="space-y-4">
+            {Object.entries(blockedByProject).map(([pid, tasks]) => (
+              <div key={pid}>
+                <div className="text-[10px] font-bold tracking-wider uppercase text-[#00d4d4] mb-2">
+                  {projectMap[pid] || pid}
+                </div>
+                <div className="space-y-1">
+                  {tasks.map((t) => (
+                    <div key={t.id} className="flex items-start gap-3 px-3 py-2 rounded-lg bg-white/[0.02]">
+                      <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-red-400" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-white">{t.id} {t.name}</div>
+                        {t.blocker && <p className="text-[11px] text-red-400/80 mt-0.5">{t.blocker}</p>}
+                        {t.output && <p className="text-[11px] text-[#64748b] mt-0.5 truncate">{t.output}</p>}
+                      </div>
+                      <span className="text-[9px] text-[#475569] flex-shrink-0">{t.owner}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {gingeTasks.length === 0 && blockedTasks.length === 0 && (
+        <div className="text-center py-16">
+          <p className="text-[#475569] text-sm">Nothing to do right now. All clear.</p>
+        </div>
+      )}
     </div>
   );
 }

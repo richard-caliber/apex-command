@@ -60,23 +60,48 @@ const VERDICT_STYLE: Record<string, { color: string; bg: string }> = {
 
 /* ─────────────────────────── COMPONENT ─────────────────────────── */
 
+interface ManualAction {
+  id: string;
+  name: string;
+  project_id: string;
+  output: string;
+  status: string;
+  stage: string;
+}
+
 export default function AutomationMapPage() {
   const [entries, setEntries] = useState<AutoEntry[]>([]);
+  const [manualActions, setManualActions] = useState<ManualAction[]>([]);
   const [collapsed, setCollapsed] = useState<Set<Category>>(new Set());
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/automation-map", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "list" }),
-    })
-      .then((r) => r.json())
-      .then((d) => { if (d?.entries) setEntries(d.entries); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/automation-map", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list" }),
+      }).then((r) => r.json()).catch(() => null),
+      fetch("/api/pipeline-tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list" }),
+      }).then((r) => r.json()).catch(() => null),
+    ]).then(([autoData, taskData]) => {
+      if (autoData?.entries) setEntries(autoData.entries);
+      if (taskData?.tasks) {
+        const gingePending = (taskData.tasks as ManualAction[]).filter(
+          (t) => t.project_id !== "_template" && (t.status === "not_started" || t.status === "in_progress" || t.status === "blocked")
+        ).filter((t) => {
+          // Check if owner is ginge — need to read from the raw task
+          const raw = taskData.tasks.find((r: { id: string; owner?: string }) => r.id === t.id);
+          return raw?.owner === "ginge";
+        });
+        setManualActions(gingePending);
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   const byCategory = (cat: Category) => entries.filter((e) => e.category === cat);
@@ -155,6 +180,40 @@ export default function AutomationMapPage() {
           </div>
         ))}
       </div>
+
+      {/* ── Manual Actions Required ── */}
+      {manualActions.length > 0 && (
+        <div style={{
+          background: "rgba(245,158,11,0.04)", border: `1px solid rgba(245,158,11,0.25)`,
+          borderRadius: 12, padding: "16px 20px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 14 }}>{"\uD83D\uDC51"}</span>
+            <h3 style={{ color: T.warn, fontSize: 14, fontWeight: 700, margin: 0 }}>Manual Actions Required</h3>
+            <span style={{ color: T.muted, fontSize: 12, marginLeft: "auto" }}>{manualActions.length} task{manualActions.length !== 1 ? "s" : ""}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {manualActions.map((t) => (
+              <div key={t.id} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                borderRadius: 8, background: "rgba(245,158,11,0.04)",
+                border: "1px solid rgba(245,158,11,0.1)", fontSize: 13,
+              }}>
+                <span style={{ color: T.warn, fontSize: 10, fontWeight: 700, fontFamily: "monospace", minWidth: 60 }}>{t.id}</span>
+                <span style={{ color: T.heading, fontWeight: 600, flex: 1 }}>{t.name}</span>
+                <span style={{ background: "rgba(0,212,212,0.08)", color: T.accent, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 99 }}>
+                  {t.project_id}
+                </span>
+                {t.output && (
+                  <span style={{ color: T.muted, fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {t.output}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Sections ── */}
       {SECTIONS.map((sec) => {
