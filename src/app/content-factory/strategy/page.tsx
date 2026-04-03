@@ -8,16 +8,18 @@ function api(url: string, body: Record<string, unknown>) {
   return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface Strategy {
   id: string; project_id: string; approved_by: string; approved_at: string;
   pillars: { name: string; description: string; pct: number; examples: string[] }[];
-  schedule: { frequency: string; days: string[]; times: string[]; format_rotation: Record<string, string>; batch_day: string };
-  rules: { voice: string; visual: string; caption_formula: string; hashtags: string[]; never_post: string[] };
+  schedule: any; // can be object or JSON string
+  rules: any; // can be object or JSON string
   production: { step: string; owner: string; time: string; tools: string[] }[];
   scaling: { trigger: string; threshold: string; action: string }[];
   ideas: { title: string; format: string; pillar: string; hook: string; effort: string; used: boolean }[];
-  metrics: { weekly: string[]; targets_30d: Record<string, string>; targets_60d: Record<string, string>; targets_90d: Record<string, string>; kill_criteria: string[] };
+  metrics: any; // can be object or JSON string
   strategy?: string;
+  success_metrics?: string;
   primary_channel?: string;
   secondary_channel?: string;
   traffic_plan?: string;
@@ -25,6 +27,15 @@ interface Strategy {
   content_rules?: string;
   cadence?: string;
   kpis?: string;
+}
+
+/** Safely parse a field that might be a JSON string or already an object */
+function safeParse(val: any): any {
+  if (!val) return null;
+  if (typeof val === "string") {
+    try { return JSON.parse(val); } catch { return val; }
+  }
+  return val;
 }
 
 interface Project { id: string; name: string; stage: string }
@@ -48,18 +59,80 @@ interface ParsedStrategy {
 }
 
 function parseStrategy(s: Strategy): ParsedStrategy {
+  // Start with strategy JSON field if it exists
+  let parsed: ParsedStrategy = {};
   if (s.strategy) {
-    try { return JSON.parse(s.strategy); } catch { /* not JSON */ }
+    try { parsed = JSON.parse(s.strategy); } catch { /* not JSON */ }
   }
-  return {
-    primary_channel: s.primary_channel,
-    secondary_channel: s.secondary_channel,
-    traffic_plan: s.traffic_plan,
-    next_actions: s.next_actions,
-    content_rules: s.content_rules,
-    cadence: s.cadence,
-    kpis: s.kpis,
-  };
+
+  // Overlay top-level fields (they may be newer)
+  if (s.primary_channel) parsed.primary_channel = s.primary_channel;
+  if (s.secondary_channel) parsed.secondary_channel = s.secondary_channel;
+  if (s.traffic_plan) parsed.traffic_plan = s.traffic_plan;
+  if (s.next_actions) parsed.next_actions = s.next_actions;
+  if (s.content_rules) parsed.content_rules = s.content_rules;
+  if (s.cadence) parsed.cadence = s.cadence;
+  if (s.kpis) parsed.kpis = s.kpis;
+
+  // Parse schedule JSON string for cadence if not set
+  if (!parsed.cadence) {
+    const sched = safeParse(s.schedule);
+    if (sched && typeof sched === "object" && !Array.isArray(sched)) {
+      const parts: string[] = [];
+      if (sched.batch_day) parts.push(`Batch day: ${sched.batch_day}`);
+      if (sched.batch_size) parts.push(sched.batch_size);
+      if (sched.production_flow) parts.push(sched.production_flow);
+      if (sched.posting_cadence) {
+        const pc = sched.posting_cadence;
+        Object.values(pc).forEach((v) => { if (typeof v === "string") parts.push(v); });
+      }
+      // Legacy format
+      if (sched.frequency) parts.push(sched.frequency);
+      if (sched.days?.length) parts.push(`Days: ${sched.days.join(", ")}`);
+      if (parts.length > 0) parsed.cadence = parts.join("\n");
+    }
+  }
+
+  // Parse rules JSON string for content_rules if not set
+  if (!parsed.content_rules) {
+    const rules = safeParse(s.rules);
+    if (rules && typeof rules === "object" && !Array.isArray(rules)) {
+      const parts: string[] = [];
+      // New nested format
+      if (rules.brand) parts.push("BRAND: " + (typeof rules.brand === "string" ? rules.brand : Object.entries(rules.brand).map(([k, v]) => `${k}: ${v}`).join(". ")));
+      if (rules.carousel) parts.push("CAROUSEL: " + (typeof rules.carousel === "string" ? rules.carousel : JSON.stringify(rules.carousel)));
+      if (rules.reel) parts.push("REEL: " + (typeof rules.reel === "string" ? rules.reel : JSON.stringify(rules.reel)));
+      if (rules.universal) parts.push("UNIVERSAL: " + (typeof rules.universal === "string" ? rules.universal : Object.entries(rules.universal).map(([k, v]) => `${k}: ${v}`).join(". ")));
+      // Legacy format
+      if (rules.voice) parts.push("Voice: " + rules.voice);
+      if (rules.visual) parts.push("Visual: " + rules.visual);
+      if (parts.length > 0) parsed.content_rules = parts.join("\n\n");
+    }
+  }
+
+  // Parse success_metrics or metrics for KPIs if not set
+  if (!parsed.kpis) {
+    const sm = safeParse(s.success_metrics);
+    if (sm?.targets && Array.isArray(sm.targets)) {
+      parsed.kpis = sm.targets.map((t: any) => `${t.metric}: ${t.target}${t.current ? ` (now: ${t.current})` : ""}`);
+    }
+    if (!parsed.kpis) {
+      const m = safeParse(s.metrics);
+      if (m?.targets_30d && Object.keys(m.targets_30d).length > 0) {
+        parsed.kpis = Object.entries(m.targets_30d).map(([k, v]) => `${k}: ${v}`);
+      }
+    }
+  }
+
+  // Parse current_status from strategy JSON if available
+  if (!parsed.current_status && s.strategy) {
+    try {
+      const sp = JSON.parse(s.strategy);
+      if (sp.current_status) parsed.current_status = sp.current_status;
+    } catch { /* ignore */ }
+  }
+
+  return parsed;
 }
 
 function StrategyInner() {
@@ -235,54 +308,73 @@ function StrategyInner() {
             </>
           ) : (
             <>
-              {/* No new strategy — check if legacy data is empty too */}
-              {strategy.pillars.length === 0 && strategy.schedule.days.length === 0 && !strategy.rules.voice && (
-                <div className="rounded-lg p-6 text-center" style={{ background: "#111118", border: "1px dashed #1e1e2e" }}>
-                  <p className="text-sm mb-1" style={{ color: "#6b6b80" }}>No strategy data for this project yet.</p>
-                  <p className="text-xs" style={{ color: "#3a3a4e" }}>Atlas will push a traffic strategy once the project reaches Stage 4.</p>
-                </div>
-              )}
+              {/* Legacy/empty strategy — safely handle JSON strings */}
+              {(() => {
+                const sched = safeParse(strategy.schedule);
+                const rules = safeParse(strategy.rules);
+                const metrics = safeParse(strategy.metrics);
+                const hasPillars = Array.isArray(strategy.pillars) && strategy.pillars.length > 0;
+                const hasSchedule = sched && typeof sched === "object" && (sched.days?.length > 0 || sched.batch_day);
+                const hasRules = rules && typeof rules === "object" && (rules.voice || rules.brand);
+                const hasMetrics = metrics && typeof metrics === "object" && (metrics.targets_30d && Object.keys(metrics.targets_30d).length > 0);
+                const isEmpty = !hasPillars && !hasSchedule && !hasRules && !hasMetrics;
 
-              {strategy.pillars.length > 0 && (
-                <Section title="Pillars">
-                  <div className="flex gap-1 rounded-full overflow-hidden h-3 mb-4">
-                    {strategy.pillars.map((p, i) => (
-                      <div key={i} style={{ width: `${p.pct}%`, background: PILLAR_COLORS[i % PILLAR_COLORS.length] }} title={`${p.name}: ${p.pct}%`} />
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {strategy.pillars.map((p, i) => (
-                      <div key={i} className="rounded-lg p-3" style={{ border: `1px solid ${PILLAR_COLORS[i % PILLAR_COLORS.length]}30`, background: `${PILLAR_COLORS[i % PILLAR_COLORS.length]}08` }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold" style={{ color: PILLAR_COLORS[i % PILLAR_COLORS.length] }}>{p.name}</span>
-                          <span className="text-[9px] font-mono" style={{ color: "#4a4a5e" }}>{p.pct}%</span>
-                        </div>
-                        <p className="text-[11px] mb-2" style={{ color: "#94a3b8" }}>{p.description}</p>
-                        {p.examples.length > 0 && (
-                          <div className="flex flex-wrap gap-1">{p.examples.map((e, j) => <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(107,107,128,0.1)", color: "#6b6b80" }}>{e}</span>)}</div>
-                        )}
+                return (
+                  <>
+                    {isEmpty && (
+                      <div className="rounded-lg p-6 text-center" style={{ background: "#111118", border: "1px dashed #1e1e2e" }}>
+                        <p className="text-sm mb-1" style={{ color: "#6b6b80" }}>No strategy data for this project yet.</p>
+                        <p className="text-xs" style={{ color: "#3a3a4e" }}>Atlas will push a traffic strategy once the project reaches Stage 4.</p>
                       </div>
-                    ))}
-                  </div>
-                </Section>
-              )}
+                    )}
 
-              {strategy.schedule.days.length > 0 && (
-                <Section title="Schedule">
-                  <p className="text-xs mb-3" style={{ color: "#00d4d4" }}>{strategy.schedule.frequency} — {strategy.schedule.days.join(", ")}</p>
-                </Section>
-              )}
+                    {hasPillars && (
+                      <Section title="Pillars">
+                        <div className="flex gap-1 rounded-full overflow-hidden h-3 mb-4">
+                          {strategy.pillars.map((p: any, i: number) => (
+                            <div key={i} style={{ width: `${p.pct}%`, background: PILLAR_COLORS[i % PILLAR_COLORS.length] }} title={`${p.name}: ${p.pct}%`} />
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {strategy.pillars.map((p: any, i: number) => (
+                            <div key={i} className="rounded-lg p-3" style={{ border: `1px solid ${PILLAR_COLORS[i % PILLAR_COLORS.length]}30`, background: `${PILLAR_COLORS[i % PILLAR_COLORS.length]}08` }}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-bold" style={{ color: PILLAR_COLORS[i % PILLAR_COLORS.length] }}>{p.name}</span>
+                                <span className="text-[9px] font-mono" style={{ color: "#4a4a5e" }}>{p.pct}%</span>
+                              </div>
+                              <p className="text-[11px] mb-2" style={{ color: "#94a3b8" }}>{p.description}</p>
+                              {p.examples?.length > 0 && (
+                                <div className="flex flex-wrap gap-1">{p.examples.map((e: string, j: number) => <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(107,107,128,0.1)", color: "#6b6b80" }}>{e}</span>)}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </Section>
+                    )}
 
-              <Section title="Rules">
-                {strategy.rules.voice && <Field label="Brand Voice" value={strategy.rules.voice} />}
-                {strategy.rules.visual && <Field label="Visual Standards" value={strategy.rules.visual} />}
-              </Section>
+                    {hasSchedule && sched.days?.length > 0 && (
+                      <Section title="Schedule">
+                        <p className="text-xs mb-3" style={{ color: "#00d4d4" }}>{sched.frequency || ""} {sched.days ? `— ${sched.days.join(", ")}` : ""}</p>
+                      </Section>
+                    )}
 
-              <Section title="Success Metrics">
-                {Object.keys(strategy.metrics.targets_30d).length > 0 && <MetricRow label="30-Day Targets" data={strategy.metrics.targets_30d} />}
-                {Object.keys(strategy.metrics.targets_60d).length > 0 && <MetricRow label="60-Day Targets" data={strategy.metrics.targets_60d} />}
-                {Object.keys(strategy.metrics.targets_90d).length > 0 && <MetricRow label="90-Day Targets" data={strategy.metrics.targets_90d} />}
-              </Section>
+                    {hasRules && (
+                      <Section title="Rules">
+                        {rules.voice && <Field label="Brand Voice" value={rules.voice} />}
+                        {rules.visual && <Field label="Visual Standards" value={rules.visual} />}
+                      </Section>
+                    )}
+
+                    {hasMetrics && (
+                      <Section title="Success Metrics">
+                        {metrics.targets_30d && Object.keys(metrics.targets_30d).length > 0 && <MetricRow label="30-Day Targets" data={metrics.targets_30d} />}
+                        {metrics.targets_60d && Object.keys(metrics.targets_60d).length > 0 && <MetricRow label="60-Day Targets" data={metrics.targets_60d} />}
+                        {metrics.targets_90d && Object.keys(metrics.targets_90d).length > 0 && <MetricRow label="90-Day Targets" data={metrics.targets_90d} />}
+                      </Section>
+                    )}
+                  </>
+                );
+              })()}
             </>
           )}
 

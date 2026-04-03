@@ -57,7 +57,21 @@ export default function CalendarPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const strategy = strategies.find((s) => s.project_id === selected);
+  const strategyRaw = strategies.find((s) => s.project_id === selected);
+  // Safely parse schedule/production which may be JSON strings
+  const strategy = strategyRaw ? {
+    ...strategyRaw,
+    schedule: (() => {
+      const s = strategyRaw.schedule;
+      if (typeof s === "string") { try { return JSON.parse(s); } catch { return { batch_day: "", days: [], times: [], format_rotation: {} }; } }
+      return s || { batch_day: "", days: [], times: [], format_rotation: {} };
+    })(),
+    production: (() => {
+      const p = strategyRaw.production;
+      if (typeof p === "string") { try { return JSON.parse(p); } catch { return []; } }
+      return Array.isArray(p) ? p : [];
+    })(),
+  } : null;
   const weekStart = getWeekStart(new Date());
   weekStart.setDate(weekStart.getDate() + weekOffset * 7);
 
@@ -106,7 +120,7 @@ export default function CalendarPage() {
                 {isSunday && <span className="text-[8px] uppercase" style={{ color: "#3a3a4e" }}>OFF</span>}
               </div>
 
-              {isBatch && strategy?.production.map((step, j) => (
+              {isBatch && strategy?.production.map((step: { step: string; owner: string; time: string }, j: number) => (
                 <div key={j} className="flex items-center gap-1.5 py-1 text-[10px]" style={{ borderBottom: "1px solid rgba(30,30,46,0.3)" }}>
                   <span>{STEP_ICON[step.step.toLowerCase().split(" ")[0]] || "\u2699\uFE0F"}</span>
                   <span className="font-mono" style={{ color: "#4a4a5e" }}>{step.time}</span>
