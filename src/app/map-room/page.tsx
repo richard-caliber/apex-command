@@ -16,7 +16,14 @@ const STAGES = [
   { id: 7, label: "Scale" },
 ];
 
+const STAGE_KEYS = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
+
 /* ── Types ── */
+interface DarwinScore {
+  score: number;
+  verdict: string;
+}
+
 interface Project {
   id: string;
   name: string;
@@ -24,15 +31,16 @@ interface Project {
   current_stage: number;
   status: string;
   stage?: string;
+  darwinScore: DarwinScore | null;
 }
 
 /* ── Fallback Data ── */
 const FALLBACK_PROJECTS: Project[] = [
-  { id: "caliber", name: "Caliber Peptides", current_stage: 4, status: "active" },
-  { id: "parliament", name: "Parliament Tracker", current_stage: 3, status: "active" },
-  { id: "storyquest", name: "StoryQuest", current_stage: 2, status: "blocked" },
-  { id: "wingman", name: "WingmanAI", current_stage: 1, status: "active" },
-  { id: "gemsnap", name: "GemSnap", current_stage: 5, status: "active" },
+  { id: "caliber", name: "Caliber Peptides", current_stage: 4, status: "active", darwinScore: null },
+  { id: "parliament", name: "Parliament Tracker", current_stage: 3, status: "active", darwinScore: null },
+  { id: "storyquest", name: "StoryQuest", current_stage: 2, status: "blocked", darwinScore: null },
+  { id: "wingman", name: "WingmanAI", current_stage: 1, status: "active", darwinScore: null },
+  { id: "gemsnap", name: "GemSnap", current_stage: 5, status: "active", darwinScore: null },
 ];
 
 /* ── Status dot colour ── */
@@ -70,13 +78,35 @@ export default function OverviewPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "list" }),
-      });
-      if (!res.ok) return;
-      const d = await res.json();
+      const h = { "Content-Type": "application/json" };
+      const [projRes, tasksRes] = await Promise.all([
+        fetch("/api/projects", { method: "POST", headers: h, body: JSON.stringify({ action: "list" }) }),
+        fetch("/api/pipeline-tasks", { method: "POST", headers: h, body: JSON.stringify({ action: "list" }) }),
+      ]);
+
+      // Build score map from tasks
+      const scoreMap: Record<string, DarwinScore> = {};
+      if (tasksRes.ok) {
+        const taskStore = await tasksRes.json();
+        const allTasks: { project_id: string; stage: string; output: string }[] = taskStore.tasks || [];
+        for (const t of allTasks) {
+          if (!t.output || t.project_id === "_template") continue;
+          try {
+            const parsed = JSON.parse(t.output);
+            if (typeof parsed.score === "number") {
+              const si = STAGE_KEYS.indexOf(t.stage);
+              const existing = scoreMap[t.project_id];
+              if (!existing || si > (existing as DarwinScore & { _si?: number })._si!) {
+                scoreMap[t.project_id] = { score: parsed.score, verdict: parsed.verdict || "" };
+                (scoreMap[t.project_id] as DarwinScore & { _si?: number })._si = si;
+              }
+            }
+          } catch { /* not JSON */ }
+        }
+      }
+
+      if (!projRes.ok) return;
+      const d = await projRes.json();
       const items = d?.projects;
       if (items?.length) {
         setProjects(
@@ -91,6 +121,7 @@ export default function OverviewPage() {
                 ? (p.current_stage as number)
                 : 3,
             status: (p.status as string) || "active",
+            darwinScore: scoreMap[p.id as string] || null,
           }))
         );
       }
@@ -233,14 +264,18 @@ export default function OverviewPage() {
                         className="relative flex-shrink-0 rounded-md overflow-hidden"
                         style={{ width: "100px", height: "64px" }}
                       >
-                        <div
-                          className="absolute inset-0"
-                          style={{
-                            background: project.image_url
-                              ? `url(${project.image_url}) center/cover no-repeat`
-                              : projectGradient(project.name),
-                          }}
-                        />
+                        {project.image_url ? (
+                          <img
+                            src={project.image_url}
+                            alt={project.name}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="absolute inset-0"
+                            style={{ background: projectGradient(project.name) }}
+                          />
+                        )}
                         {/* Status dot */}
                         <div
                           className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
@@ -251,10 +286,25 @@ export default function OverviewPage() {
                         />
                       </div>
 
-                      {/* Name */}
-                      <span className="text-xs font-medium text-[#c0c0d0] group-hover:text-[#00d4d4] transition-colors whitespace-nowrap">
-                        {project.name}
-                      </span>
+                      {/* Name + Score */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-[#c0c0d0] group-hover:text-[#00d4d4] transition-colors whitespace-nowrap">
+                          {project.name}
+                        </span>
+                        {project.darwinScore && (() => {
+                          const s = project.darwinScore.score;
+                          const bg = s >= 7 ? "rgba(34,197,94,0.85)" : s >= 4 ? "rgba(245,158,11,0.85)" : "rgba(239,68,68,0.85)";
+                          const label = s >= 7 ? "PROCEED" : s >= 4 ? "ITERATE" : "PARKED";
+                          return (
+                            <span
+                              className="text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded text-white"
+                              style={{ background: bg }}
+                            >
+                              {s}/10 {label}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     </Link>
                   ))}
                 </div>
