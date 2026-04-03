@@ -39,8 +39,11 @@ export default function PerformancePage() {
       api("/api/content-performance", { action: "list" }),
       api("/api/content-library", { action: "list" }),
     ]);
+    const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
     const strats: Strategy[] = sData?.items || [];
-    const projs: Project[] = (pData?.projects || []).filter((p: Project) => strats.some((s) => s.project_id === p.id));
+    const projs: Project[] = (pData?.projects || []).filter((p: Project & { stage?: string }) =>
+      CONTENT_STAGES.has(p.stage || "") || strats.some((s) => s.project_id === p.id)
+    );
     setProjects(projs);
     setLibrary(libData?.items || []);
     const perfItems: PerfData[] = perfData?.items || [];

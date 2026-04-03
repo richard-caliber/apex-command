@@ -199,7 +199,7 @@ export default function ContentPipelinePage() {
                 {stageTasks.length === 0 ? (
                   <p style={{ color: T.muted, fontSize: 13, padding: "20px", margin: 0 }}>No tasks for this stage yet.</p>
                 ) : (
-                  stageTasks.map((task) => <TaskRow key={task.id} task={task} />)
+                  <GroupedTaskList tasks={stageTasks} />
                 )}
               </div>
             )}
@@ -207,6 +207,76 @@ export default function ContentPipelinePage() {
         );
       })}
     </div>
+  );
+}
+
+/* ── Task Groups ── */
+
+const TASK_GROUPS = [
+  { id: "research", label: "Research Loop", icon: "\uD83D\uDD01", color: "#3b82f6", pattern: /^T-4\.4/ },
+  { id: "style", label: "Style Test", icon: "\uD83D\uDD12", color: "#a78bfa", pattern: /^T-4\.5/ },
+  { id: "batch", label: "Batch Production", icon: "\uD83D\uDD01", color: "#00d4d4", pattern: /^T-4\.(6|7|8|9|10|11)/ },
+  { id: "review", label: "Weekly Review", icon: "\uD83D\uDD01", color: "#f59e0b", pattern: /^T-4\.(12|13|14|16)/ },
+  { id: "conversion", label: "Conversion", icon: "\uD83C\uDFAF", color: "#fb923c", pattern: /^T-5\./ },
+];
+
+function GroupedTaskList({ tasks }: { tasks: (PipelineTask & { _fromTemplate?: boolean })[] }) {
+  // Group tasks by pattern
+  const groups: { label: string; icon: string; color: string; tasks: (PipelineTask & { _fromTemplate?: boolean })[] }[] = [];
+  const ungrouped: (PipelineTask & { _fromTemplate?: boolean })[] = [];
+
+  for (const task of tasks) {
+    let matched = false;
+    for (const group of TASK_GROUPS) {
+      if (group.pattern.test(task.id)) {
+        let g = groups.find((g) => g.label === group.label);
+        if (!g) {
+          g = { label: group.label, icon: group.icon, color: group.color, tasks: [] };
+          groups.push(g);
+        }
+        g.tasks.push(task);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) ungrouped.push(task);
+  }
+
+  // If no groups matched (e.g. template tasks), just render flat
+  if (groups.length === 0) {
+    return <>{tasks.map((task) => <TaskRow key={task.id} task={task} />)}</>;
+  }
+
+  return (
+    <>
+      {groups.map((group) => {
+        const allDone = group.tasks.every((t) => t.status === "done");
+        const isStyleGroup = group.label === "Style Test";
+        return (
+          <div key={group.label}>
+            <div style={{
+              padding: "8px 20px",
+              display: "flex", alignItems: "center", gap: 8,
+              background: `${group.color}06`,
+              borderBottom: `1px solid ${T.border}`,
+            }}>
+              <span style={{ fontSize: 12 }}>{allDone && isStyleGroup ? "\uD83D\uDD12" : group.icon}</span>
+              <span style={{ color: group.color, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                {group.label}
+              </span>
+              {allDone && isStyleGroup && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: T.muted, background: "rgba(107,107,128,0.12)", padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" }}>Locked</span>
+              )}
+              <span style={{ color: T.muted, fontSize: 10, marginLeft: "auto" }}>
+                {group.tasks.filter((t) => t.status === "done").length}/{group.tasks.length}
+              </span>
+            </div>
+            {group.tasks.map((task) => <TaskRow key={task.id} task={task} />)}
+          </div>
+        );
+      })}
+      {ungrouped.length > 0 && ungrouped.map((task) => <TaskRow key={task.id} task={task} />)}
+    </>
   );
 }
 

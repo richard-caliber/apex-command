@@ -40,8 +40,13 @@ export default function LibraryPage() {
       api("/api/projects", { action: "list" }),
       api("/api/content-library", { action: "list" }),
     ]);
+    const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
     const strats: Strategy[] = sData?.items || [];
-    const projs: Project[] = (pData?.projects || []).filter((p: Project) => strats.some((s) => s.project_id === p.id));
+    const allItems: LibraryItem[] = lData?.items || [];
+    const projectIds = new Set(allItems.map((l) => l.project_id));
+    const projs: Project[] = (pData?.projects || []).filter((p: Project & { stage?: string }) =>
+      CONTENT_STAGES.has(p.stage || "") || strats.some((s) => s.project_id === p.id) || projectIds.has(p.id)
+    );
     setProjects(projs);
     setLibrary(lData?.items || []);
     if (!selected && projs.length > 0) setSelected(projs[0].id);

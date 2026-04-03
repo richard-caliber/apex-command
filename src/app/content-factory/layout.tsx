@@ -9,7 +9,7 @@ const TABS = [
   { name: "Tasks", href: "/content-factory/tasks" },
   { name: "Strategy", href: "/content-factory/strategy" },
   { name: "Calendar", href: "/content-factory/calendar" },
-  { name: "Queue", href: "/content-factory/queue" },
+  { name: "Board", href: "/content-factory/queue" },
   { name: "Library", href: "/content-factory/library" },
   { name: "Performance", href: "/content-factory/performance" },
 ];

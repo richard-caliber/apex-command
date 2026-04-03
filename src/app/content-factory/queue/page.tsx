@@ -1,133 +1,173 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 function api(url: string, body: Record<string, unknown>) {
   return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 }
 
 interface Project { id: string; name: string; stage?: string }
-interface Strategy { project_id: string; ideas: { title: string; format: string; pillar: string; hook: string; used: boolean }[] }
-interface QueueItem { id: string; project_id: string; title: string; format: string; platforms: string[]; pillar: string; scheduled_date: string; status: string; pipeline_step: string; backburner: boolean }
+interface QueueItem {
+  id: string; project_id: string; title: string; format: string;
+  platforms: string[]; scheduled_date: string; status: string;
+  pipeline_step: string; pillar: string; backburner: boolean;
+}
 
-const STEPS = ["research", "review_research", "create", "review_assets", "ready_to_post"];
-const STEP_LABEL: Record<string, string> = { research: "Research", review_research: "Review", create: "Create", review_assets: "Review", ready_to_post: "Post" };
-const FORMAT_COLOR: Record<string, string> = { reel: "#ef4444", carousel: "#3b82f6", story: "#f59e0b", post: "#22c55e" };
-const PLATFORM_ICON: Record<string, string> = { instagram: "IG", tiktok: "TT", youtube: "YT", x: "X" };
+const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
+
+const COLUMNS = [
+  { id: "approved", label: "Approved Queue", statuses: ["approved", "not_started"], color: "#f59e0b" },
+  { id: "style_test", label: "Style Test", statuses: ["style_test"], color: "#a78bfa" },
+  { id: "review", label: "In Review", statuses: ["review", "review_research", "review_assets"], color: "#3b82f6" },
+  { id: "production", label: "Production", statuses: ["production", "create"], color: "#00d4d4" },
+  { id: "scheduled", label: "Scheduled", statuses: ["scheduled", "ready_to_post"], color: "#22c55e" },
+  { id: "published", label: "Published", statuses: ["done", "published"], color: "#22c55e" },
+];
+
+const PROJECT_COLOR: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+  caliber: { bg: "rgba(0,212,212,0.06)", border: "rgba(0,212,212,0.25)", text: "#00d4d4", dot: "#00d4d4" },
+  gemsnap: { bg: "rgba(167,139,250,0.06)", border: "rgba(167,139,250,0.25)", text: "#a78bfa", dot: "#a78bfa" },
+  repostai: { bg: "rgba(59,130,246,0.06)", border: "rgba(59,130,246,0.25)", text: "#3b82f6", dot: "#3b82f6" },
+  edgeauto: { bg: "rgba(34,197,94,0.06)", border: "rgba(34,197,94,0.25)", text: "#22c55e", dot: "#22c55e" },
+};
+const DEFAULT_PC = { bg: "rgba(107,107,128,0.06)", border: "rgba(107,107,128,0.2)", text: "#6b6b80", dot: "#6b6b80" };
+
+const FORMAT_ICON: Record<string, string> = {
+  carousel: "\uD83D\uDCF8", reel: "\uD83C\uDFAC", ad: "\uD83D\uDCE3",
+  thread: "\uD83D\uDC26", listing: "\uD83D\uDCCB", story: "\uD83D\uDCF1", post: "\uD83D\uDCDD",
+};
 
 export default function QueuePage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [queue, setQueue] = useState<QueueItem[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selectedProject, setSelectedProject] = useState("all");
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const [sData, pData, qData] = await Promise.all([
-      api("/api/content-strategy", { action: "list" }),
+    const [pData, qData] = await Promise.all([
       api("/api/projects", { action: "list" }),
       api("/api/content-queue", { action: "list" }),
     ]);
-    const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
-    const strats: Strategy[] = sData?.items || [];
-    const projs: Project[] = (pData?.projects || []).filter((p: Project & { stage?: string }) =>
-      CONTENT_STAGES.has(p.stage || "") || strats.some((s) => s.project_id === p.id)
-    );
-    setStrategies(strats);
+    const projs: Project[] = (pData?.projects || []).filter((p: Project) => CONTENT_STAGES.has(p.stage || ""));
     setProjects(projs);
     setQueue(qData?.items || []);
-    if (!selected && projs.length > 0) setSelected(projs[0].id);
     setLoading(false);
-  }, [selected]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const activeQueue = queue.filter((q) => q.project_id === selected && !q.backburner);
-  const backburner = queue.filter((q) => q.project_id === selected && q.backburner);
-  const strategy = strategies.find((s) => s.project_id === selected);
-  const unusedIdeas = strategy?.ideas.filter((i) => !i.used) || [];
+  const filtered = useMemo(() => {
+    if (selectedProject === "all") return queue;
+    return queue.filter((q) => q.project_id === selectedProject);
+  }, [queue, selectedProject]);
+
+  // Map items to columns
+  const columnItems = useMemo(() => {
+    const map: Record<string, QueueItem[]> = {};
+    for (const col of COLUMNS) map[col.id] = [];
+
+    for (const item of filtered) {
+      const status = item.status || item.pipeline_step || "not_started";
+      let placed = false;
+      for (const col of COLUMNS) {
+        if (col.statuses.includes(status)) {
+          map[col.id].push(item);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) map["approved"].push(item); // default to approved queue
+    }
+    return map;
+  }, [filtered]);
 
   if (loading) return <p className="text-xs text-center py-20" style={{ color: "#4a4a5e" }}>Loading...</p>;
-  if (projects.length === 0) return <p className="text-xs text-center py-20" style={{ color: "#3a3a4e" }}>No projects with strategies.</p>;
 
   return (
-    <div>
-      <div className="mb-5">
-        <select value={selected} onChange={(e) => setSelected(e.target.value)}
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <h2 className="text-lg font-bold text-white">Production Board</h2>
+        <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
           className="text-sm bg-transparent border rounded-lg px-3 py-2 cursor-pointer focus:outline-none"
           style={{ borderColor: "#1e1e2e", color: "#f1f5f9" }}>
+          <option value="all">All Projects</option>
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
+        <span className="text-[10px] font-mono ml-auto" style={{ color: "#4a4a5e" }}>{filtered.length} items</span>
       </div>
 
-      {/* Active Queue */}
-      <div className="mb-6">
-        <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#00d4d4" }}>
-          Active Queue <span className="font-mono font-normal" style={{ color: "#4a4a5e" }}>{activeQueue.length}</span>
-        </h3>
-        {activeQueue.length === 0 ? (
-          <p className="text-[11px] py-4 text-center" style={{ color: "#3a3a4e", border: "1px dashed #1e1e2e", borderRadius: "8px" }}>No content in queue</p>
-        ) : (
-          <div className="space-y-2">
-            {activeQueue.map((q) => {
-              const stepIdx = STEPS.indexOf(q.pipeline_step);
-              return (
-                <div key={q.id} className="rounded-lg p-3" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-medium" style={{ color: "#e0e0ee" }}>{q.title}</span>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ background: `${FORMAT_COLOR[q.format] || "#6b7280"}18`, color: FORMAT_COLOR[q.format] || "#6b7280" }}>{q.format}</span>
-                    {q.platforms.map((p) => <span key={p} className="text-[9px] font-bold" style={{ color: "#4a4a5e" }}>{PLATFORM_ICON[p] || p}</span>)}
-                    {q.scheduled_date && <span className="text-[10px] font-mono ml-auto" style={{ color: "#6b6b80" }}>{new Date(q.scheduled_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>}
-                  </div>
-                  {/* Mini pipeline */}
-                  <div className="flex items-center gap-1">
-                    {STEPS.map((step, i) => {
-                      const done = i < stepIdx;
-                      const current = i === stepIdx;
-                      return (
-                        <div key={step} className="flex items-center gap-1">
-                          <span className="text-[9px] px-1.5 py-0.5 rounded font-medium" style={{
-                            background: done ? "rgba(34,197,94,0.12)" : current ? "rgba(0,212,212,0.12)" : "rgba(107,107,128,0.08)",
-                            color: done ? "#22c55e" : current ? "#00d4d4" : "#3a3a4e",
-                          }}>{STEP_LABEL[step] || step} {done ? "\u2705" : current ? "\u{1F504}" : "\u2B1C"}</span>
-                          {i < STEPS.length - 1 && <span style={{ color: "#2a2a3e" }}>→</span>}
+      {/* Kanban Board */}
+      <div className="grid grid-cols-6 gap-3 overflow-x-auto" style={{ minWidth: 900 }}>
+        {COLUMNS.map((col) => {
+          const items = columnItems[col.id] || [];
+          return (
+            <div key={col.id} className="rounded-lg min-h-[300px] flex flex-col"
+              style={{ background: "#0d0d14", border: "1px solid #1e1e2e" }}>
+              {/* Column header */}
+              <div className="px-3 py-2.5 flex items-center justify-between" style={{ borderBottom: `2px solid ${col.color}30` }}>
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: col.color }}>{col.label}</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${col.color}18`, color: col.color }}>
+                  {items.length}
+                </span>
+              </div>
+
+              {/* Cards */}
+              <div className="flex-1 p-2 space-y-2 overflow-y-auto" style={{ maxHeight: 500 }}>
+                {items.map((item) => {
+                  const pc = PROJECT_COLOR[item.project_id] || DEFAULT_PC;
+                  const isExpanded = expandedCard === item.id;
+                  return (
+                    <div key={item.id}
+                      className="rounded-lg px-2.5 py-2 cursor-pointer transition-all hover:brightness-110"
+                      style={{ background: pc.bg, border: `1px solid ${pc.border}` }}
+                      onClick={() => setExpandedCard(isExpanded ? null : item.id)}>
+                      {/* Project badge */}
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: pc.dot }} />
+                        <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: pc.text }}>
+                          {projects.find((p) => p.id === item.project_id)?.name || item.project_id}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <p className="text-[11px] font-medium leading-snug mb-1.5" style={{ color: "#e0e0ee" }}>
+                        {item.title}
+                      </p>
+
+                      {/* Format + date */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded capitalize" style={{ background: "rgba(107,107,128,0.1)", color: "#94a3b8" }}>
+                          {FORMAT_ICON[item.format] || "\uD83D\uDCDD"} {item.format}
+                        </span>
+                        {item.scheduled_date && item.scheduled_date !== "TBD" && (
+                          <span className="text-[9px] font-mono" style={{ color: "#4a4a5e" }}>
+                            {new Date(item.scheduled_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${pc.border}` }}>
+                          {item.pillar && <div className="text-[9px] mb-1" style={{ color: "#6b6b80" }}>Pillar: {item.pillar}</div>}
+                          {item.platforms?.length > 0 && <div className="text-[9px] mb-1" style={{ color: "#6b6b80" }}>Platforms: {item.platforms.join(", ")}</div>}
+                          <div className="text-[9px]" style={{ color: "#4a4a5e" }}>Status: {item.status} · Step: {item.pipeline_step}</div>
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
+                  );
+                })}
+                {items.length === 0 && (
+                  <div className="flex items-center justify-center h-20">
+                    <span className="text-[10px]" style={{ color: "#2a2a3e" }}>Empty</span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Backburner */}
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#6b6b80" }}>
-          Backburner <span className="font-mono font-normal" style={{ color: "#4a4a5e" }}>{backburner.length + unusedIdeas.length}</span>
-        </h3>
-        {backburner.length === 0 && unusedIdeas.length === 0 ? (
-          <p className="text-[11px] py-4 text-center" style={{ color: "#3a3a4e", border: "1px dashed #1e1e2e", borderRadius: "8px" }}>No backburner items</p>
-        ) : (
-          <div>
-            {backburner.map((q) => (
-              <div key={q.id} className="flex items-center gap-3 py-1.5 px-2" style={{ borderBottom: "1px solid rgba(30,30,46,0.4)" }}>
-                <span className="text-xs" style={{ color: "#e0e0ee" }}>{q.title}</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ background: `${FORMAT_COLOR[q.format] || "#6b7280"}18`, color: FORMAT_COLOR[q.format] || "#6b7280" }}>{q.format}</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(107,107,128,0.1)", color: "#6b6b80" }}>{q.pillar}</span>
+                )}
               </div>
-            ))}
-            {unusedIdeas.map((idea, i) => (
-              <div key={i} className="flex items-center gap-3 py-1.5 px-2" style={{ borderBottom: "1px solid rgba(30,30,46,0.4)" }}>
-                <span className="text-xs" style={{ color: "#94a3b8" }}>{idea.title}</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ background: `${FORMAT_COLOR[idea.format] || "#6b7280"}18`, color: FORMAT_COLOR[idea.format] || "#6b7280" }}>{idea.format}</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(107,107,128,0.1)", color: "#6b6b80" }}>{idea.pillar}</span>
-                {idea.hook && <span className="text-[9px] italic truncate" style={{ color: "#3a3a4e" }}>&ldquo;{idea.hook}&rdquo;</span>}
-              </div>
-            ))}
-          </div>
-        )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
