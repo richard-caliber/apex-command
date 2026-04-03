@@ -13,6 +13,11 @@ interface Task {
   done: boolean;
 }
 
+interface DarwinScore {
+  score: number;
+  verdict: string;
+}
+
 interface Project {
   id: string;
   name: string;
@@ -24,6 +29,7 @@ interface Project {
   overdueTasks: number;
   blockedTasks: number;
   tasks: Task[];
+  darwinScore: DarwinScore | null;
 }
 
 interface Idea {
@@ -135,18 +141,74 @@ export default function WarRoom() {
       });
       if (!res.ok) return;
       const store = await res.json();
-      const apiProjects: Project[] = (store.projects || []).map((p: Record<string, unknown>) => ({
-        id: p.id as string,
-        name: p.name as string,
-        image: (p.image_url as string) || `/images/${p.id}-card.jpg`,
-        stage: capitalize(p.stage as string || "mvp"),
-        status: mapStatus(p.status as string),
-        bottleneck: (p.blocker as string) || "",
-        keyMetric: firstMetric(p.metrics as Record<string, string> | undefined),
-        overdueTasks: 0,
-        blockedTasks: 0,
-        tasks: [],
-      }));
+
+      // Fetch all tasks to extract Darwin gate scores
+      let allTasks: { id: string; project_id: string; stage: string; output: string; order: number }[] = [];
+      try {
+        const tasksRes = await fetch("/api/pipeline-tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "list" }),
+        });
+        if (tasksRes.ok) {
+          const taskStore = await tasksRes.json();
+          allTasks = taskStore.tasks || [];
+        }
+      } catch { /* ignore */ }
+
+      const apiProjects: Project[] = (store.projects || []).map((p: Record<string, unknown>) => {
+        const projectId = p.id as string;
+        // Find gate score: get project tasks, group by stage, find second-to-last in each
+        const projectTasks = allTasks.filter((t) => t.project_id === projectId);
+        let darwinScore: DarwinScore | null = null;
+
+        if (projectTasks.length > 0) {
+          // Group by stage, check each from current stage backwards
+          const stages = [...new Set(projectTasks.map((t) => t.stage))];
+          for (const stage of stages) {
+            const stageTasks = projectTasks.filter((t) => t.stage === stage).sort((a, b) => a.order - b.order);
+            if (stageTasks.length >= 2) {
+              const gateTask = stageTasks[stageTasks.length - 2];
+              if (gateTask.output) {
+                try {
+                  const parsed = JSON.parse(gateTask.output);
+                  if (typeof parsed.score === "number") {
+                    darwinScore = { score: parsed.score, verdict: parsed.verdict || "" };
+                  }
+                } catch { /* not JSON */ }
+              }
+            }
+          }
+          // Also check the last task in case it's a gate
+          if (!darwinScore) {
+            for (const t of projectTasks) {
+              if (t.output) {
+                try {
+                  const parsed = JSON.parse(t.output);
+                  if (typeof parsed.score === "number") {
+                    darwinScore = { score: parsed.score, verdict: parsed.verdict || "" };
+                  }
+                } catch { /* not JSON */ }
+              }
+            }
+          }
+        }
+
+        return {
+          id: projectId,
+          name: p.name as string,
+          image: (p.image_url as string) || `/images/${projectId}-card.jpg`,
+          stage: capitalize(p.stage as string || "mvp"),
+          status: mapStatus(p.status as string),
+          bottleneck: (p.blocker as string) || "",
+          keyMetric: firstMetric(p.metrics as Record<string, string> | undefined),
+          overdueTasks: 0,
+          blockedTasks: 0,
+          tasks: [],
+          darwinScore,
+        };
+      });
+
       // Fetch ideas from old endpoint for now
       let ideas: Idea[] = [];
       try {
@@ -307,8 +369,21 @@ function ProjectCard({ project }: { project: Project }) {
           </span>
         </div>
 
-        {/* Status badge — top right */}
-        <div className="absolute top-3 right-3">
+        {/* Status badge + Darwin score — top right */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          {project.darwinScore && (() => {
+            const s = project.darwinScore.score;
+            const color = s >= 7 ? "#22c55e" : s >= 4 ? "#f59e0b" : "#ef4444";
+            const label = s >= 7 ? "PROCEED" : s >= 4 ? "ITERATE" : "PARKED";
+            return (
+              <span
+                className="text-[9px] font-bold tracking-wider px-2 py-0.5 rounded backdrop-blur-sm"
+                style={{ color, background: `${color}20`, border: `1px solid ${color}40` }}
+              >
+                {s}/10 {label}
+              </span>
+            );
+          })()}
           <span className={`text-[9px] font-bold tracking-wider ${statusCfg.color} ${statusCfg.bg} px-2 py-0.5 rounded`}>
             {statusCfg.label}
           </span>
