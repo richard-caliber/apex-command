@@ -90,6 +90,36 @@ const FALLBACK_STAGES: PipelineStage[] = [
   { id: "scale", name: "Scale", order: 8, objective: "Scale and automate", entry_criteria: "Delivery stable", exit_criteria: "Processes automated" },
 ];
 
+/* ─────────────────────────── SCORE HELPERS ─────────────────────── */
+
+function extractScore(output: string): number | null {
+  if (!output) return null;
+  try {
+    const parsed = JSON.parse(output);
+    if (typeof parsed.score === "number") return parsed.score;
+  } catch { /* not JSON — ignore */ }
+  return null;
+}
+
+function scoreColor(score: number): string {
+  if (score >= 7) return TOKENS.success;
+  if (score >= 4) return TOKENS.warn;
+  return TOKENS.error;
+}
+
+function scoreEmoji(score: number): string {
+  if (score >= 7) return "\u2705";
+  if (score >= 4) return "\ud83d\udd04";
+  return "\ud83d\uded1";
+}
+
+/** Find the Darwin gate task for a stage (second-to-last task by order) */
+function findGateTask(tasks: PipelineTask[]): PipelineTask | undefined {
+  if (tasks.length < 2) return undefined;
+  const sorted = [...tasks].sort((a, b) => a.order - b.order);
+  return sorted[sorted.length - 2];
+}
+
 /* ─────────────────────────── COMPONENT ─────────────────────────── */
 
 export default function PipelinePage() {
@@ -332,6 +362,10 @@ export default function PipelinePage() {
         const doneCount = stageTasks.filter((t) => t.status === "done").length;
         const isExpanded = expandedStages.has(stage.id);
 
+        // Darwin gate score for this stage
+        const gateTask = findGateTask(stageTasks);
+        const gateScore = gateTask ? extractScore(gateTask.output) : null;
+
         // Header accent colour
         const headerColor = isCompleted ? TOKENS.success : isCurrent ? TOKENS.accent : isNext ? TOKENS.muted : TOKENS.body;
 
@@ -374,6 +408,17 @@ export default function PipelinePage() {
                 <span style={{ color: headerColor, fontSize: 15, fontWeight: 700 }}>
                   Stage {stage.order}: {stage.name}
                 </span>
+                {gateScore !== null && (
+                  <span style={{
+                    fontSize: 12, fontWeight: 700,
+                    color: scoreColor(gateScore),
+                    background: `${scoreColor(gateScore)}18`,
+                    padding: "2px 8px", borderRadius: 6,
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                  }}>
+                    {gateScore}/10 {scoreEmoji(gateScore)}
+                  </span>
+                )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12 }}>
                 <span style={{ color: TOKENS.muted }}>
@@ -438,6 +483,7 @@ function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boo
   const isFromTemplate = !!(task as { _fromTemplate?: boolean })._fromTemplate;
   const borderLeft = isFromTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${TOKENS.error}` : task.status === "done" ? `3px solid ${TOKENS.success}` : "3px solid transparent";
   const hasDoneOutput = task.status === "done" && task.output;
+  const taskScore = extractScore(task.output);
 
   const templateBadge = isFromTemplate ? (
     <span style={{
@@ -466,6 +512,15 @@ function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boo
           <span style={{ fontSize: 12 }}>{cfg.icon}</span>
           <span style={{ color: TOKENS.muted, fontSize: 10, fontWeight: 700, fontFamily: "monospace", minWidth: 52 }}>{task.id}</span>
           <span style={{ color: cfg.color, fontWeight: 500, flex: 1 }}>{task.name}</span>
+          {taskScore !== null && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: scoreColor(taskScore),
+              background: `${scoreColor(taskScore)}18`,
+              padding: "1px 6px", borderRadius: 4,
+            }}>
+              {taskScore}/10
+            </span>
+          )}
           {templateBadge}
           <span style={{ color: TOKENS.muted, fontSize: 11 }}>{emoji} {task.owner}</span>
           {hasDoneOutput ? (
@@ -514,6 +569,16 @@ function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boo
           {task.id}
         </span>
         <span style={{ color: TOKENS.heading, fontSize: 14, fontWeight: 600, flex: 1 }}>{task.name}</span>
+        {taskScore !== null && (
+          <span style={{
+            fontSize: 11, fontWeight: 700, color: scoreColor(taskScore),
+            background: `${scoreColor(taskScore)}18`,
+            padding: "2px 8px", borderRadius: 4,
+            display: "inline-flex", alignItems: "center", gap: 3,
+          }}>
+            {taskScore}/10 {scoreEmoji(taskScore)}
+          </span>
+        )}
         {templateBadge}
         <span style={{
           background: `${cfg.color}22`, color: cfg.color,
