@@ -99,7 +99,7 @@ function StrategyInner() {
 
   const trafficTasks = useMemo(() => {
     return tasks
-      .filter((t) => t.project_id === selected && t.stage === "traffic" && t.status !== "done" && t.status !== "skipped")
+      .filter((t) => t.project_id === selected && (t.stage === "traffic" || t.stage === "conversion") && t.status !== "done" && t.status !== "skipped")
       .sort((a, b) => a.order - b.order);
   }, [tasks, selected]);
 
@@ -127,39 +127,60 @@ function StrategyInner() {
         <div className="space-y-6">
           {hasNewStrategy ? (
             <>
-              {/* Current Status */}
+              {/* 1. STRATEGY — hero, prominent */}
+              {parsed!.traffic_plan && (
+                <div className="rounded-lg p-6" style={{ background: "rgba(0,212,212,0.05)", border: "1px solid rgba(0,212,212,0.25)" }}>
+                  <h3 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "#00d4d4" }}>{"\uD83C\uDFAF"} Strategy</h3>
+                  <p className="text-base leading-relaxed" style={{ color: "#f1f5f9" }}>{parsed!.traffic_plan}</p>
+                </div>
+              )}
+
+              {/* 2. SCHEDULE */}
+              {parsed!.cadence && (
+                <Section title={"\uD83D\uDCC5 Schedule"}>
+                  <pre className="text-xs whitespace-pre-wrap leading-relaxed" style={{ color: "#e0e0ee", fontFamily: "inherit" }}>{parsed!.cadence}</pre>
+                </Section>
+              )}
+
+              {/* 3. RULES */}
+              {parsed!.content_rules && (
+                <Section title={"\uD83D\uDCCB Rules"}>
+                  <pre className="text-xs whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{parsed!.content_rules}</pre>
+                </Section>
+              )}
+
+              {/* 4. SUCCESS METRICS */}
+              {parsed!.kpis && (
+                <div className="rounded-lg p-4" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
+                  <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#00d4d4" }}>{"\uD83D\uDCCA"} Success Metrics</h3>
+                  {Array.isArray(parsed!.kpis) ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {parsed!.kpis.map((kpi, i) => (
+                        <div key={i} className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ background: "rgba(0,212,212,0.04)", border: "1px solid rgba(0,212,212,0.1)" }}>
+                          <span className="text-xs" style={{ color: "#00d4d4" }}>{"\uD83C\uDFAF"}</span>
+                          <span className="text-xs" style={{ color: "#e0e0ee" }}>{kpi}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <pre className="text-[11px] whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{String(parsed!.kpis)}</pre>
+                  )}
+                </div>
+              )}
+
+              {/* 5. CURRENT STATUS */}
               {parsed!.current_status && (
                 <div className="rounded-lg p-4" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.2)" }}>
-                  <h3 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#f59e0b" }}>Current Status</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#f59e0b" }}>{"\uD83D\uDCCD"} Current Status</h3>
                   <p className="text-sm leading-relaxed" style={{ color: "#e0e0ee" }}>{parsed!.current_status}</p>
                 </div>
               )}
 
-              {/* Traffic Plan — hero */}
-              {parsed!.traffic_plan && (
-                <div className="rounded-lg p-5" style={{ background: "rgba(0,212,212,0.04)", border: "1px solid rgba(0,212,212,0.2)" }}>
-                  <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#00d4d4" }}>Traffic Plan</h3>
-                  <pre className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "#e0e0ee", fontFamily: "inherit" }}>{parsed!.traffic_plan}</pre>
-                  <div className="flex items-center gap-4 mt-4">
-                    {parsed!.primary_channel && (
-                      <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ background: "rgba(0,212,212,0.12)", color: "#00d4d4" }}>
-                        Primary: {parsed!.primary_channel}
-                      </span>
-                    )}
-                    {parsed!.secondary_channel && (
-                      <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ background: "rgba(107,107,128,0.12)", color: "#6b6b80" }}>
-                        Secondary: {parsed!.secondary_channel}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Next Actions — checklist */}
-              {parsed!.next_actions && parsed!.next_actions.length > 0 && (
-                <div className="rounded-lg p-4" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
-                  <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#f59e0b" }}>Next Actions</h3>
-                  <div className="space-y-1.5">
+              {/* 6. NEXT ACTIONS + pipeline tasks */}
+              <div className="rounded-lg p-4" style={{ background: "#111118", border: "1px solid rgba(245,158,11,0.2)" }}>
+                <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#f59e0b" }}>{"\u25B6\uFE0F"} Next Actions</h3>
+                {parsed!.next_actions && parsed!.next_actions.length > 0 && (
+                  <div className="space-y-1.5 mb-4">
                     {parsed!.next_actions.map((a, i) => (
                       <div key={i} className="flex items-start gap-2 py-1">
                         <span className="text-xs mt-0.5" style={{ color: "#475569" }}>{"\u25CB"}</span>
@@ -167,39 +188,48 @@ function StrategyInner() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Content Rules */}
-              {parsed!.content_rules && (
-                <Collapsible title="Content Rules" isOpen={!collapsed.has("rules")} onToggle={() => toggle("rules")}>
-                  <pre className="text-[11px] whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{parsed!.content_rules}</pre>
-                </Collapsible>
-              )}
-
-              {/* Cadence */}
-              {parsed!.cadence && (
-                <Collapsible title="Cadence" isOpen={!collapsed.has("cadence")} onToggle={() => toggle("cadence")}>
-                  <pre className="text-[11px] whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{parsed!.cadence}</pre>
-                </Collapsible>
-              )}
-
-              {/* KPIs — handle both string and array */}
-              {parsed!.kpis && (
-                <div className="rounded-lg p-4" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
-                  <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#00d4d4" }}>KPIs</h3>
-                  {Array.isArray(parsed!.kpis) ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {parsed!.kpis.map((kpi, i) => (
-                        <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(0,212,212,0.04)", border: "1px solid rgba(0,212,212,0.1)" }}>
-                          <span className="text-xs" style={{ color: "#00d4d4" }}>{"\uD83C\uDFAF"}</span>
-                          <span className="text-xs" style={{ color: "#e0e0ee" }}>{kpi}</span>
-                        </div>
-                      ))}
+                )}
+                {trafficTasks.length > 0 && (
+                  <>
+                    <div className="text-[9px] uppercase tracking-wider font-bold mb-2 mt-2 pt-3" style={{ color: "#475569", borderTop: "1px solid #1e1e2e" }}>Pipeline Tasks</div>
+                    <div className="space-y-1">
+                      {trafficTasks.slice(0, 5).map((t) => {
+                        const oc = OWNER_COLOR[t.owner] || "#6b6b80";
+                        return (
+                          <div key={t.id} className="flex items-center gap-3 py-1.5" style={{ borderBottom: "1px solid rgba(30,30,46,0.4)" }}>
+                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${t.status === "blocked" ? "bg-red-400" : t.status === "in_progress" ? "bg-amber-400 animate-pulse" : "bg-slate-600"}`} />
+                            <span className="text-[10px] font-mono" style={{ color: "#475569", minWidth: 52 }}>{t.id}</span>
+                            <span className="text-xs flex-1" style={{ color: "#e0e0ee" }}>{t.name}</span>
+                            <span className="text-[10px] font-medium" style={{ color: oc }}>{OWNER_EMOJI[t.owner] || ""} {t.owner}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <pre className="text-[11px] whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{parsed!.kpis}</pre>
-                  )}
+                  </>
+                )}
+                {(!parsed!.next_actions || parsed!.next_actions.length === 0) && trafficTasks.length === 0 && (
+                  <p className="text-xs" style={{ color: "#3a3a4e" }}>No pending actions.</p>
+                )}
+              </div>
+
+              {/* 7. CHANNELS */}
+              {(parsed!.primary_channel || parsed!.secondary_channel) && (
+                <div className="rounded-lg p-4" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
+                  <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#00d4d4" }}>{"\uD83D\uDCE1"} Channels</h3>
+                  <div className="flex items-center gap-4">
+                    {parsed!.primary_channel && (
+                      <div className="px-3 py-2 rounded-lg" style={{ background: "rgba(0,212,212,0.08)", border: "1px solid rgba(0,212,212,0.2)" }}>
+                        <div className="text-[9px] uppercase tracking-wider font-bold mb-0.5" style={{ color: "#475569" }}>Primary</div>
+                        <div className="text-xs font-semibold" style={{ color: "#00d4d4" }}>{parsed!.primary_channel}</div>
+                      </div>
+                    )}
+                    {parsed!.secondary_channel && (
+                      <div className="px-3 py-2 rounded-lg" style={{ background: "rgba(107,107,128,0.06)", border: "1px solid #1e1e2e" }}>
+                        <div className="text-[9px] uppercase tracking-wider font-bold mb-0.5" style={{ color: "#475569" }}>Secondary</div>
+                        <div className="text-xs font-semibold" style={{ color: "#94a3b8" }}>{parsed!.secondary_channel}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </>
@@ -256,8 +286,8 @@ function StrategyInner() {
             </>
           )}
 
-          {/* Traffic Tasks — connects strategy to pipeline */}
-          {trafficTasks.length > 0 && (
+          {/* Traffic tasks for legacy view (new strategy already includes them in section 6) */}
+          {!hasNewStrategy && trafficTasks.length > 0 && (
             <div className="rounded-lg p-4" style={{ background: "#111118", border: "1px solid rgba(245,158,11,0.2)" }}>
               <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#f59e0b" }}>
                 {"\u25B6\uFE0F"} Next Traffic Tasks
@@ -267,15 +297,10 @@ function StrategyInner() {
                   const oc = OWNER_COLOR[t.owner] || "#6b6b80";
                   return (
                     <div key={t.id} className="flex items-center gap-3 py-1.5" style={{ borderBottom: "1px solid rgba(30,30,46,0.4)" }}>
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        t.status === "blocked" ? "bg-red-400" : t.status === "in_progress" ? "bg-amber-400 animate-pulse" : "bg-slate-600"
-                      }`} />
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${t.status === "blocked" ? "bg-red-400" : t.status === "in_progress" ? "bg-amber-400 animate-pulse" : "bg-slate-600"}`} />
                       <span className="text-[10px] font-mono" style={{ color: "#475569", minWidth: 52 }}>{t.id}</span>
                       <span className="text-xs flex-1" style={{ color: "#e0e0ee" }}>{t.name}</span>
-                      <span className="text-[10px] font-medium" style={{ color: oc }}>
-                        {OWNER_EMOJI[t.owner] || ""} {t.owner}
-                      </span>
-                      <span className="text-[9px]" style={{ color: "#475569" }}>{t.status.replace(/_/g, " ")}</span>
+                      <span className="text-[10px] font-medium" style={{ color: oc }}>{OWNER_EMOJI[t.owner] || ""} {t.owner}</span>
                     </div>
                   );
                 })}

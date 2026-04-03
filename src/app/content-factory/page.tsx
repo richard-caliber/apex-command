@@ -5,7 +5,7 @@ import Link from "next/link";
 
 interface Project { id: string; name: string; image_url: string; stage: string; status: string }
 interface Strategy { id: string; project_id: string; approved_at: string }
-interface PipelineTask { id: string; project_id: string; stage: string; name: string; status: string; owner: string; order: number }
+interface PipelineTask { id: string; project_id: string; stage: string; name: string; status: string; owner: string; order: number; output: string }
 
 const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
 const STAGE_LABEL: Record<string, string> = { traffic: "Traffic", conversion: "Conversion", delivery: "Delivery", scale: "Scale" };
@@ -20,10 +20,13 @@ function api(url: string, body: Record<string, unknown>) {
   return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 }
 
+interface DarwinScore { score: number; verdict: string }
+
 interface CardData {
   project: Project;
   hasStrategy: boolean;
   nextTask: PipelineTask | null;
+  darwinScore: DarwinScore | null;
 }
 
 export default function ContentFactoryDashboard() {
@@ -45,9 +48,25 @@ export default function ContentFactoryDashboard() {
     // Filter to projects at traffic stage or beyond
     const contentProjects = projects.filter((p) => CONTENT_STAGES.has(p.stage));
 
+    // Build Darwin score map
+    const scoreMap: Record<string, DarwinScore> = {};
+    for (const t of tasks) {
+      if (!t.output || t.project_id === "_template") continue;
+      try {
+        const parsed = JSON.parse(t.output);
+        if (typeof parsed.score === "number") {
+          const si = stageOrder.indexOf(t.stage);
+          const existing = scoreMap[t.project_id] as (DarwinScore & { _si?: number }) | undefined;
+          if (!existing || si > (existing._si ?? -1)) {
+            scoreMap[t.project_id] = { score: parsed.score, verdict: parsed.verdict || "" };
+            (scoreMap[t.project_id] as DarwinScore & { _si?: number })._si = si;
+          }
+        }
+      } catch { /* not JSON */ }
+    }
+
     const result: CardData[] = contentProjects.map((p) => {
       const hasStrategy = strategies.some((s) => s.project_id === p.id);
-      // Find first undone task in traffic stage for this project
       const projectTasks = tasks
         .filter((t) => t.project_id === p.id && t.status !== "done" && t.status !== "skipped")
         .sort((a, b) => {
@@ -56,7 +75,7 @@ export default function ContentFactoryDashboard() {
           if (sa !== sb) return sa - sb;
           return a.order - b.order;
         });
-      return { project: p, hasStrategy, nextTask: projectTasks[0] || null };
+      return { project: p, hasStrategy, nextTask: projectTasks[0] || null, darwinScore: scoreMap[p.id] || null };
     });
 
     setCards(result);
@@ -108,6 +127,19 @@ export default function ContentFactoryDashboard() {
                   {c.hasStrategy ? "Strategy" : "No Strategy"}
                 </span>
               </div>
+              {/* Darwin score */}
+              {c.darwinScore && (() => {
+                const s = c.darwinScore.score;
+                const bg = s >= 7 ? "rgba(34,197,94,0.85)" : s >= 4 ? "rgba(245,158,11,0.85)" : "rgba(239,68,68,0.85)";
+                const label = s >= 7 ? "PROCEED" : s >= 4 ? "ITERATE" : "PARKED";
+                return (
+                  <div className="absolute top-10 left-3">
+                    <span className="text-[9px] font-extrabold tracking-wider px-2 py-0.5 rounded text-white" style={{ background: bg }}>
+                      {s}/10 {label}
+                    </span>
+                  </div>
+                );
+              })()}
               <div className="absolute bottom-0 inset-x-0 p-4">
                 <h3 className="text-sm font-bold text-white group-hover:text-[#00d4d4] transition-colors">{c.project.name}</h3>
               </div>

@@ -42,7 +42,8 @@ interface Project {
 
 /* ─────────────────────────── CONSTANTS ─────────────────────── */
 
-const STAGE_ORDER = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
+const STAGE_ORDER = ["inbox", "idea", "validation", "design", "mvp"];
+const ALL_STAGES = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
 
 const TOKENS = {
   bg: "#0a0a0f",
@@ -84,10 +85,6 @@ const FALLBACK_STAGES: PipelineStage[] = [
   { id: "validation", name: "Validation", order: 2, objective: "Prove demand exists with real signals", entry_criteria: "Idea approved", exit_criteria: "Pain signals, competitors mapped" },
   { id: "design", name: "Design", order: 3, objective: "Design the user experience", entry_criteria: "Validation passed", exit_criteria: "User journey defined, templates written" },
   { id: "mvp", name: "MVP", order: 4, objective: "Build minimum viable product", entry_criteria: "Design approved", exit_criteria: "Product live, payment working" },
-  { id: "traffic", name: "Traffic", order: 5, objective: "Drive targeted traffic", entry_criteria: "MVP live", exit_criteria: "Content loop running" },
-  { id: "conversion", name: "Conversion", order: 6, objective: "Optimise funnel", entry_criteria: "Traffic flowing", exit_criteria: "A/B tested, positive economics" },
-  { id: "delivery", name: "Delivery", order: 7, objective: "Deliver value and collect feedback", entry_criteria: "Paying customers", exit_criteria: "CSAT 8+" },
-  { id: "scale", name: "Scale", order: 8, objective: "Scale and automate", entry_criteria: "Delivery stable", exit_criteria: "Processes automated" },
 ];
 
 /* ─────────────────────────── SCORE HELPERS ─────────────────────── */
@@ -141,7 +138,12 @@ export default function PipelinePage() {
       fetch("/api/pipeline-stages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list" }), signal: ac.signal }).then((r) => r.json()).catch(() => null),
       fetch("/api/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list" }), signal: ac.signal }).then((r) => r.json()).catch(() => null),
     ]).then(([stageData, projData]) => {
-      if (stageData?.stages) setStages(stageData.stages.sort((a: PipelineStage, b: PipelineStage) => a.order - b.order));
+      if (stageData?.stages) {
+        const filtered = stageData.stages
+          .filter((s: PipelineStage) => STAGE_ORDER.includes(s.id))
+          .sort((a: PipelineStage, b: PipelineStage) => a.order - b.order);
+        setStages(filtered);
+      }
       if (projData?.projects) setProjects(projData.projects);
       setLoading(false);
     });
@@ -181,6 +183,7 @@ export default function PipelinePage() {
   const project = projects.find((p) => p.id === selectedProject);
   const currentStageId = project?.stage || "";
   const currentStageIdx = STAGE_ORDER.indexOf(currentStageId);
+  const isGraduated = currentStageIdx < 0 && ALL_STAGES.indexOf(currentStageId) >= STAGE_ORDER.length;
 
   // Which stages to show
   const visibleStages = isTemplateView
@@ -353,6 +356,21 @@ export default function PipelinePage() {
       )}
 
       {/* ── Stage Sections (collapsed by default) ── */}
+      {/* Content Factory handoff note */}
+      {!isTemplateView && isGraduated && (
+        <div style={{
+          background: "rgba(0,212,212,0.04)", border: "1px solid rgba(0,212,212,0.2)",
+          borderRadius: 12, padding: "16px 20px", textAlign: "center",
+        }}>
+          <p style={{ color: TOKENS.accent, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            This project has graduated to <a href="/content-factory" style={{ color: TOKENS.accent, textDecoration: "underline" }}>Content Factory</a>
+          </p>
+          <p style={{ color: TOKENS.muted, fontSize: 12, margin: "4px 0 0" }}>
+            Traffic, Conversion, Delivery and Scale stages are managed in Content Factory.
+          </p>
+        </div>
+      )}
+
       {visibleStages.map((stage) => {
         const idx = STAGE_ORDER.indexOf(stage.id);
         const isCurrent = !isTemplateView && stage.id === currentStageId;

@@ -6,7 +6,7 @@ function api(url: string, body: Record<string, unknown>) {
   return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 }
 
-interface Project { id: string; name: string }
+interface Project { id: string; name: string; stage?: string }
 interface Strategy { project_id: string; schedule: { batch_day: string; days: string[]; times: string[]; format_rotation: Record<string, string> }; production: { step: string; owner: string; time: string }[] }
 interface QueueItem { id: string; project_id: string; title: string; format: string; platforms: string[]; scheduled_date: string; status: string; pipeline_step: string }
 
@@ -43,8 +43,11 @@ export default function CalendarPage() {
       api("/api/projects", { action: "list" }),
       api("/api/content-queue", { action: "list" }),
     ]);
+    const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
     const strats: Strategy[] = sData?.items || [];
-    const projs: Project[] = (pData?.projects || []).filter((p: Project) => strats.some((s) => s.project_id === p.id));
+    const projs: Project[] = (pData?.projects || []).filter((p: Project) =>
+      CONTENT_STAGES.has(p.stage || "") || strats.some((s) => s.project_id === p.id)
+    );
     setStrategies(strats);
     setProjects(projs);
     setQueue(qData?.items || []);
