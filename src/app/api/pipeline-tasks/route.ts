@@ -31,7 +31,7 @@ interface TaskStore {
 }
 
 const VALID_STAGES = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
-const VALID_STATUSES = ["not_started", "in_progress", "done", "blocked", "skipped"];
+const VALID_STATUSES = ["not_started", "in_progress", "done", "blocked", "skipped", "continuous"];
 const VALID_AUTOMATION = ["manual", "semi-auto", "fully-auto"];
 
 /* ── Seed data — master template + Caliber project tasks ── */

@@ -49,7 +49,7 @@ const AUTO_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 const STATUS_DOT: Record<string, string> = {
-  not_started: "#374151", in_progress: "#f59e0b", done: "#22c55e", blocked: "#ef4444", skipped: "#6b7280",
+  not_started: "#374151", in_progress: "#f59e0b", done: "#22c55e", blocked: "#ef4444", skipped: "#6b7280", continuous: "#a78bfa",
 };
 
 /* ── API helpers ── */

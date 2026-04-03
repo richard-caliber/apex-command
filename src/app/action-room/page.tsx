@@ -113,6 +113,7 @@ const TASK_STATUS_DOT: Record<string, string> = {
   not_started: "bg-slate-600",
   blocked: "bg-red-400",
   skipped: "bg-slate-500",
+  continuous: "bg-purple-400",
 };
 
 const CATEGORY_ICON: Record<string, string> = {
@@ -605,7 +606,7 @@ function GingeActionsView({ allTasks, projects }: { allTasks: PipelineTask[]; pr
   );
   // 3. BOT TASKS — non-ginge tasks not done (informational)
   const botTasks = useMemo(
-    () => allTasks.filter((t) => t.owner !== "ginge" && t.status !== "done" && t.status !== "skipped" && t.project_id !== "_template").slice(0, 20),
+    () => allTasks.filter((t) => t.owner !== "ginge" && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous" && t.project_id !== "_template").slice(0, 20),
     [allTasks]
   );
 
@@ -823,7 +824,7 @@ function VaultPanel({ entries, emptyText }: { entries: VaultEntry[]; emptyText: 
 function NextStepsPanel({ tasks }: { tasks: PipelineTask[] }) {
   const nextTasks = useMemo(() => {
     return tasks
-      .filter((t) => t.status !== "done" && t.status !== "skipped")
+      .filter((t) => t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
       .sort((a, b) => {
         const sa = PIPELINE_STAGES.indexOf(a.stage);
         const sb = PIPELINE_STAGES.indexOf(b.stage);

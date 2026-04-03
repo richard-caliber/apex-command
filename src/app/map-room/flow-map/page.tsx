@@ -35,11 +35,11 @@ const STAGES = [
 ];
 
 const SC: Record<string, string> = {
-  done: "#22c55e", in_progress: "#00d4d4", not_started: "#374151", blocked: "#ef4444", skipped: "#6b7280",
+  done: "#22c55e", in_progress: "#00d4d4", not_started: "#374151", blocked: "#ef4444", skipped: "#6b7280", continuous: "#a78bfa",
 };
 
 const SL: Record<string, string> = {
-  done: "Complete", in_progress: "Active", not_started: "Pending", blocked: "Blocked", skipped: "Skipped",
+  done: "Complete", in_progress: "Active", not_started: "Pending", blocked: "Blocked", skipped: "Skipped", continuous: "Ongoing",
 };
 
 const OE: Record<string, string> = {

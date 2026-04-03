@@ -182,7 +182,7 @@ function StrategyInner() {
 
   const trafficTasks = useMemo(() => {
     return tasks
-      .filter((t) => t.project_id === selected && (t.stage === "traffic" || t.stage === "conversion") && t.status !== "done" && t.status !== "skipped")
+      .filter((t) => t.project_id === selected && (t.stage === "traffic" || t.stage === "conversion") && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
       .sort((a, b) => a.order - b.order);
   }, [tasks, selected]);
 

@@ -9,7 +9,7 @@ interface PipelineTask {
   project_id: string;
   name: string;
   description: string;
-  status: "not_started" | "in_progress" | "done" | "blocked" | "skipped";
+  status: "not_started" | "in_progress" | "done" | "blocked" | "skipped" | "continuous";
   automation: "manual" | "semi-auto" | "fully-auto";
   owner: string;
   model: string;
@@ -57,6 +57,7 @@ const STATUS_CFG: Record<string, { icon: string; label: string; color: string }>
   done: { icon: "\u2705", label: "Done", color: T.success },
   blocked: { icon: "\uD83D\uDD34", label: "Blocked", color: T.error },
   skipped: { icon: "\u26A0\uFE0F", label: "Skipped", color: T.warn },
+  continuous: { icon: "\uD83D\uDD01", label: "Ongoing", color: T.purple },
 };
 
 const OWNER_EMOJI: Record<string, string> = {
@@ -114,12 +115,22 @@ export default function ContentPipelinePage() {
 
   const project = projects.find((p) => p.id === selectedProject);
 
+  const sortTasks = (tasks: PipelineTask[]) =>
+    [...tasks].sort((a, b) => {
+      const ac = a.status === "continuous" ? 1 : 0;
+      const bc = b.status === "continuous" ? 1 : 0;
+      if (ac !== bc) return ac - bc;
+      return a.order - b.order;
+    });
+
   type DisplayTask = PipelineTask & { _fromTemplate?: boolean };
   const tasksForStage = (stageId: string): DisplayTask[] => {
-    const proj = projectTasks.filter((t) => t.stage === stageId).sort((a, b) => a.order - b.order);
-    if (proj.length > 0) return proj;
-    return templateTasks.filter((t) => t.stage === stageId).sort((a, b) => a.order - b.order)
-      .map((t) => ({ ...t, status: "not_started" as const, output: "", blocker: null, _fromTemplate: true }));
+    const proj = projectTasks.filter((t) => t.stage === stageId);
+    if (proj.length > 0) return sortTasks(proj);
+    return sortTasks(
+      templateTasks.filter((t) => t.stage === stageId)
+        .map((t) => ({ ...t, status: "not_started" as const, output: "", blocker: null, _fromTemplate: true }))
+    );
   };
 
   const toggleStage = (id: string) => setExpandedStages((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -218,7 +229,7 @@ function TaskRow({ task }: { task: PipelineTask & { _fromTemplate?: boolean } })
   const isTemplate = !!(task as { _fromTemplate?: boolean })._fromTemplate;
   const hasDoneOutput = task.status === "done" && task.output;
   const taskScore = extractScore(task.output);
-  const borderLeft = isTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${T.error}` : task.status === "done" ? `3px solid ${T.success}` : "3px solid transparent";
+  const borderLeft = isTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${T.error}` : task.status === "done" ? `3px solid ${T.success}` : task.status === "continuous" ? `3px solid ${T.purple}` : "3px solid transparent";
 
   return (
     <div>

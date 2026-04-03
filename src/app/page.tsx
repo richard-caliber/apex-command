@@ -185,7 +185,7 @@ export default function WarRoom() {
       for (const pid of [...new Set(allTasks.map((t) => t.project_id))]) {
         if (pid === "_template") continue;
         const projectTasks = allTasks
-          .filter((t) => t.project_id === pid && t.status !== "done" && t.status !== "skipped")
+          .filter((t) => t.project_id === pid && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
           .sort((a, b) => {
             const sa = stageOrder.indexOf(a.stage);
             const sb = stageOrder.indexOf(b.stage);

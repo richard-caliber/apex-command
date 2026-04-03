@@ -68,7 +68,7 @@ export default function ContentFactoryDashboard() {
     const result: CardData[] = contentProjects.map((p) => {
       const hasStrategy = strategies.some((s) => s.project_id === p.id);
       const projectTasks = tasks
-        .filter((t) => t.project_id === p.id && t.status !== "done" && t.status !== "skipped")
+        .filter((t) => t.project_id === p.id && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
         .sort((a, b) => {
           const sa = stageOrder.indexOf(a.stage);
           const sb = stageOrder.indexOf(b.stage);

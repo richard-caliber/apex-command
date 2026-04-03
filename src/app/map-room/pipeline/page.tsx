@@ -10,7 +10,7 @@ interface PipelineTask {
   project_id: string;
   name: string;
   description: string;
-  status: "not_started" | "in_progress" | "done" | "blocked" | "skipped";
+  status: "not_started" | "in_progress" | "done" | "blocked" | "skipped" | "continuous";
   automation: "manual" | "semi-auto" | "fully-auto";
   owner: string;
   model: string;
@@ -68,6 +68,7 @@ const STATUS_CFG: Record<string, { icon: string; label: string; color: string }>
   done: { icon: "\u2705", label: "Done", color: TOKENS.success },
   blocked: { icon: "\uD83D\uDD34", label: "Blocked", color: TOKENS.error },
   skipped: { icon: "\u26A0\uFE0F", label: "Skipped", color: TOKENS.warn },
+  continuous: { icon: "\uD83D\uDD01", label: "Ongoing", color: TOKENS.purple },
 };
 
 const OWNER_EMOJI: Record<string, string> = {
@@ -196,20 +197,29 @@ export default function PipelinePage() {
       });
 
   // Tasks for a stage — project tasks if they exist, otherwise template fallback
+  // Sort: continuous tasks go to bottom, then by order
+  const sortTasks = (tasks: PipelineTask[]) =>
+    [...tasks].sort((a, b) => {
+      const ac = a.status === "continuous" ? 1 : 0;
+      const bc = b.status === "continuous" ? 1 : 0;
+      if (ac !== bc) return ac - bc;
+      return a.order - b.order;
+    });
+
   type DisplayTask = PipelineTask & { _fromTemplate?: boolean };
   const tasksForStage = (stageId: string): DisplayTask[] => {
     if (isTemplateView) {
-      return templateTasks.filter((t) => t.stage === stageId).sort((a, b) => a.order - b.order);
+      return sortTasks(templateTasks.filter((t) => t.stage === stageId));
     }
     const projStage = projectTasks.filter((t) => t.stage === stageId);
     if (projStage.length > 0) {
-      return projStage.sort((a, b) => a.order - b.order);
+      return sortTasks(projStage);
     }
-    // No project-specific tasks — fall back to template, marked as not_started
-    return templateTasks
-      .filter((t) => t.stage === stageId)
-      .sort((a, b) => a.order - b.order)
-      .map((t) => ({ ...t, status: "not_started" as const, output: "", blocker: null, _fromTemplate: true }));
+    return sortTasks(
+      templateTasks
+        .filter((t) => t.stage === stageId)
+        .map((t) => ({ ...t, status: "not_started" as const, output: "", blocker: null, _fromTemplate: true }))
+    );
   };
 
   // Missed/skipped tasks from earlier stages (project tasks only)
@@ -499,7 +509,7 @@ function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boo
   const cfg = STATUS_CFG[task.status] || STATUS_CFG.not_started;
   const emoji = OWNER_EMOJI[task.owner] || "\uD83D\uDC64";
   const isFromTemplate = !!(task as { _fromTemplate?: boolean })._fromTemplate;
-  const borderLeft = isFromTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${TOKENS.error}` : task.status === "done" ? `3px solid ${TOKENS.success}` : "3px solid transparent";
+  const borderLeft = isFromTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${TOKENS.error}` : task.status === "done" ? `3px solid ${TOKENS.success}` : task.status === "continuous" ? `3px solid ${TOKENS.purple}` : "3px solid transparent";
   const hasDoneOutput = task.status === "done" && task.output;
   const taskScore = extractScore(task.output);
 
