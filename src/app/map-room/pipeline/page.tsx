@@ -432,10 +432,12 @@ function ProjectDropdown({ projects, value, onChange }: { projects: Project[]; v
 /* ─────────────────────────── TASK ROW ─────────────────────────── */
 
 function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boolean }; compact?: boolean }) {
+  const [outputExpanded, setOutputExpanded] = useState(false);
   const cfg = STATUS_CFG[task.status] || STATUS_CFG.not_started;
   const emoji = OWNER_EMOJI[task.owner] || "\uD83D\uDC64";
   const isFromTemplate = !!(task as { _fromTemplate?: boolean })._fromTemplate;
   const borderLeft = isFromTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${TOKENS.error}` : task.status === "done" ? `3px solid ${TOKENS.success}` : "3px solid transparent";
+  const hasDoneOutput = task.status === "done" && task.output;
 
   const templateBadge = isFromTemplate ? (
     <span style={{
@@ -450,22 +452,47 @@ function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boo
   // Compact row for completed stages
   if (compact) {
     return (
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "7px 20px",
-        borderBottom: `1px solid rgba(30,30,46,0.5)`, fontSize: 13, borderLeft,
-        opacity: isFromTemplate ? 0.6 : 1,
-      }}>
-        <span style={{ fontSize: 12 }}>{cfg.icon}</span>
-        <span style={{ color: TOKENS.muted, fontSize: 10, fontWeight: 700, fontFamily: "monospace", minWidth: 52 }}>{task.id}</span>
-        <span style={{ color: cfg.color, fontWeight: 500, flex: 1 }}>{task.name}</span>
-        {templateBadge}
-        <span style={{ color: TOKENS.muted, fontSize: 11 }}>{emoji} {task.owner}</span>
-        {task.output ? (
-          <span style={{ color: TOKENS.body, fontSize: 11, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {task.output}
-          </span>
-        ) : (
-          <span style={{ color: TOKENS.muted, fontSize: 11, fontStyle: "italic" }}>No output yet</span>
+      <div>
+        <div
+          style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "7px 20px",
+            borderBottom: hasDoneOutput && outputExpanded ? "none" : `1px solid rgba(30,30,46,0.5)`,
+            fontSize: 13, borderLeft,
+            opacity: isFromTemplate ? 0.6 : 1,
+            cursor: hasDoneOutput ? "pointer" : "default",
+          }}
+          onClick={() => hasDoneOutput && setOutputExpanded(!outputExpanded)}
+        >
+          <span style={{ fontSize: 12 }}>{cfg.icon}</span>
+          <span style={{ color: TOKENS.muted, fontSize: 10, fontWeight: 700, fontFamily: "monospace", minWidth: 52 }}>{task.id}</span>
+          <span style={{ color: cfg.color, fontWeight: 500, flex: 1 }}>{task.name}</span>
+          {templateBadge}
+          <span style={{ color: TOKENS.muted, fontSize: 11 }}>{emoji} {task.owner}</span>
+          {hasDoneOutput ? (
+            <span style={{ color: TOKENS.accent, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>
+              {outputExpanded ? "\u25B2 Output" : "\u25BC Output"}
+            </span>
+          ) : task.output ? (
+            <span style={{ color: TOKENS.body, fontSize: 11, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {task.output}
+            </span>
+          ) : (
+            <span style={{ color: TOKENS.muted, fontSize: 11, fontStyle: "italic" }}>No output yet</span>
+          )}
+        </div>
+        {hasDoneOutput && outputExpanded && (
+          <div style={{
+            padding: "10px 20px 12px 76px",
+            borderBottom: `1px solid rgba(30,30,46,0.5)`,
+            background: "rgba(0,212,212,0.02)",
+          }}>
+            <pre style={{
+              margin: 0, color: TOKENS.body, fontSize: 12, lineHeight: 1.6,
+              whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "inherit",
+            }}>
+              {task.output}
+            </pre>
+          </div>
         )}
       </div>
     );
@@ -503,13 +530,41 @@ function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boo
         )}
       </div>
 
-      {/* Row 2: Output */}
+      {/* Row 2: Output — collapsible when done */}
       <div style={{ paddingLeft: 4 }}>
-        <span style={{ color: TOKENS.muted, display: "block", marginBottom: 3, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Output</span>
-        {task.output ? (
-          <p style={{ margin: 0, color: TOKENS.body, fontSize: 13, lineHeight: 1.5 }}>{task.output}</p>
+        {hasDoneOutput ? (
+          <>
+            <button
+              onClick={() => setOutputExpanded(!outputExpanded)}
+              style={{
+                background: "none", border: "none", cursor: "pointer", padding: 0,
+                color: TOKENS.accent, fontSize: 11, fontWeight: 600,
+                display: "flex", alignItems: "center", gap: 4, marginBottom: outputExpanded ? 6 : 0,
+              }}
+            >
+              <span style={{ fontSize: 9, transform: outputExpanded ? "rotate(90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.15s" }}>{"\u25B6"}</span>
+              Output
+            </button>
+            {outputExpanded && (
+              <pre style={{
+                margin: 0, color: TOKENS.body, fontSize: 13, lineHeight: 1.6,
+                whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "inherit",
+                background: "rgba(0,212,212,0.03)", borderRadius: 8, padding: "10px 12px",
+                border: `1px solid rgba(0,212,212,0.08)`,
+              }}>
+                {task.output}
+              </pre>
+            )}
+          </>
         ) : (
-          <p style={{ margin: 0, color: TOKENS.muted, fontSize: 13, fontStyle: "italic" }}>No output yet</p>
+          <>
+            <span style={{ color: TOKENS.muted, display: "block", marginBottom: 3, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Output</span>
+            {task.output ? (
+              <p style={{ margin: 0, color: TOKENS.body, fontSize: 13, lineHeight: 1.5 }}>{task.output}</p>
+            ) : (
+              <p style={{ margin: 0, color: TOKENS.muted, fontSize: 13, fontStyle: "italic" }}>No output yet</p>
+            )}
+          </>
         )}
       </div>
 

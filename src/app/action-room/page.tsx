@@ -36,6 +36,9 @@ interface PipelineTask {
   status: string;
   owner: string;
   order: number;
+  output: string;
+  prompt_id: string;
+  blocker: string | null;
 }
 
 interface Suggestion {
@@ -383,6 +386,9 @@ export default function ActionRoom() {
               </div>
             </div>
 
+            {/* ── Project Deep Dive ── */}
+            <DeepDivePanel projectId={selectedId} tasks={displayTasks} />
+
             {/* ── Two-column layout: Feed + Pipeline ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* LIVE FEED */}
@@ -653,6 +659,98 @@ function VaultPanel({ entries, emptyText }: { entries: VaultEntry[]; emptyText: 
           <p className="text-xs text-[#c8d0dc] leading-relaxed">{e.text || e.learning || JSON.stringify(e)}</p>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── Deep Dive Panel ── */
+
+const DEEP_DIVE_SECTIONS = [
+  { taskSuffix: "T-0.8", emoji: "\ud83d\udcca", label: "Darwin Score", field: "score" },
+  { taskSuffix: "T-0.1", emoji: "\ud83d\udca1", label: "Concept", field: "concept" },
+  { taskSuffix: "T-0.3", emoji: "\ud83d\udc65", label: "Audience", field: "audience" },
+  { taskSuffix: "T-0.4", emoji: "\ud83c\udfaf", label: "Problem", field: "problem" },
+  { taskSuffix: "T-0.5", emoji: "\u2694\ufe0f", label: "Alternatives", field: "alternatives" },
+  { taskSuffix: "T-0.6", emoji: "\ud83d\udd11", label: "Differentiation", field: "differentiation" },
+  { taskSuffix: "T-0.7", emoji: "\ud83d\udd27", label: "Feasibility", field: "feasibility" },
+  { taskSuffix: "T-0.8", emoji: "\ud83d\udcdd", label: "Darwin Notes", field: "notes" },
+];
+
+function DeepDivePanel({ projectId, tasks }: { projectId: string; tasks: PipelineTask[] }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // Find task outputs matching the pattern T-X.Y-{projectId}
+  const sections = useMemo(() => {
+    return DEEP_DIVE_SECTIONS.map((sec) => {
+      // Try exact match: T-0.1-{projectId}
+      const exactId = `${sec.taskSuffix}-${projectId}`;
+      let task = tasks.find((t) => t.id === exactId);
+      // Fallback: find any task whose id starts with the suffix and belongs to this project
+      if (!task) {
+        task = tasks.find((t) => t.id.startsWith(sec.taskSuffix) && t.project_id === projectId);
+      }
+      return {
+        ...sec,
+        task,
+        output: task?.output || "",
+        status: task?.status || "not_started",
+      };
+    }).filter((s) => s.output); // Only show sections that have output
+  }, [tasks, projectId]);
+
+  const toggle = (field: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(field)) next.delete(field); else next.add(field);
+      return next;
+    });
+  };
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl border border-[#1e293b] overflow-hidden" style={{ background: "#111827" }}>
+      <div className="px-5 py-4 border-b border-[#1e293b]">
+        <h3 className="text-sm font-bold tracking-widest uppercase text-[#64748b]">Project Deep Dive</h3>
+      </div>
+      <div className="divide-y divide-[#1e293b]/60">
+        {sections.map((sec) => {
+          const isOpen = expanded.has(sec.field);
+          // For Darwin Score, try to extract just the score number for a highlight
+          const isScore = sec.field === "score";
+          const scoreMatch = isScore ? sec.output.match(/(\d+(?:\.\d+)?)\s*\/\s*10/) : null;
+
+          return (
+            <div key={sec.field}>
+              <button
+                onClick={() => toggle(sec.field)}
+                className="w-full flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors text-left"
+              >
+                <span className="text-sm">{sec.emoji}</span>
+                <span className="text-xs font-semibold text-white flex-1">{sec.label}</span>
+                {scoreMatch && (
+                  <span className="text-sm font-extrabold" style={{ color: "#00d4d4" }}>
+                    {scoreMatch[1]}/10
+                  </span>
+                )}
+                {!isOpen && (
+                  <span className="text-[11px] text-[#64748b] max-w-[300px] truncate hidden sm:inline">
+                    {sec.output.slice(0, 80)}...
+                  </span>
+                )}
+                <span className="text-[10px] text-[#475569]">{isOpen ? "\u25B2" : "\u25BC"}</span>
+              </button>
+              {isOpen && (
+                <div className="px-5 pb-4 pt-1 ml-8">
+                  <pre className="text-xs text-[#c8d0dc] leading-relaxed whitespace-pre-wrap font-[inherit] m-0" style={{ wordBreak: "break-word" }}>
+                    {sec.output}
+                  </pre>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
