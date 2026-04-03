@@ -47,22 +47,34 @@ const OWNER_COLOR: Record<string, string> = { newton: "#3b82f6", darwin: "#22c55
 const PILLAR_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#a855f7", "#ef4444", "#06b6d4", "#ec4899", "#6b7280"];
 const FORMAT_COLORS: Record<string, string> = { reel: "#ef4444", carousel: "#3b82f6", story: "#f59e0b", post: "#22c55e" };
 
+interface MetricTarget { metric: string; target: string; current?: string; status?: string }
+
 interface ParsedStrategy {
   primary_channel?: string;
   secondary_channel?: string;
   traffic_plan?: string;
   next_actions?: string[];
   content_rules?: string;
+  rules_structured?: Record<string, any>; // raw parsed rules object for sub-section rendering
   cadence?: string;
   kpis?: string | string[];
+  metric_targets?: MetricTarget[]; // structured success metrics
+  north_star?: string;
   current_status?: string;
 }
 
 function parseStrategy(s: Strategy): ParsedStrategy {
-  // Start with strategy JSON field if it exists
+  // Start with strategy field — could be JSON or plain text
   let parsed: ParsedStrategy = {};
   if (s.strategy) {
-    try { parsed = JSON.parse(s.strategy); } catch { /* not JSON */ }
+    try {
+      const j = JSON.parse(s.strategy);
+      if (typeof j === "object" && j !== null) parsed = j;
+      else parsed.traffic_plan = s.strategy; // parsed to non-object (shouldn't happen)
+    } catch {
+      // Plain text strategy — use as traffic_plan directly
+      parsed.traffic_plan = s.strategy;
+    }
   }
 
   // Overlay top-level fields (they may be newer)
@@ -93,34 +105,32 @@ function parseStrategy(s: Strategy): ParsedStrategy {
     }
   }
 
-  // Parse rules JSON string for content_rules if not set
-  if (!parsed.content_rules) {
-    const rules = safeParse(s.rules);
-    if (rules && typeof rules === "object" && !Array.isArray(rules)) {
+  // Parse rules JSON string — store both structured and flattened
+  const rules = safeParse(s.rules);
+  if (rules && typeof rules === "object" && !Array.isArray(rules)) {
+    parsed.rules_structured = rules;
+    if (!parsed.content_rules) {
       const parts: string[] = [];
-      // New nested format
-      if (rules.brand) parts.push("BRAND: " + (typeof rules.brand === "string" ? rules.brand : Object.entries(rules.brand).map(([k, v]) => `${k}: ${v}`).join(". ")));
-      if (rules.carousel) parts.push("CAROUSEL: " + (typeof rules.carousel === "string" ? rules.carousel : JSON.stringify(rules.carousel)));
-      if (rules.reel) parts.push("REEL: " + (typeof rules.reel === "string" ? rules.reel : JSON.stringify(rules.reel)));
-      if (rules.universal) parts.push("UNIVERSAL: " + (typeof rules.universal === "string" ? rules.universal : Object.entries(rules.universal).map(([k, v]) => `${k}: ${v}`).join(". ")));
-      // Legacy format
       if (rules.voice) parts.push("Voice: " + rules.voice);
       if (rules.visual) parts.push("Visual: " + rules.visual);
       if (parts.length > 0) parsed.content_rules = parts.join("\n\n");
+      // Mark as having rules even if content_rules string is empty — we'll render structured
     }
   }
 
-  // Parse success_metrics or metrics for KPIs if not set
-  if (!parsed.kpis) {
-    const sm = safeParse(s.success_metrics);
-    if (sm?.targets && Array.isArray(sm.targets)) {
+  // Parse success_metrics — store structured targets
+  const sm = safeParse(s.success_metrics);
+  if (sm?.targets && Array.isArray(sm.targets)) {
+    parsed.metric_targets = sm.targets;
+    if (sm.north_star) parsed.north_star = sm.north_star;
+    if (!parsed.kpis) {
       parsed.kpis = sm.targets.map((t: any) => `${t.metric}: ${t.target}${t.current ? ` (now: ${t.current})` : ""}`);
     }
-    if (!parsed.kpis) {
-      const m = safeParse(s.metrics);
-      if (m?.targets_30d && Object.keys(m.targets_30d).length > 0) {
-        parsed.kpis = Object.entries(m.targets_30d).map(([k, v]) => `${k}: ${v}`);
-      }
+  }
+  if (!parsed.kpis && !parsed.metric_targets) {
+    const m = safeParse(s.metrics);
+    if (m?.targets_30d && Object.keys(m.targets_30d).length > 0) {
+      parsed.kpis = Object.entries(m.targets_30d).map(([k, v]) => `${k}: ${v}`);
     }
   }
 
@@ -168,7 +178,7 @@ function StrategyInner() {
 
   const strategy = strategies.find((s) => s.project_id === selected);
   const parsed = strategy ? parseStrategy(strategy) : null;
-  const hasNewStrategy = parsed && (parsed.traffic_plan || (parsed.next_actions && parsed.next_actions.length > 0));
+  const hasNewStrategy = parsed && (parsed.traffic_plan || parsed.cadence || parsed.content_rules || parsed.rules_structured || parsed.kpis || parsed.metric_targets || parsed.current_status || (parsed.next_actions && parsed.next_actions.length > 0));
 
   const trafficTasks = useMemo(() => {
     return tasks
@@ -215,18 +225,66 @@ function StrategyInner() {
                 </Section>
               )}
 
-              {/* 3. RULES */}
-              {parsed!.content_rules && (
-                <Section title={"\uD83D\uDCCB Rules"}>
-                  <pre className="text-xs whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{parsed!.content_rules}</pre>
-                </Section>
+              {/* 3. RULES — structured sub-sections or plain text */}
+              {(parsed!.rules_structured || parsed!.content_rules) && (
+                <div className="rounded-lg overflow-hidden" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
+                  <div className="px-4 py-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "#00d4d4" }}>{"\uD83D\uDCCB"} Rules</h3>
+                  </div>
+                  {parsed!.rules_structured ? (
+                    <div className="border-t" style={{ borderColor: "#1e1e2e" }}>
+                      {Object.entries(parsed!.rules_structured).map(([key, val]) => {
+                        if (!val) return null;
+                        const label = key.charAt(0).toUpperCase() + key.slice(1);
+                        let content: string;
+                        if (typeof val === "string") content = val;
+                        else if (Array.isArray(val)) content = val.join("\n");
+                        else if (typeof val === "object") content = Object.entries(val).map(([k, v]) => `${k}: ${v}`).join("\n");
+                        else content = String(val);
+                        return (
+                          <Collapsible key={key} title={label} isOpen={!collapsed.has(`rule-${key}`)} onToggle={() => toggle(`rule-${key}`)}>
+                            <pre className="text-[11px] whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{content}</pre>
+                          </Collapsible>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="px-4 pb-4">
+                      <pre className="text-xs whitespace-pre-wrap leading-relaxed" style={{ color: "#94a3b8", fontFamily: "inherit" }}>{parsed!.content_rules}</pre>
+                    </div>
+                  )}
+                </div>
               )}
 
-              {/* 4. SUCCESS METRICS */}
-              {parsed!.kpis && (
+              {/* 4. SUCCESS METRICS — target cards with status colors */}
+              {(parsed!.metric_targets || parsed!.kpis) && (
                 <div className="rounded-lg p-4" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
                   <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#00d4d4" }}>{"\uD83D\uDCCA"} Success Metrics</h3>
-                  {Array.isArray(parsed!.kpis) ? (
+                  {parsed!.north_star && (
+                    <div className="mb-3 px-3 py-2 rounded-lg" style={{ background: "rgba(0,212,212,0.06)", border: "1px solid rgba(0,212,212,0.15)" }}>
+                      <span className="text-[9px] uppercase tracking-wider font-bold" style={{ color: "#475569" }}>North Star: </span>
+                      <span className="text-xs font-semibold" style={{ color: "#00d4d4" }}>{parsed!.north_star}</span>
+                    </div>
+                  )}
+                  {parsed!.metric_targets ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {parsed!.metric_targets.map((t, i) => {
+                        const statusColor = t.status === "met" ? "#22c55e" : t.status === "in_progress" ? "#f59e0b" : "#ef4444";
+                        const statusBg = t.status === "met" ? "rgba(34,197,94,0.08)" : t.status === "in_progress" ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)";
+                        return (
+                          <div key={i} className="px-3 py-2.5 rounded-lg" style={{ background: statusBg, border: `1px solid ${statusColor}20` }}>
+                            <div className="text-xs font-semibold mb-1" style={{ color: "#e0e0ee" }}>{t.metric}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-mono font-bold" style={{ color: statusColor }}>{t.target}</span>
+                              {t.current && (
+                                <span className="text-[10px]" style={{ color: "#6b6b80" }}>now: {t.current}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : Array.isArray(parsed!.kpis) ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {parsed!.kpis.map((kpi, i) => (
                         <div key={i} className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ background: "rgba(0,212,212,0.04)", border: "1px solid rgba(0,212,212,0.1)" }}>
