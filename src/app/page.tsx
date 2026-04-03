@@ -18,6 +18,12 @@ interface DarwinScore {
   verdict: string;
 }
 
+interface NextAction {
+  name: string;
+  owner: string;
+  taskId: string;
+}
+
 interface Project {
   id: string;
   name: string;
@@ -30,6 +36,7 @@ interface Project {
   blockedTasks: number;
   tasks: Task[];
   darwinScore: DarwinScore | null;
+  nextAction: NextAction | null;
 }
 
 interface Idea {
@@ -142,8 +149,9 @@ export default function WarRoom() {
       if (!res.ok) return;
       const store = await res.json();
 
-      // Fetch all tasks to extract Darwin gate scores
-      let allTasks: { id: string; project_id: string; stage: string; output: string; order: number }[] = [];
+      // Fetch all tasks to extract Darwin gate scores + next actions
+      const stageOrder = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
+      let allTasks: { id: string; project_id: string; stage: string; output: string; order: number; status: string; owner: string; name: string }[] = [];
       try {
         const tasksRes = await fetch("/api/pipeline-tasks", {
           method: "POST",
@@ -156,9 +164,7 @@ export default function WarRoom() {
         }
       } catch { /* ignore */ }
 
-      // Build a map of project -> latest Darwin gate score
-      // Gate tasks follow pattern T-X.8 or T-X.9 — pick the highest stage score
-      const stageOrder = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
+      // Build score map
       const scoreMap: Record<string, { score: number; verdict: string; stageIdx: number }> = {};
       for (const t of allTasks) {
         if (!t.output || t.project_id === "_template") continue;
@@ -172,6 +178,24 @@ export default function WarRoom() {
             }
           }
         } catch { /* not JSON */ }
+      }
+
+      // Build next action map — first undone task per project (by stage order, then task order)
+      const nextMap: Record<string, NextAction> = {};
+      for (const pid of [...new Set(allTasks.map((t) => t.project_id))]) {
+        if (pid === "_template") continue;
+        const projectTasks = allTasks
+          .filter((t) => t.project_id === pid && t.status !== "done" && t.status !== "skipped")
+          .sort((a, b) => {
+            const sa = stageOrder.indexOf(a.stage);
+            const sb = stageOrder.indexOf(b.stage);
+            if (sa !== sb) return sa - sb;
+            return a.order - b.order;
+          });
+        if (projectTasks.length > 0) {
+          const t = projectTasks[0];
+          nextMap[pid] = { name: t.name, owner: t.owner, taskId: t.id };
+        }
       }
 
       const apiProjects: Project[] = (store.projects || []).map((p: Record<string, unknown>) => {
@@ -191,6 +215,7 @@ export default function WarRoom() {
           blockedTasks: 0,
           tasks: [],
           darwinScore,
+          nextAction: nextMap[projectId] || null,
         };
       });
 
@@ -414,8 +439,21 @@ function ProjectCard({ project }: { project: Project }) {
         </div>
       </div>
 
-      {/* Bottleneck line + signals */}
+      {/* Next action + bottleneck */}
       <div className="px-4 py-3 border-t border-[#1e293b]/60">
+        {project.nextAction && (() => {
+          const o = project.nextAction.owner;
+          const color = o === "ginge" ? "#ef4444" : o === "claude-code" ? "#3b82f6" : "#22c55e";
+          const dot = o === "ginge" ? "bg-red-400" : o === "claude-code" ? "bg-blue-400" : "bg-green-400";
+          return (
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+              <span className="text-[10px] font-semibold truncate" style={{ color }}>
+                Next: {project.nextAction.name} → {project.nextAction.owner}
+              </span>
+            </div>
+          );
+        })()}
         <p className="text-xs text-[#94a3b8] leading-relaxed truncate">
           {project.bottleneck}
         </p>
