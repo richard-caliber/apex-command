@@ -57,21 +57,27 @@ export default function CalendarPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const strategyRaw = strategies.find((s) => s.project_id === selected);
-  // Safely parse schedule/production which may be JSON strings
-  const strategy = strategyRaw ? {
-    ...strategyRaw,
-    schedule: (() => {
-      const s = strategyRaw.schedule;
-      if (typeof s === "string") { try { return JSON.parse(s); } catch { return { batch_day: "", days: [], times: [], format_rotation: {} }; } }
-      return s || { batch_day: "", days: [], times: [], format_rotation: {} };
-    })(),
-    production: (() => {
-      const p = strategyRaw.production;
-      if (typeof p === "string") { try { return JSON.parse(p); } catch { return []; } }
-      return Array.isArray(p) ? p : [];
-    })(),
-  } : null;
+  const strategyRaw = strategies.find((s: Strategy) => s.project_id === selected);
+  // Safely parse schedule/production which may be JSON strings with different shapes
+  const strategy = strategyRaw ? (() => {
+    const defaults = { batch_day: "", days: [] as string[], times: [] as string[], format_rotation: {} as Record<string, string> };
+    let sched = defaults;
+    try {
+      const raw = typeof strategyRaw.schedule === "string" ? JSON.parse(strategyRaw.schedule) : strategyRaw.schedule;
+      sched = { ...defaults, ...raw };
+      // Ensure arrays exist even if the new format doesn't have them
+      if (!Array.isArray(sched.days)) sched.days = [];
+      if (!sched.format_rotation || typeof sched.format_rotation !== "object") sched.format_rotation = {};
+    } catch { /* use defaults */ }
+
+    let prod: { step: string; owner: string; time: string }[] = [];
+    try {
+      const raw = typeof strategyRaw.production === "string" ? JSON.parse(strategyRaw.production) : strategyRaw.production;
+      prod = Array.isArray(raw) ? raw : [];
+    } catch { /* use empty */ }
+
+    return { ...strategyRaw, schedule: sched, production: prod };
+  })() : null;
   const weekStart = getWeekStart(new Date());
   weekStart.setDate(weekStart.getDate() + weekOffset * 7);
 
@@ -105,7 +111,7 @@ export default function CalendarPage() {
         {DAYS.map((day, i) => {
           const date = weekDates[i];
           const dateStr = date.toISOString().split("T")[0];
-          const isBatch = strategy?.schedule.batch_day === day;
+          const isBatch = strategy?.schedule.batch_day?.toLowerCase() === day;
           const isSunday = day === "sunday";
           const isScheduled = strategy?.schedule.days.includes(day);
           const dayQueue = projectQueue.filter((q) => q.scheduled_date === dateStr);
