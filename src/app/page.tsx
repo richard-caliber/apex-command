@@ -354,25 +354,29 @@ function ProjectCard({ project }: { project: Project }) {
           </span>
         </div>
 
-        {/* Status badge + Darwin score — top right */}
-        <div className="absolute top-3 right-3 flex items-center gap-1.5">
-          {project.darwinScore && (() => {
-            const s = project.darwinScore.score;
-            const color = s >= 7 ? "#22c55e" : s >= 4 ? "#f59e0b" : "#ef4444";
-            const label = s >= 7 ? "PROCEED" : s >= 4 ? "ITERATE" : "PARKED";
-            return (
-              <span
-                className="text-[9px] font-bold tracking-wider px-2 py-0.5 rounded backdrop-blur-sm"
-                style={{ color, background: `${color}20`, border: `1px solid ${color}40` }}
-              >
-                {s}/10 {label}
-              </span>
-            );
-          })()}
+        {/* Status badge — top right */}
+        <div className="absolute top-3 right-3">
           <span className={`text-[9px] font-bold tracking-wider ${statusCfg.color} ${statusCfg.bg} px-2 py-0.5 rounded`}>
             {statusCfg.label}
           </span>
         </div>
+
+        {/* Darwin Score — top left below stage */}
+        {project.darwinScore && (() => {
+          const s = project.darwinScore.score;
+          const bg = s >= 7 ? "rgba(34,197,94,0.85)" : s >= 4 ? "rgba(245,158,11,0.85)" : "rgba(239,68,68,0.85)";
+          const label = s >= 7 ? "PROCEED" : s >= 4 ? "ITERATE" : "PARKED";
+          return (
+            <div className="absolute top-10 left-3">
+              <span
+                className="text-[10px] font-extrabold tracking-wider px-2 py-0.5 rounded text-white backdrop-blur-sm"
+                style={{ background: bg }}
+              >
+                {s}/10 {label}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Name + Metric — bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
