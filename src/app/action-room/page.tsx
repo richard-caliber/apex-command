@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 /* ── Types ── */
 
@@ -285,14 +286,35 @@ export default function ActionRoom() {
 
   return (
     <div className="min-h-dvh" style={{ background: "#0a0a0f" }}>
-      {/* ── Header ── */}
-      <header className="border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-4">
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4 flex-wrap">
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">ACTION ROOM</h1>
+      {/* ── Header with shared nav ── */}
+      <header className="hidden sm:block border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1800px] mx-auto flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-6">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+              APEX COMMAND CENTRE
+            </h1>
+            <nav className="hidden sm:flex items-center gap-4">
+              <Link href="/" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">War Room</Link>
+              <Link href="/finance" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Finance</Link>
+              <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompt Library</Link>
+              <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
+              <Link href="/vault" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Keys</Link>
+              <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Map Room</Link>
+              <Link href="/content-factory" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Content Factory</Link>
+              <span className="text-sm text-white font-medium">Action Room</span>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Project Selector ── */}
+      <div className="border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-[1800px] mx-auto flex items-center gap-4">
+          <span className="text-xs font-bold tracking-widest uppercase text-[#64748b]">Project</span>
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="text-sm bg-[#111827] border border-[#1e293b] rounded-lg px-4 py-2.5 text-white min-w-[240px] cursor-pointer focus:outline-none focus:border-[#00d4d4]"
+            className="text-sm bg-[#111827] border border-[#1e293b] rounded-lg px-4 py-2.5 text-white min-w-[280px] cursor-pointer focus:outline-none focus:border-[#00d4d4]"
           >
             <option value="">Select a project...</option>
             {projects.map((p) => (
@@ -300,7 +322,7 @@ export default function ActionRoom() {
             ))}
           </select>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {!selectedId ? (
