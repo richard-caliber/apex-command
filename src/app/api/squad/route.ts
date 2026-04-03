@@ -1,104 +1,118 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
-const KV_KEY = "apex:squad";
+const KV_KEY = "apex:squad:v3";
 const TOKEN = "apex-live-2026";
 
-interface Capability {
+export interface WorkspaceFile {
   name: string;
-  detail: string;
+  path?: string;
+  description?: string;
+  owner?: string;
+  size: string;
+  updated_at: string;
+  status?: "current" | "stale" | "orphan";
 }
 
-interface Bot {
+export interface Agent {
+  id: string;
+  name: string;
   emoji: string;
-  name: string;
   role: string;
-  capabilities: Capability[];
-  status: string;
+  title: string;
+  department: string;
+  reports_to: string;
+  status: "active" | "idle" | "blocked" | "error";
+  current_model: string;
+  model_strategy: string;
+  current_task: string;
+  task_since: string;
+  layout: { row: number; col: number; x: number; y: number; connects_to: string[] };
+  preferred_models?: { light: string; normal: string; deep: string };
+  identity_text?: string;
+  soul_text: string;
+  capabilities_text?: string;
+  responsibilities_text?: string;
+  memory_text: string;
+  memory_updated_at?: string;
+  workspace_files: WorkspaceFile[];
+  current_tasks?: { id: string; text: string; status: string; project?: string }[];
+  output_log?: { timestamp: string; task_id: string; task_name: string; summary: string; status: string }[];
+  blockers?: { description: string; waiting_on: string; since?: string }[];
+  last_action?: string;
+  last_updated: string;
 }
 
-interface UpcomingItem {
-  status: "blocked" | "in-progress" | "ready";
-  name: string;
-  unlocks: string;
-  owner: string;
+export interface SquadData {
+  agents: Agent[];
+  lastUpdated: string;
 }
 
-interface SquadData {
-  bots: Bot[];
-  upcoming: UpcomingItem[];
-}
-
-const SEED: SquadData = {
-  bots: [
-    {
-      emoji: "🔬",
-      name: "Newton",
-      role: "Research & Intelligence",
-      capabilities: [
-        { name: "X/Twitter monitoring", detail: "via Xpoz" },
-        { name: "Instagram account analysis", detail: "via Xpoz" },
-        { name: "Reddit monitoring", detail: "via Xpoz" },
-        { name: "TikTok trend tracking", detail: "via Xpoz" },
-        { name: "YouTube video analysis", detail: "yt-dlp" },
-        { name: "Web search + deep research", detail: "" },
-        { name: "Competitor teardowns", detail: "" },
-        { name: "Market analysis + pricing strategy", detail: "" },
-      ],
-      status: "All live",
-    },
-    {
-      emoji: "🧭",
-      name: "Atlas",
-      role: "Strategy & Execution",
-      capabilities: [
-        { name: "Claude Code builds + Vercel deploys", detail: "" },
-        { name: "Content creation", detail: "carousels + reels" },
-        { name: "Apex dashboard updates via API", detail: "" },
-        { name: "IG auto-publishing", detail: "Graph API" },
-        { name: "Inter-squad coordination", detail: "" },
-        { name: "Memory management", detail: "" },
-      ],
-      status: "All live",
-    },
-    {
-      emoji: "🔄",
-      name: "Darwin",
-      role: "Optimisation & Systems",
-      capabilities: [
-        { name: "Content review + quality gates", detail: "" },
-        { name: "Cron job management", detail: "" },
-        { name: "Python script execution", detail: "" },
-        { name: "System monitoring", detail: "" },
-        { name: "n8n workflow design", detail: "" },
-      ],
-      status: "All live",
-    },
-  ],
-  upcoming: [
-    { status: "blocked", name: "WebMCP Chrome extension", unlocks: "Darwin gets browser control → Reddit posting automation", owner: "👤" },
-    { status: "blocked", name: "Sign up xpoz.ai", unlocks: "Unlocks X/TikTok/IG/Reddit for all bots", owner: "👤" },
-    { status: "blocked", name: "YouTube Data API key", unlocks: "Newton gets YouTube search + stats", owner: "👤" },
-    { status: "blocked", name: "Create throwaway X account", unlocks: "Newton gets authenticated thread pulls", owner: "👤" },
-    { status: "in-progress", name: "n8n cross-posting pipeline", unlocks: "Every IG post auto-distributes to TikTok + YouTube Shorts", owner: "🔄" },
-    { status: "in-progress", name: "Twikit setup", unlocks: "Deep X thread analysis", owner: "🔬" },
-    { status: "in-progress", name: "last30days.py unified", unlocks: "One command searches all platforms", owner: "🔬" },
-    { status: "ready", name: "Blotato cross-posting", unlocks: "Content auto-distributes everywhere", owner: "🧭" },
-    { status: "ready", name: "smux", unlocks: "Claude Code + Codex shared terminal", owner: "🧭" },
-    { status: "ready", name: "Ruflo", unlocks: "Full agent swarm orchestration", owner: "🧭" },
-  ],
+// Ginge — the human founder node
+const GINGE: Agent = {
+  id: "ginge",
+  name: "Ginge",
+  emoji: "\uD83D\uDC51",
+  role: "Founder & Commander",
+  title: "The Boss",
+  department: "Command",
+  reports_to: "",
+  status: "active",
+  current_model: "Human Brain",
+  model_strategy: "Delegates to agents, reviews outputs, makes final calls",
+  current_task: "Building Apex Command Centre",
+  task_since: new Date().toISOString(),
+  layout: { row: 0, col: 1, x: 50, y: 8, connects_to: ["atlas", "newton", "darwin"] },
+  soul_text: "",
+  memory_text: "",
+  workspace_files: [],
+  last_updated: new Date().toISOString(),
 };
+
+// Layout positions for the 3 AI agents
+const LAYOUTS: Record<string, Agent["layout"]> = {
+  atlas:  { row: 1, col: 1, x: 50, y: 42, connects_to: ["ginge", "newton", "darwin"] },
+  newton: { row: 2, col: 0, x: 22, y: 78, connects_to: ["ginge", "atlas"] },
+  darwin: { row: 2, col: 2, x: 78, y: 78, connects_to: ["ginge", "atlas"] },
+};
+
+async function buildSeed(): Promise<SquadData> {
+  try {
+    const raw = await readFile(join(process.cwd(), "data", "squad.json"), "utf-8");
+    const parsed = JSON.parse(raw);
+    const agents: Agent[] = [GINGE];
+
+    for (const a of parsed.agents || []) {
+      agents.push({
+        ...a,
+        layout: LAYOUTS[a.id] || { row: 3, col: 1, x: 50, y: 90, connects_to: [] },
+        last_updated: a.task_since || new Date().toISOString(),
+        memory_updated_at: a.task_since || "",
+      });
+    }
+
+    return { agents, lastUpdated: new Date().toISOString() };
+  } catch {
+    // Fallback if file not found
+    return {
+      agents: [GINGE],
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+}
 
 async function getData(): Promise<SquadData> {
   const cached = await kv.get<SquadData>(KV_KEY);
   if (cached) return cached;
-  await kv.set(KV_KEY, SEED);
-  return SEED;
+  const seed = await buildSeed();
+  await kv.set(KV_KEY, seed);
+  return seed;
 }
 
 export async function GET() {
-  const data = await getData();
-  return NextResponse.json(data);
+  return NextResponse.json(await getData());
 }
 
 export async function PUT(req: NextRequest) {
@@ -106,10 +120,35 @@ export async function PUT(req: NextRequest) {
   if (auth !== `Bearer ${TOKEN}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   const body = await req.json();
-  const existing = await getData();
-  const merged = { ...existing, ...body };
-  await kv.set(KV_KEY, merged);
-  return NextResponse.json(merged);
+  body.lastUpdated = new Date().toISOString();
+  await kv.set(KV_KEY, body);
+  return NextResponse.json(body);
+}
+
+export async function PATCH(req: NextRequest) {
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${TOKEN}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { agentId, ...updates } = await req.json();
+  if (!agentId) {
+    return NextResponse.json({ error: "agentId required" }, { status: 400 });
+  }
+
+  const data = await getData();
+  const agent = data.agents.find((a) => a.id === agentId);
+  if (!agent) {
+    return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+  }
+
+  if ("memory_text" in updates && updates.memory_text !== agent.memory_text) {
+    updates.memory_updated_at = new Date().toISOString();
+  }
+
+  Object.assign(agent, updates, { last_updated: new Date().toISOString() });
+  data.lastUpdated = new Date().toISOString();
+  await kv.set(KV_KEY, data);
+  return NextResponse.json(agent);
 }

@@ -6,24 +6,24 @@ import { useState, useEffect } from "react";
 
 const TABS = [
   { name: "Overview", href: "/map-room" },
-  { name: "Ideas", href: "/map-room/ideas" },
   { name: "Pipeline", href: "/map-room/pipeline" },
   { name: "Tasks", href: "/map-room/tasks" },
   { name: "Data", href: "/map-room/data" },
-  { name: "Social", href: "/map-room/social" },
+  { name: "Ideas", href: "/map-room/ideas" },
   { name: "IP Vault", href: "/map-room/ip-vault" },
-  { name: "Capabilities", href: "/map-room/capabilities" },
+  { name: "Automation Map", href: "/map-room/automation-map" },
   { name: "Flow Map", href: "/map-room/flow-map" },
   { name: "Heartbeat", href: "/map-room/heartbeat" },
 ];
 
 const TOP_NAV = [
   { name: "War Room", href: "/" },
-  { name: "Pipeline", href: "/pipeline" },
   { name: "Finance", href: "/finance" },
-  { name: "Prompts", href: "/prompts" },
+  { name: "Prompt Library", href: "/prompts" },
   { name: "Squad", href: "/squad" },
+  { name: "Keys", href: "/vault" },
   { name: "Map Room", href: "/map-room", active: true },
+  { name: "Content Factory", href: "/content-factory" },
 ];
 
 export default function MapRoomLayout({ children }: { children: React.ReactNode }) {
@@ -43,7 +43,7 @@ export default function MapRoomLayout({ children }: { children: React.ReactNode 
   return (
     <div className="min-h-dvh" style={{ background: "#0a0a0f", color: "#f1f5f9" }}>
       {/* Top Nav */}
-      <header className="border-b px-4 sm:px-6 lg:px-8 py-4" style={{ borderColor: "#1e1e2e" }}>
+      <header className="hidden sm:block border-b px-4 sm:px-6 lg:px-8 py-4" style={{ borderColor: "#1e1e2e" }}>
         <div className="max-w-[1800px] mx-auto flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-6">
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">APEX COMMAND CENTRE</h1>

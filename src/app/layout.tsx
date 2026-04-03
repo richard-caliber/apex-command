@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { MobileNav } from "./mobile-nav";
 
 export const metadata: Metadata = {
   title: "APEX COMMAND CENTRE",
@@ -17,7 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased pb-16 sm:pb-0">
+        {children}
+        <MobileNav />
+      </body>
     </html>
   );
 }

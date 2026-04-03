@@ -15,17 +15,18 @@ export default function FinancePage() {
     <div className="min-h-dvh relative">
       <Particles />
 
-      <header className="relative z-10 border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-4">
+      <header className="hidden sm:block relative z-10 border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-6">
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">APEX COMMAND CENTRE</h1>
             <nav className="flex items-center gap-4">
               <Link href="/" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">War Room</Link>
-              <Link href="/pipeline" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Pipeline</Link>
               <span className="text-sm text-white font-medium">Finance</span>
-              <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompts</Link>
+              <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompt Library</Link>
               <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
+              <Link href="/vault" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Keys</Link>
               <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Map Room</Link>
+              <Link href="/content-factory" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Content Factory</Link>
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm text-[#94a3b8]">

@@ -1,50 +1,48 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /* ─────────────────────────── TYPES ─────────────────────────── */
 
-interface WorkflowTask {
+interface PipelineTask {
   id: string;
+  stage: string;
+  project_id: string;
   name: string;
-  lane: string;
+  description: string;
+  status: "not_started" | "in_progress" | "done" | "blocked" | "skipped";
+  automation: "manual" | "semi-auto" | "fully-auto";
   owner: string;
-  why: string;
-  prompt?: { text: string; version: string };
-  expectedOutput?: string;
-  qualityGate?: string;
-  nextTask?: string;
-  loopTo?: string;
-  automationLevel: "Manual" | "Semi-Auto" | "Fully Auto";
-  founderRequired: boolean;
+  model: string;
+  prompt_id: string;
+  output: string;
+  quality_gate: string;
+  blocker: string | null;
+  next_task: string;
+  order: number;
+  created_at: string;
+  updated_at: string;
 }
 
-interface ActiveProject {
+interface PipelineStage {
   id: string;
   name: string;
-  currentStage: number;
-  status: "on-track" | "blocked" | "stalled";
-  currentTaskId: string;
-  completedTaskIds: string[];
-  blockedTaskIds: string[];
-  blockerNote?: string;
-  missingOutputs: string[];
-  nextAction: string;
+  order: number;
+  objective: string;
+  entry_criteria: string;
+  exit_criteria: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  stage: string;
+  status: string;
 }
 
 /* ─────────────────────────── CONSTANTS ─────────────────────── */
 
-const STAGES = [
-  { id: -1, label: "Inbox" },
-  { id: 0, label: "Idea" },
-  { id: 1, label: "Validation" },
-  { id: 2, label: "Design" },
-  { id: 3, label: "MVP" },
-  { id: 4, label: "Traffic" },
-  { id: 5, label: "Conversion" },
-  { id: 6, label: "Delivery" },
-  { id: 7, label: "Scale" },
-];
+const STAGE_ORDER = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
 
 const TOKENS = {
   bg: "#0a0a0f",
@@ -63,245 +61,233 @@ const TOKENS = {
   orange: "#fb923c",
 };
 
-const LANE_COLORS: Record<string, string> = {
-  Research: TOKENS.blue,
-  Content: TOKENS.purple,
-  Design: TOKENS.pink,
-  Dev: TOKENS.accent,
-  QA: TOKENS.orange,
-  Data: TOKENS.blue,
-  Growth: TOKENS.success,
-  Distribution: TOKENS.purple,
-  Fulfilment: TOKENS.orange,
-  Support: TOKENS.pink,
-  Delivery: TOKENS.accent,
-  Ops: TOKENS.muted,
+const STATUS_CFG: Record<string, { icon: string; label: string; color: string }> = {
+  not_started: { icon: "\u2B1C", label: "Not Started", color: TOKENS.muted },
+  in_progress: { icon: "\uD83D\uDFE1", label: "In Progress", color: TOKENS.warn },
+  done: { icon: "\u2705", label: "Done", color: TOKENS.success },
+  blocked: { icon: "\uD83D\uDD34", label: "Blocked", color: TOKENS.error },
+  skipped: { icon: "\u26A0\uFE0F", label: "Skipped", color: TOKENS.warn },
 };
 
-const AUTO_COLORS: Record<string, { color: string; bg: string }> = {
-  Manual: { color: TOKENS.muted, bg: "rgba(107,107,128,0.15)" },
-  "Semi-Auto": { color: TOKENS.warn, bg: "rgba(245,158,11,0.15)" },
-  "Fully Auto": { color: TOKENS.success, bg: "rgba(34,197,94,0.15)" },
+const OWNER_EMOJI: Record<string, string> = {
+  ginge: "\uD83D\uDC51",
+  atlas: "\uD83C\uDFAF",
+  darwin: "\uD83D\uDD2C",
+  newton: "\uD83E\uDDE0",
+  "claude-code": "\uD83E\uDD16",
+  system: "\u2699\uFE0F",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  "on-track": { label: "On Track", color: TOKENS.success, bg: "rgba(34,197,94,0.1)" },
-  blocked: { label: "Blocked", color: TOKENS.error, bg: "rgba(239,68,68,0.1)" },
-  stalled: { label: "Stalled", color: TOKENS.warn, bg: "rgba(245,158,11,0.1)" },
-};
-
-/* ─────────────────────────── MASTER WORKFLOWS ─────────────────── */
-
-const MASTER_WORKFLOWS: Record<number, WorkflowTask[]> = {
-  [-1]: [
-    { id: "inbox-1", name: "Capture Idea", lane: "Ops", owner: "Ginge", why: "Raw ideas need a single capture point", expectedOutput: "Idea card", qualityGate: "None", nextTask: "Tag & Categorise", automationLevel: "Manual", founderRequired: true },
-    { id: "inbox-2", name: "Tag & Categorise", lane: "Ops", owner: "Atlas", why: "Categorisation enables prioritisation", expectedOutput: "Tagged idea", qualityGate: "None", nextTask: "Move to Idea stage", automationLevel: "Semi-Auto", founderRequired: false },
-  ],
-  [0]: [
-    { id: "idea-1", name: "Write Problem Statement", lane: "Research", owner: "Ginge", why: "Forces clarity on what problem we solve", expectedOutput: "1-paragraph problem statement", qualityGate: "Founder approval", nextTask: "Score Opportunity", automationLevel: "Manual", founderRequired: true },
-    { id: "idea-2", name: "Score Opportunity", lane: "Research", owner: "Newton", why: "Quantify potential before investing time", expectedOutput: "Opportunity score (1-10)", qualityGate: "Score 7+", nextTask: "Move to Validation", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "idea-3", name: "Kill or Proceed Decision", lane: "Ops", owner: "Ginge", why: "Gate prevents wasted effort on weak ideas", expectedOutput: "Go/No-go decision", qualityGate: "Founder decision", nextTask: "Move to Validation", automationLevel: "Manual", founderRequired: true },
-  ],
-  [1]: [
-    { id: "val-1", name: "Extract Pain Signals", lane: "Research", owner: "Newton", why: "Real language from real people validates demand", prompt: { text: "Analyze Reddit, forums, and review sites for the target niche. Extract:\n1. Exact phrases people use to describe their pain\n2. Frequency of complaints\n3. Emotional intensity (1-10)\n4. Existing solutions mentioned and why they fail\n\nFormat as a Pain Language Bank with columns:\n| Pain Phrase | Source | Frequency | Intensity | Failed Solution |", version: "v1.2" }, expectedOutput: "Pain Language Bank", qualityGate: "Darwin 8/10+", nextTask: "Generate Hooks", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "val-2", name: "Competitor Analysis", lane: "Research", owner: "Newton", why: "Know the landscape before entering it", prompt: { text: "Research the top 10 competitors in this space. For each:\n1. Product name & URL\n2. Pricing model & price points\n3. Key features (top 5)\n4. Weaknesses (from reviews)\n5. Traffic estimate (SimilarWeb)\n6. Content strategy summary\n\nFormat as structured competitor matrix.", version: "v1.0" }, expectedOutput: "Competitor Report", qualityGate: "None", nextTask: "Market Sizing", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "val-3", name: "Market Sizing", lane: "Research", owner: "Newton", why: "Size determines if the opportunity is worth pursuing", expectedOutput: "TAM/SAM/SOM estimate", qualityGate: "Founder review", nextTask: "Stage Decision", automationLevel: "Semi-Auto", founderRequired: true },
-    { id: "val-4", name: "Generate Hooks", lane: "Content", owner: "Atlas", why: "Hooks test whether pain translates to attention", prompt: { text: "Using the Pain Language Bank, generate 12 hook variants:\n- 4x Question hooks\n- 4x Statement hooks  \n- 4x Story hooks\n\nEach hook must:\n1. Use exact pain language from the bank\n2. Be under 15 words\n3. Create curiosity gap\n4. Feel native to the platform (Instagram/TikTok)\n\nRank by predicted engagement.", version: "v2.1" }, expectedOutput: "Hook Bank", qualityGate: "Darwin selects top 3", nextTask: "Test Hooks", automationLevel: "Fully Auto", founderRequired: false },
-  ],
-  [2]: [
-    { id: "des-1", name: "Define User Journey", lane: "Design", owner: "Atlas", why: "Map the complete experience before building anything", expectedOutput: "User flow diagram", qualityGate: "Founder approval", nextTask: "Write Report Template", automationLevel: "Semi-Auto", founderRequired: true },
-    { id: "des-2", name: "Write Report Template", lane: "Content", owner: "Atlas", why: "Personalised reports convert browsers to buyers", prompt: { text: "Generate a personalised audit report template with:\n1. Dynamic greeting using {name}\n2. 9 scored sections with {score}/10 ratings\n3. Personalised recommendations per section\n4. Executive summary paragraph\n5. Call-to-action with urgency element\n\nTone: Professional but direct. No fluff.\nFormat: HTML template with Tailwind classes.", version: "v1.3" }, expectedOutput: "Report template", qualityGate: "Darwin 8/10+", nextTask: "Build Report Page", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "des-3", name: "Build Report Page", lane: "Dev", owner: "Claude Code", why: "The report page IS the product for audit-style businesses", prompt: { text: "Build a modern Next.js page that renders personalised audit reports.\n\nRequirements:\n- Server-side rendering with dynamic data\n- 9-section layout with animated score reveals\n- Mobile-first responsive design\n- Print-friendly CSS\n- < 1 second LCP\n- Tailwind + inline styles only (no CSS files)\n\nStack: Next.js 14, TypeScript, Tailwind CSS", version: "v2.0" }, expectedOutput: "Deployed page", qualityGate: "<1s LCP", nextTask: "Client Demo", automationLevel: "Semi-Auto", founderRequired: false },
-  ],
-  [3]: [
-    { id: "mvp-1", name: "Define MVP Scope", lane: "Dev", owner: "Ginge", why: "Scope creep kills MVPs — define the minimum", expectedOutput: "MVP feature list", qualityGate: "Founder sign-off", nextTask: "Build Core Feature", automationLevel: "Manual", founderRequired: true },
-    { id: "mvp-2", name: "Build Core Feature", lane: "Dev", owner: "Claude Code", why: "Ship the one thing that matters", expectedOutput: "Deployed feature", qualityGate: "Works end-to-end", nextTask: "User Test", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "mvp-3", name: "User Test", lane: "QA", owner: "Ginge", why: "Real users find real problems", expectedOutput: "Feedback log", qualityGate: "5 users tested", nextTask: "Iterate or Advance", automationLevel: "Manual", founderRequired: true },
-  ],
-  [4]: [
-    { id: "traf-1", name: "Create Carousel Copy", lane: "Content", owner: "Atlas", why: "Carousels drive saves and shares — the growth engine", prompt: { text: "Write a 7-slide Instagram carousel:\n\nSlide 1: Hook (use top hook from Hook Bank)\nSlide 2: Problem amplification\nSlide 3: Common mistake #1\nSlide 4: Common mistake #2  \nSlide 5: The shift / insight\nSlide 6: The solution framework\nSlide 7: CTA with urgency\n\nRules:\n- Max 30 words per slide\n- Each slide must standalone\n- Use power words from Pain Language Bank\n- End every slide with a reason to swipe", version: "v3.0" }, expectedOutput: "Carousel copy", qualityGate: "Darwin 8/10+", nextTask: "Quality Gate Review", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "traf-2", name: "Quality Gate Review", lane: "QA", owner: "Darwin", why: "Catch weak content before it goes live and wastes reach", prompt: { text: "Review this carousel against the quality checklist:\n\n1. Hook score (1-10): Does slide 1 stop the scroll?\n2. Flow score (1-10): Does each slide compel a swipe?\n3. Value score (1-10): Would someone save this?\n4. CTA score (1-10): Is the action clear?\n5. Brand score (1-10): Consistent voice and visual?\n\nOverall: Calculate average. Below 8 = FAIL with specific fixes.\nAbove 8 = PASS with optional improvements.", version: "v2.0" }, expectedOutput: "Rating + fixes", qualityGate: "8/10+ pass", nextTask: "Generate Images", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "traf-3", name: "Generate Images", lane: "Content", owner: "Atlas", why: "Visual content gets 2x engagement vs text-only", expectedOutput: "7 carousel images", qualityGate: "Brand check", nextTask: "Publish Content", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "traf-4", name: "Publish Content", lane: "Distribution", owner: "Atlas", why: "Consistent publishing builds algorithmic trust", prompt: { text: "Publish the carousel via Instagram Graph API:\n1. Upload images to container\n2. Create carousel container\n3. Publish with caption\n4. Verify post is live\n5. Log post ID, timestamp, and URL\n\nCaption rules:\n- First line = hook (no hashtags)\n- Line break after hook\n- 3-5 value bullets\n- CTA on final line\n- 20-30 hashtags in first comment", version: "v1.5" }, expectedOutput: "Live post", qualityGate: "Post confirmed", nextTask: "Analyze Performance", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "traf-5", name: "Analyze Performance", lane: "Data", owner: "Darwin", why: "Data-driven iteration beats guessing", expectedOutput: "Engagement metrics", qualityGate: "None", nextTask: "Create Carousel Copy", loopTo: "Create Carousel Copy", automationLevel: "Fully Auto", founderRequired: false },
-  ],
-  [5]: [
-    { id: "conv-1", name: "Funnel Analysis", lane: "Data", owner: "Atlas", why: "Find the biggest leak before optimising", prompt: { text: "Analyze the full conversion funnel:\n1. Landing page views -> CTA clicks (% drop-off)\n2. CTA clicks -> Form starts (% drop-off)\n3. Form starts -> Form completes (% drop-off)\n4. Form completes -> Payment page (% drop-off)\n5. Payment page -> Purchase (% drop-off)\n\nFor each stage:\n- Current conversion rate\n- Industry benchmark\n- Gap analysis\n- Top 3 hypotheses for drop-off\n- Recommended fix (quick win vs structural)", version: "v1.0" }, expectedOutput: "Drop-off report", qualityGate: "None", nextTask: "Design A/B Test", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "conv-2", name: "Design A/B Test", lane: "Growth", owner: "Ginge", why: "Test before you invest — data beats opinions", expectedOutput: "Test spec", qualityGate: "Founder approval", nextTask: "Implement Test", automationLevel: "Manual", founderRequired: true },
-    { id: "conv-3", name: "Implement Test", lane: "Dev", owner: "Claude Code", why: "Ship the variant fast so data starts flowing", expectedOutput: "Deployed variant", qualityGate: "Feature flag active", nextTask: "Wait for Results", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "conv-4", name: "Wait for Results", lane: "Data", owner: "System", why: "Statistical significance requires patience", expectedOutput: "Statistical results", qualityGate: "1000 visitors/variant", nextTask: "Scale Decision", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "conv-5", name: "Scale Decision", lane: "Growth", owner: "Ginge", why: "Only scale what is proven to work", expectedOutput: "Spend decision", qualityGate: "Founder", nextTask: "Funnel Analysis", loopTo: "Funnel Analysis", automationLevel: "Manual", founderRequired: true },
-  ],
-  [6]: [
-    { id: "del-1", name: "Ship Order", lane: "Fulfilment", owner: "Atlas", why: "Fast delivery builds trust and repeat business", expectedOutput: "Tracking number", qualityGate: "None", nextTask: "Collect Feedback", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "del-2", name: "Collect Feedback", lane: "Support", owner: "Darwin", why: "Feedback reveals what metrics miss", expectedOutput: "Feedback log", qualityGate: "7-day window", nextTask: "Review Support Issues", automationLevel: "Fully Auto", founderRequired: false },
-    { id: "del-3", name: "Review Support Issues", lane: "Support", owner: "Darwin", why: "Patterns in complaints reveal systemic problems", expectedOutput: "Issue report", qualityGate: "Weekly", nextTask: "Improve Onboarding", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "del-4", name: "Improve Onboarding", lane: "Delivery", owner: "Atlas", why: "Better onboarding reduces support load and churn", expectedOutput: "Updated process", qualityGate: "None", nextTask: "Monitor Satisfaction", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "del-5", name: "Monitor Satisfaction", lane: "Data", owner: "Darwin", why: "CSAT is the leading indicator of retention", expectedOutput: "CSAT score", qualityGate: "Weekly", nextTask: "Ship Order", loopTo: "Ship Order", automationLevel: "Fully Auto", founderRequired: false },
-  ],
-  [7]: [
-    { id: "scale-1", name: "Identify Scale Levers", lane: "Growth", owner: "Newton", why: "Not everything scales — find what does", expectedOutput: "Scale lever map", qualityGate: "Founder review", nextTask: "Automate Processes", automationLevel: "Manual", founderRequired: true },
-    { id: "scale-2", name: "Automate Processes", lane: "Dev", owner: "Claude Code", why: "Automation removes the founder from the critical path", expectedOutput: "Automation deployed", qualityGate: "End-to-end test", nextTask: "Monitor & Iterate", automationLevel: "Semi-Auto", founderRequired: false },
-    { id: "scale-3", name: "Monitor & Iterate", lane: "Data", owner: "Darwin", why: "Scale breaks things — monitor continuously", expectedOutput: "Performance dashboard", qualityGate: "Weekly review", nextTask: "Identify Scale Levers", loopTo: "Identify Scale Levers", automationLevel: "Fully Auto", founderRequired: false },
-  ],
-};
-
-const COMING_SOON_STAGES = new Set([-1, 0, 3, 7]);
-
-/* ─────────────────────────── ACTIVE PROJECTS SEED ─────────────── */
-
-const SEED_PROJECTS: ActiveProject[] = [
-  {
-    id: "caliber",
-    name: "Caliber Peptides",
-    currentStage: 4,
-    status: "blocked",
-    currentTaskId: "traf-1",
-    completedTaskIds: [],
-    blockedTaskIds: ["traf-1"],
-    blockerNote: "Copy scored 6.5/10 — needs rewrite",
-    missingOutputs: [],
-    nextAction: "Rewrite carousel copy to hit 8/10+ quality gate",
-  },
-  {
-    id: "gemsnap",
-    name: "GemSnap",
-    currentStage: 5,
-    status: "stalled",
-    currentTaskId: "conv-4",
-    completedTaskIds: ["conv-1", "conv-2", "conv-3"],
-    blockedTaskIds: [],
-    blockerNote: undefined,
-    missingOutputs: ["Statistical results"],
-    nextAction: "Waiting for 1000 visitors per variant — passive",
-  },
-  {
-    id: "edgeauto",
-    name: "Edge Auto",
-    currentStage: 2,
-    status: "blocked",
-    currentTaskId: "des-3",
-    completedTaskIds: ["des-1"],
-    blockedTaskIds: ["des-3"],
-    blockerNote: "Design spec pending founder review",
-    missingOutputs: ["Report template"],
-    nextAction: "Complete report template before build can start",
-  },
+const FALLBACK_STAGES: PipelineStage[] = [
+  { id: "inbox", name: "Inbox", order: 0, objective: "Capture and triage incoming ideas", entry_criteria: "Any idea or signal", exit_criteria: "Tagged and triaged" },
+  { id: "idea", name: "Idea", order: 1, objective: "Clarify the problem and score the opportunity", entry_criteria: "Idea captured", exit_criteria: "Problem statement, score 7+" },
+  { id: "validation", name: "Validation", order: 2, objective: "Prove demand exists with real signals", entry_criteria: "Idea approved", exit_criteria: "Pain signals, competitors mapped" },
+  { id: "design", name: "Design", order: 3, objective: "Design the user experience", entry_criteria: "Validation passed", exit_criteria: "User journey defined, templates written" },
+  { id: "mvp", name: "MVP", order: 4, objective: "Build minimum viable product", entry_criteria: "Design approved", exit_criteria: "Product live, payment working" },
+  { id: "traffic", name: "Traffic", order: 5, objective: "Drive targeted traffic", entry_criteria: "MVP live", exit_criteria: "Content loop running" },
+  { id: "conversion", name: "Conversion", order: 6, objective: "Optimise funnel", entry_criteria: "Traffic flowing", exit_criteria: "A/B tested, positive economics" },
+  { id: "delivery", name: "Delivery", order: 7, objective: "Deliver value and collect feedback", entry_criteria: "Paying customers", exit_criteria: "CSAT 8+" },
+  { id: "scale", name: "Scale", order: 8, objective: "Scale and automate", entry_criteria: "Delivery stable", exit_criteria: "Processes automated" },
 ];
 
 /* ─────────────────────────── COMPONENT ─────────────────────────── */
 
 export default function PipelinePage() {
-  const [activeStage, setActiveStage] = useState(4);
-  const [projects, setProjects] = useState<ActiveProject[]>(SEED_PROJECTS);
-  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [stages, setStages] = useState<PipelineStage[]>(FALLBACK_STAGES);
+  const [projectTasks, setProjectTasks] = useState<PipelineTask[]>([]);
+  const [templateTasks, setTemplateTasks] = useState<PipelineTask[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const stageRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Try to fetch live projects, fall back to seed data
+  const isTemplateView = selectedProject === "_template";
+
+  /* ── Fetch stages + projects on mount ── */
   useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/map-room/projects", { signal: controller.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error("API error");
-        return r.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setProjects(data);
-        }
-      })
-      .catch(() => {
-        // Silently fall back to seed data
-      });
-    return () => controller.abort();
+    const ac = new AbortController();
+    Promise.all([
+      fetch("/api/pipeline-stages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list" }), signal: ac.signal }).then((r) => r.json()).catch(() => null),
+      fetch("/api/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list" }), signal: ac.signal }).then((r) => r.json()).catch(() => null),
+    ]).then(([stageData, projData]) => {
+      if (stageData?.stages) setStages(stageData.stages.sort((a: PipelineStage, b: PipelineStage) => a.order - b.order));
+      if (projData?.projects) setProjects(projData.projects);
+      setLoading(false);
+    });
+    return () => ac.abort();
   }, []);
 
-  const togglePrompt = useCallback((taskId: string) => {
-    setExpandedPrompts((prev) => {
+  /* ── Fetch tasks when project changes ── */
+  useEffect(() => {
+    if (!selectedProject) { setProjectTasks([]); setTemplateTasks([]); setExpandedStages(new Set()); return; }
+    const ac = new AbortController();
+    const h = { "Content-Type": "application/json" };
+    const post = (pid: string) => fetch("/api/tasks", { method: "POST", headers: h, body: JSON.stringify({ action: "list", project_id: pid }), signal: ac.signal }).then((r) => r.json()).catch(() => null);
+
+    if (selectedProject === "_template") {
+      post("_template").then((data) => {
+        if (data?.tasks) setTemplateTasks(data.tasks);
+        setProjectTasks([]);
+        setExpandedStages(new Set());
+      });
+    } else {
+      // Always fetch BOTH project tasks and template tasks
+      Promise.all([post(selectedProject), post("_template")]).then(([projData, tmplData]) => {
+        if (projData?.tasks) setProjectTasks(projData.tasks);
+        else setProjectTasks([]);
+        if (tmplData?.tasks) setTemplateTasks(tmplData.tasks);
+        else setTemplateTasks([]);
+        const proj = projects.find((p) => p.id === selectedProject);
+        if (proj?.stage) setExpandedStages(new Set([proj.stage]));
+        else setExpandedStages(new Set());
+      });
+    }
+
+    return () => ac.abort();
+  }, [selectedProject, projects]);
+
+  /* ── Derived state ── */
+  const project = projects.find((p) => p.id === selectedProject);
+  const currentStageId = project?.stage || "";
+  const currentStageIdx = STAGE_ORDER.indexOf(currentStageId);
+
+  // Which stages to show
+  const visibleStages = isTemplateView
+    ? stages // Template: show all 9
+    : stages.filter((s) => {
+        const idx = STAGE_ORDER.indexOf(s.id);
+        if (idx < 0) return false;
+        if (currentStageIdx < 0) return true;
+        return idx <= currentStageIdx + 1; // completed + current + next
+      });
+
+  // Tasks for a stage — project tasks if they exist, otherwise template fallback
+  type DisplayTask = PipelineTask & { _fromTemplate?: boolean };
+  const tasksForStage = (stageId: string): DisplayTask[] => {
+    if (isTemplateView) {
+      return templateTasks.filter((t) => t.stage === stageId).sort((a, b) => a.order - b.order);
+    }
+    const projStage = projectTasks.filter((t) => t.stage === stageId);
+    if (projStage.length > 0) {
+      return projStage.sort((a, b) => a.order - b.order);
+    }
+    // No project-specific tasks — fall back to template, marked as not_started
+    return templateTasks
+      .filter((t) => t.stage === stageId)
+      .sort((a, b) => a.order - b.order)
+      .map((t) => ({ ...t, status: "not_started" as const, output: "", blocker: null, _fromTemplate: true }));
+  };
+
+  // Missed/skipped tasks from earlier stages (project tasks only)
+  const missedTasks = projectTasks.filter((t) => {
+    const stageIdx = STAGE_ORDER.indexOf(t.stage);
+    return stageIdx < currentStageIdx && t.status === "skipped";
+  });
+
+  const toggleStage = (stageId: string) => {
+    setExpandedStages((prev) => {
       const next = new Set(prev);
-      if (next.has(taskId)) next.delete(taskId);
-      else next.add(taskId);
+      if (next.has(stageId)) next.delete(stageId); else next.add(stageId);
       return next;
     });
-  }, []);
+  };
 
-  const copyPrompt = useCallback((taskId: string, text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(taskId);
-      setTimeout(() => setCopiedId(null), 2000);
-    });
-  }, []);
+  const scrollToStage = (stageId: string) => {
+    stageRefs.current[stageId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Also expand it
+    setExpandedStages((prev) => new Set(prev).add(stageId));
+  };
 
-  const stageWorkflow = MASTER_WORKFLOWS[activeStage] || [];
-  const stageProjects = projects.filter((p) => p.currentStage === activeStage);
-  const isComingSoon = COMING_SOON_STAGES.has(activeStage);
-  const currentStageLabel = STAGES.find((s) => s.id === activeStage)?.label ?? "";
-
-  // Count active projects per stage
-  const projectCounts: Record<number, number> = {};
-  for (const p of projects) {
-    projectCounts[p.currentStage] = (projectCounts[p.currentStage] || 0) + 1;
+  /* ── Loading state ── */
+  if (loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300, color: TOKENS.muted }}>
+        Loading pipeline...
+      </div>
+    );
   }
 
+  /* ── No project selected: clean empty state ── */
+  if (!selectedProject) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <h2 style={{ color: TOKENS.heading, fontSize: 22, fontWeight: 800, margin: 0 }}>Pipeline</h2>
+            <p style={{ color: TOKENS.body, fontSize: 14, margin: "4px 0 0" }}>Project execution tracker</p>
+          </div>
+          <ProjectDropdown projects={projects} value={selectedProject} onChange={setSelectedProject} />
+        </div>
+        <div style={{
+          background: TOKENS.card, border: `1px solid ${TOKENS.border}`, borderRadius: 12,
+          padding: "80px 40px", textAlign: "center",
+        }}>
+          <p style={{ color: TOKENS.muted, fontSize: 48, margin: "0 0 16px" }}>{"\uD83D\uDCCB"}</p>
+          <p style={{ color: TOKENS.heading, fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>
+            Select a project to view its pipeline
+          </p>
+          <p style={{ color: TOKENS.muted, fontSize: 14, margin: 0 }}>
+            Choose a project from the dropdown above to see its stage progression, tasks, and outputs.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Project / Template selected ── */
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* ── Page Title ── */}
-      <div>
-        <h2 style={{ color: TOKENS.heading, fontSize: 22, fontWeight: 800, margin: 0 }}>
-          Pipeline
-        </h2>
-        <p style={{ color: TOKENS.body, fontSize: 14, margin: "4px 0 0" }}>
-          Stage playbook + prompt library + live execution workspace
-        </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <h2 style={{ color: TOKENS.heading, fontSize: 22, fontWeight: 800, margin: 0 }}>Pipeline</h2>
+          <p style={{ color: TOKENS.body, fontSize: 14, margin: "4px 0 0" }}>
+            {isTemplateView
+              ? "Master template \u2014 blueprint for all projects"
+              : `${project?.name || selectedProject} \u2014 currently at ${stages.find((s) => s.id === currentStageId)?.name || currentStageId || "unknown"}`
+            }
+          </p>
+        </div>
+        <ProjectDropdown projects={projects} value={selectedProject} onChange={setSelectedProject} />
       </div>
 
       {/* ── Stage Rail ── */}
-      <div
-        style={{
-          display: "flex",
-          gap: 6,
-          overflowX: "auto",
-          paddingBottom: 4,
-        }}
-      >
-        {STAGES.map((stage) => {
-          const isActive = stage.id === activeStage;
-          const count = projectCounts[stage.id] || 0;
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+        {visibleStages.map((stage) => {
+          const idx = STAGE_ORDER.indexOf(stage.id);
+          const isCurrent = !isTemplateView && stage.id === currentStageId;
+          const isCompleted = !isTemplateView && idx < currentStageIdx;
+          const isNext = !isTemplateView && idx === currentStageIdx + 1;
+          const count = tasksForStage(stage.id).length;
+
+          let borderColor = TOKENS.border;
+          let textColor = TOKENS.body;
+          let bg = TOKENS.card;
+          if (isCurrent) { borderColor = TOKENS.accent; textColor = TOKENS.accent; bg = "rgba(0,212,212,0.08)"; }
+          else if (isCompleted) { borderColor = TOKENS.success; textColor = TOKENS.success; bg = "rgba(34,197,94,0.06)"; }
+          else if (isNext) { textColor = TOKENS.muted; }
+
           return (
             <button
               key={stage.id}
-              onClick={() => setActiveStage(stage.id)}
+              onClick={() => scrollToStage(stage.id)}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "8px 16px",
-                borderRadius: 8,
-                border: `1px solid ${isActive ? TOKENS.accent : TOKENS.border}`,
-                background: isActive ? "rgba(0,212,212,0.1)" : TOKENS.card,
-                color: isActive ? TOKENS.accent : TOKENS.body,
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: isActive ? 700 : 500,
-                whiteSpace: "nowrap",
-                transition: "all 0.15s",
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 16px", borderRadius: 8,
+                border: `1px solid ${borderColor}`, background: bg, color: textColor,
+                cursor: "pointer", fontSize: 13, fontWeight: isCurrent ? 700 : 500, whiteSpace: "nowrap",
               }}
             >
-              <span style={{ opacity: 0.5, fontSize: 11 }}>{stage.id === -1 ? "—" : stage.id}</span>
-              {stage.label}
+              {isCompleted && <span style={{ fontSize: 11 }}>{"\u2705"}</span>}
+              {isNext && <span style={{ fontSize: 11 }}>{"\uD83D\uDD12"}</span>}
+              {stage.name}
               {count > 0 && (
-                <span
-                  style={{
-                    background: TOKENS.accent,
-                    color: "#000",
-                    fontSize: 10,
-                    fontWeight: 800,
-                    borderRadius: 99,
-                    padding: "1px 7px",
-                    minWidth: 18,
-                    textAlign: "center",
-                  }}
-                >
+                <span style={{
+                  background: isCurrent ? TOKENS.accent : isCompleted ? TOKENS.success : TOKENS.muted,
+                  color: "#000", fontSize: 10, fontWeight: 800,
+                  borderRadius: 99, padding: "1px 7px", minWidth: 18, textAlign: "center",
+                }}>
                   {count}
                 </span>
               )}
@@ -310,456 +296,251 @@ export default function PipelinePage() {
         })}
       </div>
 
-      {/* ── VIEW 1: Master Workflow ── */}
-      <div
-        style={{
-          background: TOKENS.card,
-          border: `1px solid ${TOKENS.border}`,
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: `1px solid ${TOKENS.border}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 16 }}>📋</span>
-            <h3 style={{ color: TOKENS.heading, fontSize: 16, fontWeight: 700, margin: 0 }}>
-              Stage {activeStage === -1 ? "—" : activeStage}: {currentStageLabel} — Master Workflow
-            </h3>
+      {/* ── Missed/Skipped Tasks ── */}
+      {!isTemplateView && missedTasks.length > 0 && (
+        <div style={{
+          background: "rgba(245,158,11,0.06)", border: `1px solid rgba(245,158,11,0.3)`,
+          borderRadius: 12, padding: "16px 20px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 14 }}>{"\u26A0\uFE0F"}</span>
+            <h3 style={{ color: TOKENS.warn, fontSize: 14, fontWeight: 700, margin: 0 }}>Skipped Tasks from Earlier Stages</h3>
           </div>
-          {isComingSoon && (
-            <span
-              style={{
-                background: "rgba(245,158,11,0.15)",
-                color: TOKENS.warn,
-                fontSize: 11,
-                fontWeight: 600,
-                padding: "3px 10px",
-                borderRadius: 6,
-              }}
-            >
-              COMING SOON — Placeholder tasks
-            </span>
-          )}
-          <span style={{ color: TOKENS.muted, fontSize: 12 }}>
-            {stageWorkflow.length} task{stageWorkflow.length !== 1 ? "s" : ""}
-          </span>
+          {missedTasks.map((task) => (
+            <div key={task.id} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
+              borderBottom: `1px solid rgba(245,158,11,0.15)`, fontSize: 13,
+            }}>
+              <span style={{ color: TOKENS.warn, fontSize: 10, fontWeight: 700, fontFamily: "monospace" }}>{task.id}</span>
+              <span style={{ color: TOKENS.muted, fontSize: 11, textTransform: "uppercase" }}>
+                {stages.find((s) => s.id === task.stage)?.name || task.stage}
+              </span>
+              <span style={{ color: TOKENS.heading, fontWeight: 500 }}>{task.name}</span>
+              <span style={{ color: TOKENS.warn, fontSize: 11, marginLeft: "auto" }}>{"\u26A0\uFE0F"} Skipped</span>
+            </div>
+          ))}
         </div>
+      )}
 
-        {/* Task Rows */}
-        <div>
-          {stageWorkflow.map((task, idx) => {
-            const isPromptOpen = expandedPrompts.has(task.id);
-            const laneColor = LANE_COLORS[task.lane] || TOKENS.body;
-            const autoStyle = AUTO_COLORS[task.automationLevel];
+      {/* ── Stage Sections (collapsed by default) ── */}
+      {visibleStages.map((stage) => {
+        const idx = STAGE_ORDER.indexOf(stage.id);
+        const isCurrent = !isTemplateView && stage.id === currentStageId;
+        const isCompleted = !isTemplateView && idx < currentStageIdx;
+        const isNext = !isTemplateView && idx === currentStageIdx + 1;
+        const stageTasks = tasksForStage(stage.id);
+        const doneCount = stageTasks.filter((t) => t.status === "done").length;
+        const isExpanded = expandedStages.has(stage.id);
 
-            return (
-              <div key={task.id}>
-                {/* Main row */}
-                <div
-                  style={{
-                    padding: "14px 20px",
-                    borderBottom: `1px solid ${TOKENS.border}`,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 10,
-                  }}
-                >
-                  {/* Row Header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ color: TOKENS.muted, fontSize: 12, fontWeight: 600, minWidth: 20 }}>
-                      {idx + 1}.
-                    </span>
-                    <span style={{ color: TOKENS.heading, fontSize: 14, fontWeight: 600 }}>
-                      {task.name}
-                    </span>
-                    {/* Lane pill */}
-                    <span
-                      style={{
-                        background: `${laneColor}22`,
-                        color: laneColor,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        padding: "2px 8px",
-                        borderRadius: 99,
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {task.lane}
-                    </span>
-                    {/* Owner */}
-                    <span style={{ color: TOKENS.body, fontSize: 12 }}>
-                      {task.owner}
-                    </span>
-                    {/* Automation badge */}
-                    <span
-                      style={{
-                        background: autoStyle.bg,
-                        color: autoStyle.color,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        padding: "2px 8px",
-                        borderRadius: 4,
-                      }}
-                    >
-                      {task.automationLevel}
-                    </span>
-                    {/* Founder badge */}
-                    {task.founderRequired && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          padding: "2px 8px",
-                          borderRadius: 4,
-                          background: "rgba(167,139,250,0.15)",
-                          color: TOKENS.purple,
-                        }}
-                      >
-                        👤 Founder Required
-                      </span>
-                    )}
-                    {/* Loop badge */}
-                    {task.loopTo && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          padding: "2px 8px",
-                          borderRadius: 4,
-                          background: "rgba(0,212,212,0.1)",
-                          color: TOKENS.accent,
-                        }}
-                      >
-                        🔁 loops to {task.loopTo}
-                      </span>
-                    )}
-                  </div>
+        // Header accent colour
+        const headerColor = isCompleted ? TOKENS.success : isCurrent ? TOKENS.accent : isNext ? TOKENS.muted : TOKENS.body;
 
-                  {/* Details Row */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr 1fr 1fr",
-                      gap: 12,
-                      paddingLeft: 30,
-                      fontSize: 12,
-                    }}
-                  >
-                    {/* Why */}
-                    <div>
-                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                        Why
-                      </span>
-                      <span style={{ color: TOKENS.body }}>{task.why}</span>
-                    </div>
-                    {/* Expected Output */}
-                    <div>
-                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                        Output
-                      </span>
-                      {task.expectedOutput ? (
-                        <span style={{ color: TOKENS.body }}>{task.expectedOutput}</span>
-                      ) : (
-                        <span
-                          style={{
-                            background: "rgba(245,158,11,0.15)",
-                            color: TOKENS.warn,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                          }}
-                        >
-                          ⚠ Missing Output Definition
-                        </span>
-                      )}
-                    </div>
-                    {/* Quality Gate */}
-                    <div>
-                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                        Quality Gate
-                      </span>
-                      <span style={{ color: TOKENS.body }}>{task.qualityGate || "None"}</span>
-                    </div>
-                    {/* Next Task */}
-                    <div>
-                      <span style={{ color: TOKENS.muted, display: "block", marginBottom: 2, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                        Next
-                      </span>
-                      <span style={{ color: TOKENS.accent }}>{task.nextTask || "—"}</span>
-                    </div>
-                  </div>
-
-                  {/* Prompt Row */}
-                  <div style={{ paddingLeft: 30 }}>
-                    {task.prompt ? (
-                      <div>
-                        <button
-                          onClick={() => togglePrompt(task.id)}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: TOKENS.accent,
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: "4px 0",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <span style={{ fontSize: 10, transition: "transform 0.15s", transform: isPromptOpen ? "rotate(90deg)" : "rotate(0deg)" }}>
-                            ▶
-                          </span>
-                          {isPromptOpen ? "Hide Prompt" : "Show Prompt"}
-                          <span style={{ color: TOKENS.muted, fontWeight: 400, marginLeft: 4 }}>
-                            {task.prompt.version}
-                          </span>
-                        </button>
-                        {isPromptOpen && (
-                          <div
-                            style={{
-                              marginTop: 8,
-                              background: "#0a0a12",
-                              border: `1px solid ${TOKENS.border}`,
-                              borderRadius: 8,
-                              padding: 16,
-                              position: "relative",
-                            }}
-                          >
-                            <pre
-                              style={{
-                                margin: 0,
-                                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-                                fontSize: 12,
-                                lineHeight: 1.6,
-                                color: TOKENS.body,
-                                whiteSpace: "pre-wrap",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {task.prompt.text}
-                            </pre>
-                            <button
-                              onClick={() => copyPrompt(task.id, task.prompt!.text)}
-                              style={{
-                                position: "absolute",
-                                top: 10,
-                                right: 10,
-                                background: copiedId === task.id ? "rgba(34,197,94,0.2)" : "rgba(0,212,212,0.1)",
-                                border: `1px solid ${copiedId === task.id ? TOKENS.success : TOKENS.border}`,
-                                color: copiedId === task.id ? TOKENS.success : TOKENS.accent,
-                                cursor: "pointer",
-                                fontSize: 11,
-                                fontWeight: 600,
-                                padding: "4px 10px",
-                                borderRadius: 6,
-                                transition: "all 0.15s",
-                              }}
-                            >
-                              {copiedId === task.id ? "Copied!" : "Copy"}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span
-                        style={{
-                          background: "rgba(239,68,68,0.12)",
-                          color: TOKENS.error,
-                          fontSize: 11,
-                          fontWeight: 600,
-                          padding: "3px 8px",
-                          borderRadius: 4,
-                        }}
-                      >
-                        ❌ Missing Prompt
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── VIEW 2: Active Projects ── */}
-      <div
-        style={{
-          background: TOKENS.card,
-          border: `1px solid ${TOKENS.border}`,
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: `1px solid ${TOKENS.border}`,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <span style={{ fontSize: 16 }}>🚀</span>
-          <h3 style={{ color: TOKENS.heading, fontSize: 16, fontWeight: 700, margin: 0 }}>
-            Active Projects at {currentStageLabel}
-          </h3>
-          <span style={{ color: TOKENS.muted, fontSize: 12 }}>
-            {stageProjects.length} project{stageProjects.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-
-        {stageProjects.length === 0 ? (
+        return (
           <div
+            key={stage.id}
+            ref={(el) => { stageRefs.current[stage.id] = el; }}
             style={{
-              padding: "40px 20px",
-              textAlign: "center",
+              background: "rgba(17,17,24,0.7)",
+              backdropFilter: "blur(12px)",
+              border: `1px solid ${isCompleted ? "rgba(34,197,94,0.3)" : isNext ? "rgba(107,107,128,0.2)" : TOKENS.border}`,
+              borderRadius: 12,
+              overflow: "hidden",
+              opacity: isNext ? 0.5 : 1,
             }}
           >
-            <p style={{ color: TOKENS.muted, fontSize: 14, margin: 0 }}>
-              No active projects at this stage. The workflow above is ready when a project arrives.
-            </p>
+            {/* ── Collapsed Stage Header (always visible) ── */}
+            <div
+              onClick={() => !isNext && toggleStage(stage.id)}
+              style={{
+                padding: "14px 20px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                cursor: isNext ? "default" : "pointer",
+                background: isCompleted ? "rgba(34,197,94,0.04)" : isNext ? "rgba(107,107,128,0.04)" : "transparent",
+                userSelect: "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {/* Expand arrow */}
+                <span style={{
+                  color: TOKENS.accent, fontSize: 10,
+                  transition: "transform 0.15s",
+                  transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                  display: "inline-block",
+                }}>
+                  {isNext ? "\uD83D\uDD12" : "\u25B6"}
+                </span>
+                {isCompleted && <span style={{ fontSize: 13 }}>{"\u2705"}</span>}
+                {isCurrent && <span style={{ fontSize: 13 }}>{"\u25B6\uFE0F"}</span>}
+                <span style={{ color: headerColor, fontSize: 15, fontWeight: 700 }}>
+                  Stage {stage.order}: {stage.name}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12 }}>
+                <span style={{ color: TOKENS.muted }}>
+                  {stageTasks.length} task{stageTasks.length !== 1 ? "s" : ""}
+                </span>
+                <span style={{ color: headerColor, fontWeight: 600 }}>
+                  {doneCount} complete
+                </span>
+                {isNext && <span style={{ color: TOKENS.muted, fontWeight: 600 }}>LOCKED</span>}
+              </div>
+            </div>
+
+            {/* ── Expanded Task List ── */}
+            {isExpanded && !isNext && (
+              <div style={{ borderTop: `1px solid ${TOKENS.border}` }}>
+                {stageTasks.length === 0 ? (
+                  <p style={{ color: TOKENS.muted, fontSize: 13, padding: "20px", margin: 0 }}>
+                    No tasks for this stage yet.
+                  </p>
+                ) : (
+                  stageTasks.map((task) => (
+                    <TaskRow key={task.id} task={task} compact={isCompleted} />
+                  ))
+                )}
+              </div>
+            )}
           </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────── PROJECT DROPDOWN ─────────────────────────── */
+
+function ProjectDropdown({ projects, value, onChange }: { projects: Project[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        background: TOKENS.card, border: `1px solid ${TOKENS.border}`, borderRadius: 8,
+        padding: "8px 16px", color: TOKENS.heading, fontSize: 13, fontWeight: 600,
+        cursor: "pointer", minWidth: 200,
+      }}
+    >
+      <option value="">Select a project...</option>
+      <option value="_template">All Projects (Template)</option>
+      {projects.map((p) => (
+        <option key={p.id} value={p.id}>{p.name}</option>
+      ))}
+    </select>
+  );
+}
+
+/* ─────────────────────────── TASK ROW ─────────────────────────── */
+
+function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boolean }; compact?: boolean }) {
+  const cfg = STATUS_CFG[task.status] || STATUS_CFG.not_started;
+  const emoji = OWNER_EMOJI[task.owner] || "\uD83D\uDC64";
+  const isFromTemplate = !!(task as { _fromTemplate?: boolean })._fromTemplate;
+  const borderLeft = isFromTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${TOKENS.error}` : task.status === "done" ? `3px solid ${TOKENS.success}` : "3px solid transparent";
+
+  const templateBadge = isFromTemplate ? (
+    <span style={{
+      background: "rgba(107,107,128,0.15)", color: TOKENS.muted,
+      fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4,
+      textTransform: "uppercase", letterSpacing: 0.5,
+    }}>
+      Template
+    </span>
+  ) : null;
+
+  // Compact row for completed stages
+  if (compact) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10, padding: "7px 20px",
+        borderBottom: `1px solid rgba(30,30,46,0.5)`, fontSize: 13, borderLeft,
+        opacity: isFromTemplate ? 0.6 : 1,
+      }}>
+        <span style={{ fontSize: 12 }}>{cfg.icon}</span>
+        <span style={{ color: TOKENS.muted, fontSize: 10, fontWeight: 700, fontFamily: "monospace", minWidth: 52 }}>{task.id}</span>
+        <span style={{ color: cfg.color, fontWeight: 500, flex: 1 }}>{task.name}</span>
+        {templateBadge}
+        <span style={{ color: TOKENS.muted, fontSize: 11 }}>{emoji} {task.owner}</span>
+        {task.output ? (
+          <span style={{ color: TOKENS.body, fontSize: 11, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {task.output}
+          </span>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {stageProjects.map((project) => {
-              const statusCfg = STATUS_CONFIG[project.status];
-              const workflowTasks = MASTER_WORKFLOWS[project.currentStage] || [];
+          <span style={{ color: TOKENS.muted, fontSize: 11, fontStyle: "italic" }}>No output yet</span>
+        )}
+      </div>
+    );
+  }
 
-              return (
-                <div
-                  key={project.id}
-                  style={{
-                    padding: "16px 20px",
-                    borderBottom: `1px solid ${TOKENS.border}`,
-                  }}
-                >
-                  {/* Project Header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <span style={{ color: TOKENS.heading, fontSize: 15, fontWeight: 700 }}>
-                      {project.name}
-                    </span>
-                    <span
-                      style={{
-                        background: statusCfg.bg,
-                        color: statusCfg.color,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        padding: "2px 10px",
-                        borderRadius: 99,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 5,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 99,
-                          background: statusCfg.color,
-                          display: "inline-block",
-                        }}
-                      />
-                      {statusCfg.label}
-                    </span>
-                  </div>
+  // Full detail row
+  return (
+    <div style={{
+      padding: "14px 20px", borderBottom: `1px solid ${TOKENS.border}`, borderLeft,
+      display: "flex", flexDirection: "column", gap: 8,
+      opacity: isFromTemplate ? 0.7 : 1,
+    }}>
+      {/* Row 1: ID + Name + Status + Owner */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span style={{
+          background: "rgba(0,212,212,0.1)", color: TOKENS.accent,
+          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, fontFamily: "monospace",
+        }}>
+          {task.id}
+        </span>
+        <span style={{ color: TOKENS.heading, fontSize: 14, fontWeight: 600, flex: 1 }}>{task.name}</span>
+        {templateBadge}
+        <span style={{
+          background: `${cfg.color}22`, color: cfg.color,
+          fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6,
+          display: "flex", alignItems: "center", gap: 4,
+        }}>
+          {cfg.icon} {cfg.label}
+        </span>
+        <span style={{ color: TOKENS.body, fontSize: 12 }}>{emoji} {task.owner}</span>
+        {task.model && (
+          <span style={{ background: "rgba(167,139,250,0.12)", color: TOKENS.purple, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 99 }}>
+            {task.model}
+          </span>
+        )}
+      </div>
 
-                  {/* Task Progress */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
-                    {workflowTasks.map((task) => {
-                      const isCurrent = task.id === project.currentTaskId;
-                      const isCompleted = project.completedTaskIds.includes(task.id);
-                      const isBlocked = project.blockedTaskIds.includes(task.id);
+      {/* Row 2: Output */}
+      <div style={{ paddingLeft: 4 }}>
+        <span style={{ color: TOKENS.muted, display: "block", marginBottom: 3, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Output</span>
+        {task.output ? (
+          <p style={{ margin: 0, color: TOKENS.body, fontSize: 13, lineHeight: 1.5 }}>{task.output}</p>
+        ) : (
+          <p style={{ margin: 0, color: TOKENS.muted, fontSize: 13, fontStyle: "italic" }}>No output yet</p>
+        )}
+      </div>
 
-                      let icon = "○";
-                      let textColor = TOKENS.muted;
-                      let bgColor = "transparent";
+      {/* Row 3: Blocker */}
+      {task.status === "blocked" && task.blocker && (
+        <div style={{ paddingLeft: 4, display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
+          <span style={{ color: TOKENS.error, fontWeight: 700, flexShrink: 0 }}>BLOCKER:</span>
+          <span style={{ color: TOKENS.error }}>{task.blocker}</span>
+        </div>
+      )}
 
-                      if (isCompleted) {
-                        icon = "✅";
-                        textColor = TOKENS.success;
-                      } else if (isBlocked) {
-                        icon = "🚩";
-                        textColor = TOKENS.error;
-                      } else if (isCurrent) {
-                        icon = "▶";
-                        textColor = TOKENS.accent;
-                        bgColor = "rgba(0,212,212,0.06)";
-                      }
-
-                      return (
-                        <div
-                          key={task.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            padding: "5px 10px",
-                            borderRadius: 6,
-                            background: bgColor,
-                            fontSize: 13,
-                          }}
-                        >
-                          <span style={{ fontSize: 12, width: 20, flexShrink: 0 }}>{icon}</span>
-                          <span style={{ color: isCurrent ? TOKENS.heading : textColor, fontWeight: isCurrent ? 600 : 400 }}>
-                            {task.name}
-                          </span>
-                          {isCurrent && (
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                padding: "1px 6px",
-                                borderRadius: 4,
-                                background: "rgba(0,212,212,0.15)",
-                                color: TOKENS.accent,
-                                marginLeft: 4,
-                              }}
-                            >
-                              CURRENT
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Blocker + Missing Outputs + Next Action */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 10 }}>
-                    {project.blockerNote && (
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
-                        <span style={{ color: TOKENS.error, fontWeight: 600, flexShrink: 0 }}>BLOCKER:</span>
-                        <span style={{ color: TOKENS.error }}>{project.blockerNote}</span>
-                      </div>
-                    )}
-                    {project.missingOutputs.length > 0 && (
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
-                        <span style={{ color: TOKENS.warn, fontWeight: 600, flexShrink: 0 }}>MISSING:</span>
-                        <span style={{ color: TOKENS.warn }}>{project.missingOutputs.join(", ")}</span>
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12 }}>
-                      <span style={{ color: TOKENS.accent, fontWeight: 600, flexShrink: 0 }}>NEXT:</span>
-                      <span style={{ color: TOKENS.accent }}>{project.nextAction}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Row 4: Quality gate + View Prompt link */}
+      <div style={{ paddingLeft: 4, display: "flex", alignItems: "center", gap: 16, fontSize: 12 }}>
+        {task.quality_gate && (
+          <span style={{ color: TOKENS.muted }}>
+            <span style={{ fontWeight: 600, textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5 }}>Gate: </span>
+            {task.quality_gate}
+          </span>
+        )}
+        {task.prompt_id && (
+          <a
+            href={`/prompts#${task.prompt_id}`}
+            style={{ color: TOKENS.accent, textDecoration: "none", fontWeight: 600, fontSize: 12 }}
+          >
+            View Prompt {"\u2192"}
+          </a>
+        )}
+        {task.next_task && (
+          <span style={{ color: TOKENS.muted, fontSize: 11, marginLeft: "auto" }}>
+            Next: <span style={{ color: TOKENS.accent }}>{task.next_task}</span>
+          </span>
         )}
       </div>
     </div>

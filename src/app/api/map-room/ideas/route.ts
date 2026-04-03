@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
-const KV_KEY = "maproom:ideas";
+const KV_KEY = "maproom:ideas:v2";
 const TOKEN = "apex-live-2026";
 
-interface Idea {
+export interface Idea {
   id: string;
-  name: string;
-  summary: string;
+  title: string;
+  description: string;
+  status: "raw" | "expanded" | "queued" | "parked" | "zombie";
   tags: string[];
-  status: "raw" | "exploring" | "validated" | "parked" | "killed";
-  source: string;
-  potential_revenue: string;
-  effort: "low" | "medium" | "high";
+  image_url: string;
   notes: string;
+  linked_project: string | null;
+  source: string;
   created_at: string;
   updated_at: string;
 }
@@ -24,85 +24,137 @@ interface IdeasData {
 }
 
 const SEED: IdeasData = {
-  lastUpdated: "2026-03-30T12:00:00Z",
+  lastUpdated: "2026-04-02T00:00:00Z",
   items: [
     {
-      id: "repost-ai",
-      name: "RepostAI",
-      summary: "AI tool that repurposes long-form content into platform-specific social posts automatically",
-      tags: ["SaaS", "AI", "content"],
-      status: "exploring",
-      source: "Internal brainstorm",
-      potential_revenue: "$5K MRR",
-      effort: "high",
-      notes: "Could use Claude API for content transformation. Need to validate demand first.",
-      created_at: "2026-03-10",
-      updated_at: "2026-03-28",
-    },
-    {
-      id: "parliament-tracker",
-      name: "Parliament Tracker",
-      summary: "Live dashboard tracking MP votes, contradictions, and attendance with D3 chamber visualisation",
-      tags: ["civic-tech", "data", "visualisation"],
-      status: "validated",
-      source: "Side project",
-      potential_revenue: "Sponsorship model",
-      effort: "medium",
-      notes: "Already live on Vercel with 70 MPs. Contradiction detection working. Could monetise via media partnerships.",
-      created_at: "2026-02-15",
-      updated_at: "2026-03-30",
-    },
-    {
-      id: "comic-creator",
-      name: "Comic Creator",
-      summary: "AI-powered comic strip generator from text prompts with consistent character styles",
-      tags: ["consumer", "AI", "creative"],
+      id: "idea-comic",
+      title: "Comic Creator",
+      description: "Turn any story prompt into a full comic book with AI-generated panels and consistent characters.",
       status: "raw",
-      source: "App Factory list",
-      potential_revenue: "$2K MRR",
-      effort: "high",
-      notes: "Character consistency is the hard problem. Could use LoRA fine-tuning.",
-      created_at: "2026-03-20",
-      updated_at: "2026-03-20",
+      tags: ["Creative", "AI", "Consumer"],
+      image_url: "/images/idea-comic.jpg",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-03-15T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
     },
     {
-      id: "peptide-stack-builder",
-      name: "Peptide Stack Builder",
-      summary: "Interactive tool that recommends peptide stacks based on user goals (recovery, cognition, etc.)",
-      tags: ["health", "tool", "Caliber"],
-      status: "exploring",
-      source: "Caliber Peptides extension",
-      potential_revenue: "Lead gen for Caliber",
-      effort: "low",
-      notes: "Could be a free tool on the Caliber site to drive traffic and build email list.",
-      created_at: "2026-03-15",
-      updated_at: "2026-03-29",
+      id: "idea-peptide-stack",
+      title: "Peptide Stack Builder",
+      description: "Interactive tool that recommends peptide stacks based on goals, body stats, and experience level.",
+      status: "queued",
+      tags: ["Health", "Tool", "Caliber"],
+      image_url: "/images/idea-peptide-stack.jpg",
+      notes: "",
+      linked_project: "caliber",
+      source: "ginge",
+      created_at: "2026-03-10T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
     },
     {
-      id: "villa-investor",
-      name: "Villa Investor Platform",
-      summary: "Marketplace connecting villa owners with fractional investors for renovation projects",
-      tags: ["proptech", "marketplace", "investment"],
-      status: "parked",
-      source: "Philippines connections",
-      potential_revenue: "$10K+ per deal",
-      effort: "high",
-      notes: "Complex regulatory requirements. Parked until Caliber and GemSnap are generating revenue.",
-      created_at: "2026-02-20",
-      updated_at: "2026-03-15",
-    },
-    {
-      id: "market-intel",
-      name: "Market Intel as a Service",
-      summary: "Automated competitor monitoring and market intelligence reports delivered weekly via AI agents",
-      tags: ["SaaS", "AI", "B2B"],
+      id: "idea-villa-investor",
+      title: "Villa Investor Platform",
+      description: "Digital investment platform for Phuket villa buyers with ROI calculators and virtual tours.",
       status: "raw",
-      source: "Edge Auto spin-off",
-      potential_revenue: "$3K MRR",
-      effort: "medium",
-      notes: "Natural extension of Edge Auto. Could use the same agent pipeline to monitor competitors for clients.",
-      created_at: "2026-03-25",
-      updated_at: "2026-03-25",
+      tags: ["Property", "Finance"],
+      image_url: "/images/idea-villa-investor.jpg",
+      notes: "",
+      linked_project: "villas",
+      source: "ginge",
+      created_at: "2026-03-12T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
+    },
+    {
+      id: "idea-market-intel",
+      title: "Market Intel as a Service",
+      description: "On-demand market research reports generated by AI agents — competitor analysis, pricing intel, trend forecasting.",
+      status: "zombie",
+      tags: ["B2B", "AI", "Research"],
+      image_url: "/images/idea-market-intel.png",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-02-20T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
+    },
+    {
+      id: "idea-geopolitik",
+      title: "Geopolitik",
+      description: "AI-powered geopolitical intelligence platform — track global events, policy shifts, and their market impact.",
+      status: "raw",
+      tags: ["GovTech", "AI", "Data"],
+      image_url: "/images/idea-geopolitik.png",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-03-05T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
+    },
+    {
+      id: "idea-gunsnap",
+      title: "GunSnap",
+      description: "AI gemstone-style identification and valuation for firearms — snap, identify, get instant specs and value.",
+      status: "raw",
+      tags: ["Consumer", "AI", "Niche"],
+      image_url: "/images/idea-gunsnap.jpg",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-03-08T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
+    },
+    {
+      id: "idea-poolsnap",
+      title: "PoolSnap",
+      description: "AI pool diagnostics — snap a photo, get water quality analysis, maintenance recommendations, and cost estimates.",
+      status: "raw",
+      tags: ["Consumer", "AI", "Home"],
+      image_url: "/images/idea-poolsnap.jpg",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-03-08T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
+    },
+    {
+      id: "idea-promptcraft",
+      title: "PromptCraft",
+      description: "Prompt engineering toolkit — build, test, version, and share AI prompts with performance tracking.",
+      status: "raw",
+      tags: ["AI", "Tool", "SaaS"],
+      image_url: "/images/idea-promptcraft.jpg",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-03-01T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
+    },
+    {
+      id: "idea-sales-copilot",
+      title: "Sales Co-Pilot",
+      description: "AI sales assistant that joins calls, takes notes, suggests responses, and auto-generates follow-ups.",
+      status: "raw",
+      tags: ["B2B", "AI", "SaaS"],
+      image_url: "/images/idea-sales-copilot.jpg",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-03-01T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
+    },
+    {
+      id: "idea-splashboard",
+      title: "SplashBoard",
+      description: "Visual dashboard builder — drag-and-drop KPI boards with live data connections and AI-generated insights.",
+      status: "raw",
+      tags: ["SaaS", "Data", "Tool"],
+      image_url: "/images/idea-splashboard.png",
+      notes: "",
+      linked_project: null,
+      source: "ginge",
+      created_at: "2026-02-28T00:00:00Z",
+      updated_at: "2026-03-29T00:00:00Z",
     },
   ],
 };
@@ -114,30 +166,97 @@ async function getData(): Promise<IdeasData> {
   return SEED;
 }
 
+// Public read
 export async function GET() {
-  const data = await getData();
-  return NextResponse.json(data);
+  return NextResponse.json(await getData());
 }
 
+// Action-based CRUD
 export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const { action } = body;
+
+  // list + search are public
+  if (action === "list") {
+    const data = await getData();
+    return NextResponse.json(data.items);
+  }
+
+  if (action === "search") {
+    const { query } = body;
+    if (!query) return NextResponse.json([]);
+    const data = await getData();
+    const q = query.toLowerCase();
+    return NextResponse.json(
+      data.items.filter((i) =>
+        i.title.toLowerCase().includes(q) ||
+        i.description.toLowerCase().includes(q) ||
+        i.tags.some((t) => t.toLowerCase().includes(q))
+      )
+    );
+  }
+
+  // Writes require auth
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${TOKEN}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
   const data = await getData();
   const now = new Date().toISOString();
 
-  const item: Idea = {
-    id: Date.now().toString(36),
-    ...body,
-    created_at: body.created_at || now,
-    updated_at: now,
-  };
+  switch (action) {
+    case "get": {
+      const item = data.items.find((i) => i.id === body.id);
+      if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json(item);
+    }
 
-  data.items.push(item);
-  data.lastUpdated = now;
-  await kv.set(KV_KEY, data);
-  return NextResponse.json(item, { status: 201 });
+    case "set": {
+      const { id, title, description, status, tags, image_url, notes, linked_project, source } = body;
+      if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+      const existing = data.items.find((i) => i.id === id);
+      if (existing) {
+        if (title !== undefined) existing.title = title;
+        if (description !== undefined) existing.description = description;
+        if (status !== undefined) existing.status = status;
+        if (tags !== undefined) existing.tags = tags;
+        if (image_url !== undefined) existing.image_url = image_url;
+        if (notes !== undefined) existing.notes = notes;
+        if (linked_project !== undefined) existing.linked_project = linked_project;
+        if (source !== undefined) existing.source = source;
+        existing.updated_at = now;
+      } else {
+        data.items.push({
+          id,
+          title: title || "Untitled",
+          description: description || "",
+          status: status || "raw",
+          tags: tags || [],
+          image_url: image_url || "",
+          notes: notes || "",
+          linked_project: linked_project || null,
+          source: source || "ginge",
+          created_at: now,
+          updated_at: now,
+        });
+      }
+
+      data.lastUpdated = now;
+      await kv.set(KV_KEY, data);
+      return NextResponse.json({ ok: true });
+    }
+
+    case "delete": {
+      if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
+      data.items = data.items.filter((i) => i.id !== body.id);
+      data.lastUpdated = now;
+      await kv.set(KV_KEY, data);
+      return NextResponse.json({ ok: true });
+    }
+
+    default:
+      return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  }
 }

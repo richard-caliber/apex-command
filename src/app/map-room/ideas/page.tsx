@@ -1,826 +1,481 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+
+const TOKEN = "apex-live-2026";
+const API = "/api/map-room/ideas";
+
+/* ── Commentary Types ── */
+interface Commentary {
+  id: string;
+  agent: string;
+  emoji: string;
+  text: string;
+  updated_at: string;
+}
+
+const AGENT_COLORS: Record<string, { border: string; bg: string; label: string }> = {
+  atlas: { border: "#00d4d4", bg: "rgba(0, 212, 212, 0.06)", label: "Atlas" },
+  newton: { border: "#3b82f6", bg: "rgba(59, 130, 246, 0.06)", label: "Newton" },
+  darwin: { border: "#22c55e", bg: "rgba(34, 197, 94, 0.06)", label: "Darwin" },
+};
 
 /* ── Types ── */
 interface Idea {
   id: string;
   title: string;
-  summary: string;
-  status: "raw" | "expanded" | "queued" | "promoted" | "zombie" | "graveyard";
+  description: string;
+  status: "raw" | "expanded" | "queued" | "parked" | "zombie";
   tags: string[];
-  excitement: number; // 1-5
-  image_url: string | null;
+  image_url: string;
+  notes: string;
+  linked_project: string | null;
+  source: string;
   created_at: string;
-  cleaned_summary?: string;
-  expansion_ideas?: string[];
+  updated_at: string;
 }
+
+type Status = Idea["status"];
 
 /* ── Constants ── */
-const TOKEN = "apex-live-2026";
-
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  raw: { bg: "rgba(107,107,128,0.15)", text: "#6b6b80", label: "Raw" },
-  expanded: { bg: "rgba(96,165,250,0.15)", text: "#60a5fa", label: "Expanded" },
-  queued: { bg: "rgba(0,212,212,0.15)", text: "#00d4d4", label: "Queued" },
-  promoted: { bg: "rgba(34,197,94,0.15)", text: "#22c55e", label: "Promoted" },
-  zombie: { bg: "rgba(245,158,11,0.15)", text: "#f59e0b", label: "Zombie" },
-  graveyard: { bg: "rgba(55,55,70,0.3)", text: "#4a4a5a", label: "Graveyard" },
-};
-
-const PLACEHOLDER_TEXTS = [
-  "What problem did you notice today?",
-  "What would you build with unlimited engineers?",
-  "What's broken about healthcare?",
-  "I wish there was a tool that...",
-  "What would you build with unlimited engineers?",
-  "What's broken about real estate?",
-  "What would you automate if you could?",
+const STATUSES: { id: Status; label: string; color: string }[] = [
+  { id: "raw", label: "Raw", color: "#6b7280" },
+  { id: "expanded", label: "Expanded", color: "#00d4d4" },
+  { id: "queued", label: "Queued", color: "#f59e0b" },
+  { id: "parked", label: "Parked", color: "#6366f1" },
+  { id: "zombie", label: "Zombie", color: "#ef4444" },
 ];
 
-const SORT_OPTIONS = [
-  { value: "newest", label: "Newest" },
-  { value: "oldest", label: "Oldest" },
-  { value: "status", label: "Status" },
-  { value: "promoted-first", label: "Promoted First" },
+const STATUS_COLOR: Record<string, string> = Object.fromEntries(STATUSES.map((s) => [s.id, s.color]));
+
+const GRADIENTS = [
+  "from-teal-900/40 to-slate-900/60",
+  "from-purple-900/40 to-slate-900/60",
+  "from-blue-900/40 to-slate-900/60",
+  "from-amber-900/40 to-slate-900/60",
+  "from-rose-900/40 to-slate-900/60",
+  "from-emerald-900/40 to-slate-900/60",
 ];
 
-const STATUS_FILTERS = ["all", "raw", "expanded", "queued", "promoted", "zombie", "graveyard"];
-
-const GRADIENT_PALETTES = [
-  "linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #0a1628 100%)",
-  "linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)",
-  "linear-gradient(135deg, #0b1d0b 0%, #1a2e1a 50%, #0d2818 100%)",
-  "linear-gradient(135deg, #2d1b00 0%, #1a1a2e 50%, #0a0a1f 100%)",
-  "linear-gradient(135deg, #1a0000 0%, #2d1a1a 50%, #1a0a1a 100%)",
-  "linear-gradient(135deg, #001a1a 0%, #0a2828 50%, #001414 100%)",
-];
-
-/* ── Helpers ── */
-function getIdeaMissingFields(idea: Idea): string[] {
-  const missing: string[] = [];
-  if (!idea.image_url) missing.push("No image");
-  if (!idea.cleaned_summary && !idea.summary) missing.push("No summary");
-  if (!idea.tags || idea.tags.length === 0) missing.push("No tags");
-  return missing;
-}
-
-function getIdeaCompleteness(idea: Idea): number {
-  let filled = 0;
-  const total = 5; // title + summary + tags + image + expansion_ideas
-  if (idea.title) filled++;
-  if (idea.summary || idea.cleaned_summary) filled++;
-  if (idea.tags && idea.tags.length > 0) filled++;
-  if (idea.image_url) filled++;
-  if (idea.expansion_ideas && idea.expansion_ideas.length > 0) filled++;
-  return Math.round((filled / total) * 100);
-}
-
-/* ── Seed Data ── */
-const SEED_IDEAS: Idea[] = [
-  {
-    id: "idea-repostai",
-    title: "RepostAI",
-    summary: "AI-powered content repurposing engine — one post becomes 10 across all platforms with optimised formats.",
-    status: "expanded",
-    tags: ["AI", "Content", "SaaS"],
-    excitement: 5,
-    image_url: null,
-    created_at: "2026-03-25T10:00:00Z",
-    cleaned_summary: "AI-powered content repurposing engine that transforms a single piece of content into platform-optimised variants.",
-    expansion_ideas: ["Chrome extension", "API for agencies", "Analytics dashboard"],
-  },
-  {
-    id: "idea-parliament",
-    title: "Parliament Tracker",
-    summary: "Track MP voting patterns, detect contradictions, and surface hidden voting trends with AI analysis.",
-    status: "promoted",
-    tags: ["GovTech", "Data", "AI"],
-    excitement: 4,
-    image_url: null,
-    created_at: "2026-03-20T14:00:00Z",
-    cleaned_summary: "AI-powered platform tracking MP voting records and public statements to detect contradictions.",
-    expansion_ideas: ["WhatsApp bot", "Journalist API", "Prediction model"],
-  },
-  {
-    id: "idea-comic",
-    title: "Comic Creator",
-    summary: "Turn any story prompt into a full comic book with AI-generated panels, speech bubbles, and consistent characters.",
-    status: "raw",
-    tags: ["Creative", "AI", "Consumer"],
-    excitement: 4,
-    image_url: null,
-    created_at: "2026-03-28T09:00:00Z",
-    cleaned_summary: "",
-    expansion_ideas: [],
-  },
-  {
-    id: "idea-peptide-stack",
-    title: "Peptide Stack Builder",
-    summary: "Interactive tool that recommends peptide stacks based on goals, body stats, and experience level.",
-    status: "queued",
-    tags: ["Health", "Tool", "Caliber"],
-    excitement: 3,
-    image_url: null,
-    created_at: "2026-03-22T16:00:00Z",
-    cleaned_summary: "Interactive peptide stack recommendation tool.",
-    expansion_ideas: ["Protocol builder", "Community reviews"],
-  },
-  {
-    id: "idea-villa-investor",
-    title: "Villa Investor Platform",
-    summary: "",
-    status: "raw",
-    tags: [],
-    excitement: 3,
-    image_url: null,
-    created_at: "2026-03-27T11:00:00Z",
-    cleaned_summary: "",
-    expansion_ideas: [],
-  },
-  {
-    id: "idea-market-intel",
-    title: "Market Intel as a Service",
-    summary: "On-demand market research reports generated by AI agents — competitor analysis, pricing intel, trend forecasting.",
-    status: "zombie",
-    tags: ["B2B", "AI", "Research"],
-    excitement: 2,
-    image_url: null,
-    created_at: "2026-03-15T08:00:00Z",
-    cleaned_summary: "On-demand market research reports generated by AI agents.",
-    expansion_ideas: ["Subscription tier", "API for pitch decks"],
-  },
-];
-
-const MOCK_SIGNALS = [
-  { title: "AI wrappers are dead, AI agents are the new play", source: "@levelsio", time: "2h ago" },
-  { title: "Voice-first interfaces converting 3x better than chat", source: "@sama", time: "5h ago" },
-  { title: "Solo founders hitting $10k MRR in 30 days with Claude", source: "@marc_lou", time: "8h ago" },
-  { title: "The peptide market is exploding — $45B by 2028", source: "@healthtech_vc", time: "1d ago" },
-];
-
-const MOCK_VIDEOS = [
-  { title: "How I Built a $1M SaaS in 90 Days", channel: "Starter Story", views: "342K" },
-  { title: "The Future of AI Agents in Business", channel: "Y Combinator", views: "1.2M" },
-  { title: "Building in Public: Week 12 Update", channel: "Pieter Levels", views: "89K" },
-  { title: "Why Micro-SaaS is the Best Business Model", channel: "MicroConf", views: "156K" },
-];
-
-const MOCK_TRENDS = [
-  { title: "AI-powered compliance tools seeing 400% growth", category: "RegTech" },
-  { title: "Voice cloning costs dropped 90% in 6 months", category: "AI Audio" },
-  { title: "Vertical SaaS for trades — plumbing, HVAC, electrical", category: "B2B" },
-  { title: "Peptide research APIs becoming mainstream", category: "BioTech" },
-];
-
-const CAPABILITIES = [
-  "Claude can build full apps from a single prompt",
-  "Voice cloning is now real-time at $0.001/sec",
-  "GPT-image-1 generates indistinguishable product photography",
-  "Browser-use agents can navigate any website autonomously",
-];
-
-/* ── Component ── */
+/* ── Main ── */
 export default function IdeasPage() {
-  const [ideas, setIdeas] = useState<Idea[]>(SEED_IDEAS);
-  const [inputValue, setInputValue] = useState("");
-  const [placeholderIdx, setPlaceholderIdx] = useState(0);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("");
-  const [searchText, setSearchText] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
-  const [submitting, setSubmitting] = useState(false);
-  const [collapsedPanels, setCollapsedPanels] = useState<Set<string>>(new Set());
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [commentaries, setCommentaries] = useState<Commentary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | Status>("all");
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // Rotate placeholder
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPlaceholderIdx((i) => (i + 1) % PLACEHOLDER_TEXTS.length);
-    }, 3000);
-    return () => clearInterval(timer);
+  // Quick capture
+  const [captureTitle, setCaptureTitle] = useState("");
+  const [captureTags, setCaptureTags] = useState("");
+
+  // Feeds
+  const [feedsOpen, setFeedsOpen] = useState<Record<string, boolean>>({});
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [ideasRes, commentaryRes] = await Promise.all([
+        fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "list" }),
+        }),
+        fetch("/api/ideas-commentary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "list" }),
+        }),
+      ]);
+      if (ideasRes.ok) setIdeas(await ideasRes.json());
+      if (commentaryRes.ok) setCommentaries(await commentaryRes.json());
+    } catch (_e) { /* silent */ }
+    finally { setLoading(false); }
   }, []);
 
-  // Fetch ideas
-  const fetchIdeas = useCallback(async () => {
-    try {
-      const res = await fetch("/api/map-room/ideas");
-      if (res.ok) {
-        const data = await res.json();
-        const items = data?.items || data?.ideas;
-        if (items?.length) {
-          // Map API shape (name, etc.) to our Idea shape
-          const statusMap: Record<string, string> = {
-            exploring: "expanded",
-            validated: "queued",
-            parked: "zombie",
-            killed: "graveyard",
-          };
-          setIdeas(items.map((i: Record<string, unknown>) => ({
-            id: i.id,
-            title: i.name || i.title || "Untitled",
-            summary: i.summary || "",
-            status: statusMap[i.status as string] || i.status || "raw",
-            tags: i.tags || [],
-            excitement: i.excitement || 3,
-            image_url: i.image_url || null,
-            created_at: i.created_at || new Date().toISOString(),
-            cleaned_summary: (i.cleaned_summary as string) || "",
-            expansion_ideas: (i.expansion_ideas as string[]) || [],
-          })));
-        }
-      }
-    } catch {
-      // keep seed data
-    }
-  }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  useEffect(() => {
-    fetchIdeas();
-  }, [fetchIdeas]);
-
-  // Submit idea
-  const handleSubmit = async () => {
-    if (!inputValue.trim()) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/map-room/ideas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-        body: JSON.stringify({ title: inputValue.trim(), summary: "", status: "raw", tags: [], excitement: 1 }),
-      });
-      if (res.ok) {
-        setInputValue("");
-        fetchIdeas();
-      }
-    } catch {
-      // Optimistic local add
-      const newIdea: Idea = {
-        id: `idea-${Date.now()}`,
-        title: inputValue.trim(),
-        summary: "",
-        status: "raw",
-        tags: [],
-        excitement: 1,
-        image_url: null,
-        created_at: new Date().toISOString(),
-        cleaned_summary: "",
-        expansion_ideas: [],
-      };
-      setIdeas((prev) => [newIdea, ...prev]);
-      setInputValue("");
-    }
-    setSubmitting(false);
-  };
-
-  // Pre-fill capture bar from inspiration
-  const prefillCapture = (text: string) => {
-    setInputValue(text);
-    inputRef.current?.focus();
-  };
-
-  const togglePanel = (name: string) => {
-    setCollapsedPanels((prev) => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
+  const addIdea = async () => {
+    if (!captureTitle.trim()) return;
+    const id = `idea-${Date.now().toString(36)}`;
+    const tags = captureTags ? captureTags.split(",").map((t) => t.trim()).filter(Boolean) : [];
+    await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      body: JSON.stringify({ action: "set", id, title: captureTitle.trim(), tags, source: "ginge" }),
     });
+    setCaptureTitle("");
+    setCaptureTags("");
+    fetchData();
   };
 
-  // Collect all tags
-  const allTags = Array.from(new Set(ideas.flatMap((i) => i.tags))).sort();
+  const updateIdea = async (id: string, updates: Partial<Idea>) => {
+    await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      body: JSON.stringify({ action: "set", id, ...updates }),
+    });
+    setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, ...updates, updated_at: new Date().toISOString() } : i));
+  };
 
-  // Count incomplete ideas
-  const incompleteCount = ideas.filter((i) => getIdeaMissingFields(i).length > 0).length;
+  const deleteIdea = async (id: string) => {
+    await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      body: JSON.stringify({ action: "delete", id }),
+    });
+    setDeleteConfirm(null);
+    setExpanded(null);
+    fetchData();
+  };
 
-  // Filter & sort
-  let filtered = ideas.filter((idea) => {
-    if (statusFilter !== "all" && idea.status !== statusFilter) return false;
-    if (tagFilter && !idea.tags.includes(tagFilter)) return false;
-    if (searchText) {
-      const q = searchText.toLowerCase();
-      if (!idea.title.toLowerCase().includes(q) && !idea.summary.toLowerCase().includes(q)) return false;
+  const captureFromFeed = (title: string, source: string) => {
+    setCaptureTitle(title);
+    setCaptureTags(source);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const filtered = useMemo(() => {
+    let items = ideas;
+    if (filter !== "all") items = items.filter((i) => i.status === filter);
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter((i) =>
+        i.title.toLowerCase().includes(q) ||
+        i.description.toLowerCase().includes(q) ||
+        i.tags.some((t) => t.toLowerCase().includes(q))
+      );
     }
-    return true;
-  });
+    return items.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [ideas, filter, search]);
 
-  filtered = [...filtered].sort((a, b) => {
-    switch (sortBy) {
-      case "oldest":
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      case "status": {
-        const order = ["promoted", "queued", "expanded", "raw", "zombie", "graveyard"];
-        return order.indexOf(a.status) - order.indexOf(b.status);
-      }
-      case "promoted-first": {
-        if (a.status === "promoted" && b.status !== "promoted") return -1;
-        if (b.status === "promoted" && a.status !== "promoted") return 1;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-      default:
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    }
-  });
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const i of ideas) counts[i.status] = (counts[i.status] || 0) + 1;
+    return counts;
+  }, [ideas]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* ── Page Header with Attention Count ── */}
-      {incompleteCount > 0 && (
-        <div
-          className="flex items-center gap-3 rounded-lg px-4 py-3"
-          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}
-        >
-          <span style={{ color: "#f59e0b", fontSize: 16 }}>⚠</span>
-          <span className="text-sm font-medium" style={{ color: "#f59e0b" }}>
-            {incompleteCount} idea{incompleteCount !== 1 ? "s" : ""} need{incompleteCount === 1 ? "s" : ""} attention
-          </span>
-          <span className="text-xs" style={{ color: "#6b6b80" }}>
-            — missing images, summaries, or tags
-          </span>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white">Ideas</h1>
+
+      {/* ── Squad Commentary ── */}
+      {commentaries.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {commentaries.map((c) => {
+            const agent = AGENT_COLORS[c.agent] || AGENT_COLORS.atlas;
+            return (
+              <div
+                key={c.id}
+                className="rounded-xl p-4 border"
+                style={{
+                  background: agent.bg,
+                  borderColor: `${agent.border}30`,
+                  borderLeftWidth: "3px",
+                  borderLeftColor: agent.border,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">{c.emoji}</span>
+                  <span className="text-sm font-bold text-white">{agent.label}</span>
+                </div>
+                <p className="text-xs text-[#c8d0dc] leading-relaxed mb-3">&ldquo;{c.text}&rdquo;</p>
+                <span className="text-[10px] text-[#475569]">Updated {timeAgo(c.updated_at)}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* ── Quick Capture Bar ── */}
-      <section className="rounded-xl border p-6" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg">💡</span>
-          <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "#6b6b80" }}>
-            Quick Capture
-          </h2>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder={PLACEHOLDER_TEXTS[placeholderIdx]}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              rows={2}
-              className="w-full rounded-lg border px-4 py-3 text-sm resize-none focus:outline-none transition-colors placeholder-[#4a4a5a]"
-              style={{
-                background: "#0a0a0f",
-                borderColor: "#1e1e2e",
-                color: "#ffffff",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !inputValue.trim()}
-              className="px-5 py-3 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 cursor-pointer"
-              style={{
-                background: "rgba(0,212,212,0.15)",
-                color: "#00d4d4",
-                border: "1px solid rgba(0,212,212,0.3)",
-              }}
-            >
-              {submitting ? "..." : "Capture"}
-            </button>
-            <button
-              className="px-3 py-2 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-center gap-1"
-              style={{
-                background: "rgba(107,107,128,0.1)",
-                color: "#6b6b80",
-                border: "1px solid rgba(107,107,128,0.2)",
-              }}
-              title="Voice capture (placeholder)"
-            >
-              🎤
-              <span
-                className="text-[8px] px-1 py-0.5 rounded"
-                style={{ background: "rgba(107,107,128,0.15)", color: "#6b6b80" }}
-              >
-                🔌
-              </span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Filters & Sort ── */}
-      <section className="flex flex-wrap items-center gap-3">
-        {/* Status pills */}
-        <div className="flex items-center gap-1 flex-wrap">
-          {STATUS_FILTERS.map((s) => {
-            const isActive = statusFilter === s;
-            const style = s === "all" ? null : STATUS_STYLES[s];
-            return (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer"
-                style={{
-                  background: isActive
-                    ? style?.bg || "rgba(0,212,212,0.15)"
-                    : "rgba(30,30,46,0.5)",
-                  color: isActive
-                    ? style?.text || "#00d4d4"
-                    : "#6b6b80",
-                  border: `1px solid ${isActive ? (style?.text || "#00d4d4") + "33" : "#1e1e2e"}`,
-                }}
-              >
-                {s === "all" ? "All" : STATUS_STYLES[s]?.label || s}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tag filter */}
-        <select
-          value={tagFilter}
-          onChange={(e) => setTagFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-xs cursor-pointer focus:outline-none"
-          style={{ background: "#111118", border: "1px solid #1e1e2e", color: "#a0a0b0" }}
-        >
-          <option value="">All Tags</option>
-          {allTags.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-
-        {/* Search */}
-        <input
-          type="text"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          placeholder="Search ideas..."
-          className="px-3 py-1.5 rounded-lg text-xs focus:outline-none flex-1 min-w-[120px] max-w-[250px]"
-          style={{ background: "#111118", border: "1px solid #1e1e2e", color: "#a0a0b0" }}
-        />
-
-        {/* Sort */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-xs cursor-pointer focus:outline-none ml-auto"
-          style={{ background: "#111118", border: "1px solid #1e1e2e", color: "#a0a0b0" }}
-        >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      </section>
-
-      {/* ── Main Layout: Grid + Sidebar ── */}
-      <div className="flex gap-6 flex-col lg:flex-row">
-        {/* ── Idea Grid ── */}
-        <div className="flex-1 min-w-0">
-          {filtered.length === 0 && (
-            <div className="rounded-xl border p-12 text-center" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
-              <div className="text-3xl mb-3">🌱</div>
-              <p className="text-sm" style={{ color: "#a0a0b0" }}>No ideas match your filters.</p>
-              <p className="text-xs mt-1" style={{ color: "#6b6b80" }}>Try adjusting your filters or capture a new idea above.</p>
-            </div>
-          )}
-
-          <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
-            {filtered.map((idea, idx) => {
-              const statusStyle = STATUS_STYLES[idea.status];
-              const gradient = GRADIENT_PALETTES[idx % GRADIENT_PALETTES.length];
-              const missingFields = getIdeaMissingFields(idea);
-              const completeness = getIdeaCompleteness(idea);
-              const needsEnrichment = idea.status === "raw" && missingFields.length > 0;
-
-              return (
-                <Link
-                  key={idea.id}
-                  href={`/map-room/ideas/${idea.id}`}
-                  className="block rounded-xl border overflow-hidden break-inside-avoid transition-all hover:border-[#2a2a3e] hover:translate-y-[-2px] group"
-                  style={{ background: "#111118", borderColor: "#1e1e2e" }}
-                >
-                  {/* Image / Gradient placeholder */}
-                  {idea.image_url ? (
-                    <div
-                      className="w-full aspect-video bg-cover bg-center"
-                      style={{ backgroundImage: `url(${idea.image_url})` }}
-                    />
-                  ) : (
-                    <div
-                      className="w-full aspect-video flex items-center justify-center"
-                      style={{ background: gradient }}
-                    >
-                      <span className="text-3xl opacity-30 group-hover:opacity-50 transition-opacity">
-                        💡
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="p-4">
-                    {/* Title */}
-                    <h3 className="text-sm font-bold text-white mb-1 group-hover:text-[#00d4d4] transition-colors">
-                      {idea.title}
-                    </h3>
-
-                    {/* Summary */}
-                    {idea.summary && (
-                      <p className="text-xs leading-relaxed mb-3" style={{ color: "#a0a0b0" }}>
-                        {idea.summary.length > 100 ? idea.summary.slice(0, 100) + "..." : idea.summary}
-                      </p>
-                    )}
-
-                    {/* Missing Data Badges */}
-                    {missingFields.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {missingFields.map((badge) => (
-                          <span
-                            key={badge}
-                            className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
-                            style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}
-                          >
-                            {badge}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Needs Enrichment Badge */}
-                    {needsEnrichment && (
-                      <div
-                        className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md"
-                        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)" }}
-                      >
-                        <span style={{ fontSize: 10 }}>⚡</span>
-                        <span className="text-[9px] font-medium" style={{ color: "#f59e0b" }}>
-                          Needs enrichment
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Completeness Bar */}
-                    <div className="mb-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-medium" style={{ color: "#6b6b80" }}>
-                          Completeness
-                        </span>
-                        <span className="text-[9px] font-mono" style={{ color: completeness === 100 ? "#22c55e" : "#6b6b80" }}>
-                          {completeness}%
-                        </span>
-                      </div>
-                      <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(30,30,46,0.8)" }}>
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{
-                            width: `${completeness}%`,
-                            background: completeness === 100
-                              ? "#22c55e"
-                              : completeness >= 60
-                                ? "#00d4d4"
-                                : "#f59e0b",
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Bottom row */}
-                    <div className="flex items-center justify-between">
-                      {/* Status badge */}
-                      <span
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider"
-                        style={{ background: statusStyle.bg, color: statusStyle.text }}
-                      >
-                        {statusStyle.label}
-                      </span>
-
-                      {/* Excitement */}
-                      <div className="flex items-center gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <span
-                            key={i}
-                            className="text-[10px]"
-                            style={{ opacity: i < idea.excitement ? 1 : 0.2 }}
-                          >
-                            ⚡
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Tags */}
-                    {idea.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {idea.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[9px] px-1.5 py-0.5 rounded-full"
-                            style={{ background: "rgba(0,212,212,0.08)", color: "#00d4d4" }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Right Sidebar: Inspiration Panels ── */}
-        <div className="w-full lg:w-80 flex-shrink-0 space-y-4">
-          {/* Twitter/X Signals */}
-          <InspirationPanel
-            title="Twitter/X Signals"
-            icon="🐦"
-            placeholder
-            collapsed={collapsedPanels.has("twitter")}
-            onToggle={() => togglePanel("twitter")}
-          >
-            {MOCK_SIGNALS.map((s, i) => (
-              <div key={i} className="px-3 py-2.5 border-b last:border-b-0" style={{ borderColor: "#1e1e2e" }}>
-                <p className="text-xs text-white leading-relaxed">{s.title}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <div className="flex items-center gap-2 text-[10px]" style={{ color: "#6b6b80" }}>
-                    <span>{s.source}</span>
-                    <span>·</span>
-                    <span>{s.time}</span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      prefillCapture(s.title);
-                    }}
-                    className="text-[10px] px-2 py-0.5 rounded font-medium transition-all cursor-pointer"
-                    style={{ background: "rgba(0,212,212,0.1)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.2)" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.1)"; }}
-                  >
-                    → Create Idea
-                  </button>
-                </div>
-              </div>
-            ))}
-          </InspirationPanel>
-
-          {/* YouTube Watchlist */}
-          <InspirationPanel
-            title="YouTube Watchlist"
-            icon="📺"
-            placeholder
-            collapsed={collapsedPanels.has("youtube")}
-            onToggle={() => togglePanel("youtube")}
-          >
-            {MOCK_VIDEOS.map((v, i) => (
-              <div key={i} className="px-3 py-2.5 border-b last:border-b-0" style={{ borderColor: "#1e1e2e" }}>
-                <p className="text-xs text-white leading-relaxed">{v.title}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <div className="flex items-center gap-2 text-[10px]" style={{ color: "#6b6b80" }}>
-                    <span>{v.channel}</span>
-                    <span>·</span>
-                    <span>{v.views} views</span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      prefillCapture(v.title);
-                    }}
-                    className="text-[10px] px-2 py-0.5 rounded font-medium transition-all cursor-pointer"
-                    style={{ background: "rgba(0,212,212,0.1)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.2)" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.1)"; }}
-                  >
-                    → Create Idea
-                  </button>
-                </div>
-              </div>
-            ))}
-          </InspirationPanel>
-
-          {/* News/Trends */}
-          <InspirationPanel
-            title="News & Trends"
-            icon="📈"
-            placeholder
-            collapsed={collapsedPanels.has("trends")}
-            onToggle={() => togglePanel("trends")}
-          >
-            {MOCK_TRENDS.map((t, i) => (
-              <div key={i} className="px-3 py-2.5 border-b last:border-b-0" style={{ borderColor: "#1e1e2e" }}>
-                <p className="text-xs text-white leading-relaxed">{t.title}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <span
-                    className="inline-block text-[9px] px-1.5 py-0.5 rounded-full"
-                    style={{ background: "rgba(96,165,250,0.12)", color: "#60a5fa" }}
-                  >
-                    {t.category}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      prefillCapture(t.title);
-                    }}
-                    className="text-[10px] px-2 py-0.5 rounded font-medium transition-all cursor-pointer"
-                    style={{ background: "rgba(0,212,212,0.1)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.2)" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.1)"; }}
-                  >
-                    → Create Idea
-                  </button>
-                </div>
-              </div>
-            ))}
-          </InspirationPanel>
-
-          {/* Capabilities Feed */}
-          <InspirationPanel
-            title="Capabilities Feed"
-            icon="🧠"
-            collapsed={collapsedPanels.has("capabilities")}
-            onToggle={() => togglePanel("capabilities")}
-          >
-            {CAPABILITIES.map((c, i) => (
-              <div key={i} className="px-3 py-2.5 border-b last:border-b-0" style={{ borderColor: "#1e1e2e" }}>
-                <p className="text-xs leading-relaxed" style={{ color: "#a0a0b0" }}>{c}</p>
-                <div className="flex justify-end mt-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      prefillCapture(c);
-                    }}
-                    className="text-[10px] px-2 py-0.5 rounded font-medium transition-all cursor-pointer"
-                    style={{ background: "rgba(0,212,212,0.1)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.2)" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,212,212,0.1)"; }}
-                  >
-                    → Create Idea
-                  </button>
-                </div>
-              </div>
-            ))}
-          </InspirationPanel>
+      <div className="rounded-xl border border-[#00d4d4]/20 p-4" style={{ background: "rgba(0, 212, 212, 0.03)" }}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            value={captureTitle}
+            onChange={(e) => setCaptureTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addIdea()}
+            placeholder="What's the idea?"
+            className="flex-1 min-w-[200px] bg-[#111827] border border-[#1e293b] rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#00d4d4]"
+          />
+          <input
+            value={captureTags}
+            onChange={(e) => setCaptureTags(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addIdea()}
+            placeholder="Tags (comma separated)"
+            className="w-48 bg-[#111827] border border-[#1e293b] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#00d4d4]"
+          />
+          <button onClick={addIdea}
+            className="px-4 py-2.5 rounded-lg text-sm font-semibold bg-[#00d4d4]/10 text-[#00d4d4] border border-[#00d4d4]/30 hover:bg-[#00d4d4]/20 transition-colors cursor-pointer">
+            Add
+          </button>
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-in {
-          animation: fadeIn 0.5s ease-out;
-        }
-      `}</style>
+      {/* ── Search ── */}
+      <input
+        value={search} onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search ideas..."
+        className="w-full sm:w-64 bg-[#111827] border border-[#1e293b] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00d4d4]"
+      />
+
+      {/* ── Status Filter Tabs ── */}
+      <div className="flex items-center gap-1 flex-wrap">
+        <FilterTab label="All" count={ideas.length} active={filter === "all"} onClick={() => setFilter("all")} color="#94a3b8" />
+        {STATUSES.map((s) => (
+          <FilterTab key={s.id} label={s.label} count={statusCounts[s.id] || 0} active={filter === s.id}
+            onClick={() => setFilter(s.id)} color={s.color} />
+        ))}
+      </div>
+
+      {/* ── Idea Grid ── */}
+      {loading ? (
+        <p className="text-sm text-[#475569] text-center py-20">Loading ideas...</p>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-[#1e293b] px-6 py-12 text-center" style={{ background: "#111827" }}>
+          <p className="text-[#475569] text-sm">{ideas.length === 0 ? "No ideas yet. Drop one above." : "No ideas match this filter."}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map((idea, idx) => (
+            <IdeaCard key={idea.id} idea={idea} index={idx}
+              isExpanded={expanded === idea.id}
+              onToggle={() => setExpanded(expanded === idea.id ? null : idea.id)}
+              onUpdate={(updates) => updateIdea(idea.id, updates)}
+              onDelete={() => deleteConfirm === idea.id ? deleteIdea(idea.id) : setDeleteConfirm(idea.id)}
+              deleteConfirming={deleteConfirm === idea.id}
+              onCancelDelete={() => setDeleteConfirm(null)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Inspiration Feeds ── */}
+      <div className="space-y-3 pt-4">
+        <h3 className="text-sm font-bold tracking-widest uppercase text-[#64748b]">Inspiration Feeds</h3>
+
+        {/* X/Twitter */}
+        <FeedSection title="📡 X / Twitter Signals" id="twitter" open={!!feedsOpen.twitter} onToggle={() => setFeedsOpen((p) => ({ ...p, twitter: !p.twitter }))}>
+          <TweetCapture onCapture={captureFromFeed} />
+        </FeedSection>
+
+        {/* YouTube */}
+        <FeedSection title="📺 YouTube Watchlist" id="youtube" open={!!feedsOpen.youtube} onToggle={() => setFeedsOpen((p) => ({ ...p, youtube: !p.youtube }))}>
+          <p className="text-xs text-[#475569] italic">Coming soon — connect YouTube Data API key via Vault to see latest videos from tracked channels.</p>
+        </FeedSection>
+
+        {/* News */}
+        <FeedSection title="📰 News & Trends" id="news" open={!!feedsOpen.news} onToggle={() => setFeedsOpen((p) => ({ ...p, news: !p.news }))}>
+          <p className="text-xs text-[#475569] italic">Coming soon — RSS integration for industry sources.</p>
+        </FeedSection>
+      </div>
     </div>
   );
 }
 
-/* ── Inspiration Panel ── */
-function InspirationPanel({
-  title,
-  icon,
-  placeholder,
-  collapsed,
-  onToggle,
-  children,
-}: {
-  title: string;
-  icon: string;
-  placeholder?: boolean;
-  collapsed: boolean;
+/* ── Idea Card ── */
+function IdeaCard({ idea, index, isExpanded, onToggle, onUpdate, onDelete, deleteConfirming, onCancelDelete }: {
+  idea: Idea; index: number; isExpanded: boolean;
   onToggle: () => void;
-  children: React.ReactNode;
+  onUpdate: (updates: Partial<Idea>) => void;
+  onDelete: () => void; deleteConfirming: boolean; onCancelDelete: () => void;
 }) {
+  const color = STATUS_COLOR[idea.status] || "#6b7280";
+  const gradient = GRADIENTS[index % GRADIENTS.length];
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const debouncedUpdate = (updates: Partial<Idea>) => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => onUpdate(updates), 500);
+  };
+
+  const warnings: string[] = [];
+  if (!idea.image_url) warnings.push("No image");
+  if (!idea.description) warnings.push("No description");
+
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ background: "#111118", borderColor: "#1e1e2e" }}>
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-sm">{icon}</span>
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#a0a0b0" }}>
-            {title}
-          </span>
-          {placeholder && (
-            <span
-              className="text-[8px] px-1.5 py-0.5 rounded"
-              style={{ background: "rgba(107,107,128,0.15)", color: "#6b6b80" }}
-            >
-              🔌 PLACEHOLDER
-            </span>
-          )}
+    <div className="rounded-xl border border-[#1e293b] overflow-hidden transition-all hover:brightness-105"
+      style={{ background: "rgba(17, 24, 39, 0.85)" }}>
+
+      {/* Image / gradient header */}
+      <div className={`relative h-24 bg-gradient-to-br ${gradient} cursor-pointer`} onClick={onToggle}>
+        {idea.image_url && (
+          <img src={idea.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
+        {/* Status badge */}
+        <span className="absolute top-2 right-2 text-[9px] font-bold tracking-wider px-2 py-0.5 rounded"
+          style={{ color, background: `${color}20`, border: `1px solid ${color}40` }}>
+          {idea.status.toUpperCase()}
+        </span>
+
+        {/* Title */}
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <h3 className="text-sm font-bold text-white leading-tight">{idea.title}</h3>
         </div>
-        <svg
-          className="w-3 h-3 transition-transform"
-          style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", color: "#6b6b80" }}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {!collapsed && <div>{children}</div>}
+
+        {/* Warnings */}
+        {warnings.length > 0 && (
+          <div className="absolute top-2 left-2 flex gap-1">
+            {warnings.map((w) => (
+              <span key={w} className="text-[8px] text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded" title={w}>
+                &#x26A0;&#xFE0F;
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-3 cursor-pointer" onClick={onToggle}>
+        {idea.description && (
+          <p className="text-xs text-[#94a3b8] leading-relaxed line-clamp-2 mb-2">{idea.description}</p>
+        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {idea.tags.map((t) => (
+            <span key={t} className="text-[9px] text-[#64748b] bg-[#1e293b] px-1.5 py-0.5 rounded-full">{t}</span>
+          ))}
+          {idea.source && <span className="text-[9px] text-[#475569] ml-auto">{idea.source}</span>}
+        </div>
+        <p className="text-[10px] text-[#475569] mt-1.5">{timeAgo(idea.created_at)}</p>
+      </div>
+
+      {/* Expanded edit */}
+      {isExpanded && (
+        <div className="border-t border-[#1e293b] p-3 space-y-3" onClick={(e) => e.stopPropagation()}>
+          <EditField label="Description" value={idea.description}
+            onChange={(v) => debouncedUpdate({ description: v })} multiline />
+          <EditField label="Notes" value={idea.notes}
+            onChange={(v) => debouncedUpdate({ notes: v })} multiline />
+          <EditField label="Image URL" value={idea.image_url}
+            onChange={(v) => debouncedUpdate({ image_url: v })} mono />
+          <EditField label="Tags (comma separated)" value={idea.tags.join(", ")}
+            onChange={(v) => debouncedUpdate({ tags: v.split(",").map((t) => t.trim()).filter(Boolean) })} />
+
+          {/* Status dropdown */}
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-[#475569] font-bold block mb-1">Status</label>
+            <select value={idea.status} onChange={(e) => onUpdate({ status: e.target.value as Status })}
+              className="text-xs bg-[#0a0e1a] border border-[#1e293b] rounded px-2 py-1.5 text-[#94a3b8] cursor-pointer">
+              {STATUSES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+          </div>
+
+          {/* Delete */}
+          <div className="pt-2 border-t border-[#1e293b]/50">
+            {deleteConfirming ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-red-400">Delete this idea?</span>
+                <button onClick={onDelete} className="text-[10px] text-red-400 font-bold cursor-pointer">Yes, delete</button>
+                <button onClick={onCancelDelete} className="text-[10px] text-[#475569] cursor-pointer">Cancel</button>
+              </div>
+            ) : (
+              <button onClick={onDelete} className="text-[10px] text-[#475569] hover:text-red-400 cursor-pointer">Delete idea</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+/* ── Edit Field ── */
+function EditField({ label, value, onChange, multiline, mono }: {
+  label: string; value: string; onChange: (v: string) => void; multiline?: boolean; mono?: boolean;
+}) {
+  const [local, setLocal] = useState(value);
+
+  useEffect(() => { setLocal(value); }, [value]);
+
+  const handleChange = (v: string) => {
+    setLocal(v);
+    onChange(v);
+  };
+
+  return (
+    <div>
+      <label className="text-[10px] uppercase tracking-wider text-[#475569] font-bold block mb-1">{label}</label>
+      {multiline ? (
+        <textarea value={local} onChange={(e) => handleChange(e.target.value)}
+          className={`w-full bg-[#0a0e1a] border border-[#1e293b] rounded-lg px-3 py-2 text-xs text-white resize-y min-h-[50px] focus:outline-none focus:border-[#00d4d4] ${mono ? "font-mono" : ""}`} />
+      ) : (
+        <input value={local} onChange={(e) => handleChange(e.target.value)}
+          className={`w-full bg-[#0a0e1a] border border-[#1e293b] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00d4d4] ${mono ? "font-mono" : ""}`} />
+      )}
+    </div>
+  );
+}
+
+/* ── Tweet Capture ── */
+function TweetCapture({ onCapture }: { onCapture: (title: string, source: string) => void }) {
+  const [url, setUrl] = useState("");
+
+  const capture = () => {
+    if (!url.trim()) return;
+    const title = `Tweet capture: ${url.trim().substring(0, 80)}`;
+    onCapture(title, `x.com,${url.trim()}`);
+    setUrl("");
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-[#94a3b8]">Paste a tweet URL to capture as an idea</p>
+      <div className="flex items-center gap-2">
+        <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && capture()}
+          placeholder="https://x.com/..."
+          className="flex-1 bg-[#0a0e1a] border border-[#1e293b] rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#00d4d4]" />
+        <button onClick={capture}
+          className="px-3 py-2 rounded-lg text-xs font-semibold bg-[#00d4d4]/10 text-[#00d4d4] border border-[#00d4d4]/30 hover:bg-[#00d4d4]/20 transition-colors cursor-pointer">
+          Capture as Idea
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Feed Section ── */
+function FeedSection({ title, id, open, onToggle, children }: {
+  title: string; id: string; open: boolean; onToggle: () => void; children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ background: "#111827", borderColor: open ? "#00d4d420" : "#1e293b", borderLeftColor: "#00d4d4", borderLeftWidth: "3px" }}>
+      <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+        <span className="text-sm font-semibold text-white flex-1 text-left">{title}</span>
+        <span className="text-xs text-[#475569]">{open ? "\u25B2" : "\u25BC"}</span>
+      </button>
+      {open && <div className="border-t border-[#1e293b] px-4 pb-4 pt-3">{children}</div>}
+    </div>
+  );
+}
+
+/* ── Filter Tab ── */
+function FilterTab({ label, count, active, onClick, color }: {
+  label: string; count: number; active: boolean; onClick: () => void; color: string;
+}) {
+  return (
+    <button onClick={onClick}
+      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+      style={{
+        background: active ? `${color}15` : "transparent",
+        color: active ? color : "#64748b",
+        border: active ? `1px solid ${color}30` : "1px solid transparent",
+      }}>
+      {label}
+      <span className="text-[9px] font-mono opacity-70">{count}</span>
+    </button>
+  );
+}
+
+/* ── Helpers ── */
+function timeAgo(iso: string): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }

@@ -4,9 +4,12 @@
       "id": "gemsnap",
       "name": "GemSnap",
       "image": "/images/gemsnap-card.jpg",
-      "status": "urgent",
-      "statusLine": "237 clicks, 0 conversions — PostHog added, awaiting data",
+      "stage": "Traffic",
+      "status": "attention",
+      "bottleneck": "237 clicks, 0 conversions — awaiting PostHog data",
       "keyMetric": { "label": "MRR", "value": "$0" },
+      "overdueTasks": 2,
+      "blockedTasks": 0,
       "tasks": [
         { "text": "Review PostHog session recordings", "owner": "🧭", "priority": "red", "done": false },
         { "text": "Verify phone on Meta ad account", "owner": "👤", "priority": "red", "done": false },
@@ -17,9 +20,12 @@
       "id": "caliber",
       "name": "Caliber Peptides",
       "image": "/images/caliber-card.jpg",
-      "status": "good",
-      "statusLine": "Content pipeline automated. TA-1 carousel + reel published.",
+      "stage": "Conversion",
+      "status": "on-track",
+      "bottleneck": "Content live — chasing first sale",
       "keyMetric": { "label": "Orders", "value": "0" },
+      "overdueTasks": 0,
+      "blockedTasks": 0,
       "tasks": [
         { "text": "First sale — reach out to network", "owner": "👤", "priority": "amber", "done": false },
         { "text": "BPC-157 SEO landing page (Antigravity)", "owner": "👤", "priority": "green", "done": false },
@@ -30,9 +36,12 @@
       "id": "edgeauto",
       "name": "Edge Auto",
       "image": "/images/edgeauto-card.jpg",
-      "status": "attention",
-      "statusLine": "Landing page live. Blocked on calendar + booking test.",
+      "stage": "MVP",
+      "status": "blocked",
+      "bottleneck": "Blocked on calendar + booking test",
       "keyMetric": { "label": "Customers", "value": "0" },
+      "overdueTasks": 2,
+      "blockedTasks": 1,
       "tasks": [
         { "text": "Add richard@edgeautomate.org to phone", "owner": "👤", "priority": "red", "done": false },
         { "text": "Test booking page end-to-end", "owner": "👤", "priority": "red", "done": false },
@@ -44,9 +53,12 @@
       "id": "storyquest",
       "name": "StoryQuest",
       "image": "/images/storyquest-card.jpg",
+      "stage": "MVP",
       "status": "attention",
-      "statusLine": "Bugs fixed, features built. Needs SFX + Stripe + TTS.",
+      "bottleneck": "Needs Stripe + SFX + TTS to ship",
       "keyMetric": { "label": "Users", "value": "0" },
+      "overdueTasks": 1,
+      "blockedTasks": 0,
       "tasks": [
         { "text": "Wire Stripe paywall (handleSubscribe)", "owner": "👤", "priority": "red", "done": false },
         { "text": "Add SFX audio files to /public/audio/sfx/", "owner": "👤", "priority": "amber", "done": false },
@@ -55,36 +67,46 @@
       ]
     },
     {
+      "id": "repostai",
+      "name": "RepostAI",
+      "image": "/images/repostai-card.jpg",
+      "stage": "Validation",
+      "status": "attention",
+      "bottleneck": "Pre-launch — needs landing page + PH date",
+      "keyMetric": { "label": "MRR", "value": "$0" },
+      "overdueTasks": 2,
+      "blockedTasks": 0,
+      "tasks": [
+        { "text": "Schedule Product Hunt launch date", "owner": "👤", "priority": "red", "done": false },
+        { "text": "Build landing page with email capture", "owner": "🧭", "priority": "red", "done": false },
+        { "text": "Meta ads campaign", "owner": "🧭", "priority": "amber", "done": false }
+      ]
+    },
+    {
       "id": "villas",
       "name": "Phuket Villas",
       "image": "/images/villas-card.jpg",
+      "stage": "Conversion",
       "status": "attention",
-      "statusLine": "3 villas, ~90M THB. Buyers delayed. Marketing to agents.",
+      "bottleneck": "Buyers delayed — marketing to agents",
       "keyMetric": { "label": "Value", "value": "90M THB" },
+      "overdueTasks": 0,
+      "blockedTasks": 0,
       "tasks": [
         { "text": "Villa investor page (Antigravity build)", "owner": "👤", "priority": "amber", "done": false },
         { "text": "Email top 4 Phuket agencies with prospectus", "owner": "🧭", "priority": "amber", "done": false }
       ]
     },
     {
-      "id": "parliament",
-      "name": "Parliament Tracker",
-      "image": "/images/parliament-card.jpg",
-      "status": "parked",
-      "statusLine": "Research phase. Newton evaluating feasibility.",
-      "keyMetric": { "label": "Stage", "value": "Research" },
-      "tasks": [
-        { "text": "Email capture landing page (Antigravity)", "owner": "👤", "priority": "green", "done": false },
-        { "text": "Newton feasibility report", "owner": "🔬", "priority": "green", "done": false }
-      ]
-    },
-    {
       "id": "squad",
       "name": "The Squad",
       "image": "/images/squad-card.jpg",
-      "status": "good",
-      "statusLine": "3 active bots. Pipeline automated. System stable.",
+      "stage": "Delivery",
+      "status": "on-track",
+      "bottleneck": "System stable — 3 bots active",
       "keyMetric": { "label": "Active Bots", "value": "3" },
+      "overdueTasks": 0,
+      "blockedTasks": 0,
       "tasks": [
         { "text": "Dev-browser Chrome extension setup", "owner": "👤", "priority": "amber", "done": false },
         { "text": "Explore Antigravity for landing page pipeline", "owner": "🧭", "priority": "green", "done": false },
@@ -92,17 +114,101 @@
       ]
     },
     {
-      "id": "repostai",
-      "name": "RepostAI",
-      "image": "/images/repostai-card.svg",
-      "status": "attention",
-      "statusLine": "Pre-launch. Go-to-market plan ready. Meta ads eligible.",
-      "keyMetric": { "label": "MRR", "value": "$0" },
+      "id": "parliament",
+      "name": "Parliament Tracker",
+      "image": "/images/parliament-card.jpg",
+      "stage": "Validation",
+      "status": "parked",
+      "bottleneck": "Newton evaluating feasibility",
+      "keyMetric": { "label": "Stage", "value": "Research" },
+      "overdueTasks": 0,
+      "blockedTasks": 0,
       "tasks": [
-        { "text": "Schedule Product Hunt launch date", "owner": "👤", "priority": "red", "done": false },
-        { "text": "Build landing page with email capture", "owner": "🧭", "priority": "red", "done": false },
-        { "text": "Meta ads campaign", "owner": "🧭", "priority": "amber", "done": false }
+        { "text": "Email capture landing page (Antigravity)", "owner": "👤", "priority": "green", "done": false },
+        { "text": "Newton feasibility report", "owner": "🔬", "priority": "green", "done": false }
       ]
+    }
+  ],
+  "ideas": [
+    {
+      "id": "idea-comic",
+      "title": "Comic Creator",
+      "image": "/images/idea-comic.jpg",
+      "summary": "Turn any story prompt into a full comic book with AI-generated panels and consistent characters.",
+      "status": "raw",
+      "tags": ["Creative", "AI", "Consumer"]
+    },
+    {
+      "id": "idea-peptide-stack",
+      "title": "Peptide Stack Builder",
+      "image": "/images/idea-peptide-stack.jpg",
+      "summary": "Interactive tool that recommends peptide stacks based on goals, body stats, and experience level.",
+      "status": "queued",
+      "tags": ["Health", "Tool", "Caliber"]
+    },
+    {
+      "id": "idea-villa-investor",
+      "title": "Villa Investor Platform",
+      "image": "/images/idea-villa-investor.jpg",
+      "summary": "Digital investment platform for Phuket villa buyers with ROI calculators and virtual tours.",
+      "status": "raw",
+      "tags": ["Property", "Finance"]
+    },
+    {
+      "id": "idea-market-intel",
+      "title": "Market Intel as a Service",
+      "image": "/images/idea-market-intel.png",
+      "summary": "On-demand market research reports generated by AI agents — competitor analysis, pricing intel, trend forecasting.",
+      "status": "zombie",
+      "tags": ["B2B", "AI", "Research"]
+    },
+    {
+      "id": "idea-geopolitik",
+      "title": "Geopolitik",
+      "image": "/images/idea-geopolitik.png",
+      "summary": "AI-powered geopolitical intelligence platform — track global events, policy shifts, and their market impact.",
+      "status": "raw",
+      "tags": ["GovTech", "AI", "Data"]
+    },
+    {
+      "id": "idea-gunsnap",
+      "title": "GunSnap",
+      "image": "/images/idea-gunsnap.jpg",
+      "summary": "AI gemstone-style identification and valuation for firearms — snap, identify, get instant specs and value.",
+      "status": "raw",
+      "tags": ["Consumer", "AI", "Niche"]
+    },
+    {
+      "id": "idea-poolsnap",
+      "title": "PoolSnap",
+      "image": "/images/idea-poolsnap.jpg",
+      "summary": "AI pool diagnostics — snap a photo, get water quality analysis, maintenance recommendations, and cost estimates.",
+      "status": "raw",
+      "tags": ["Consumer", "AI", "Home"]
+    },
+    {
+      "id": "idea-promptcraft",
+      "title": "PromptCraft",
+      "image": "/images/idea-promptcraft.jpg",
+      "summary": "Prompt engineering toolkit — build, test, version, and share AI prompts with performance tracking.",
+      "status": "raw",
+      "tags": ["AI", "Tool", "SaaS"]
+    },
+    {
+      "id": "idea-sales-copilot",
+      "title": "Sales Co-Pilot",
+      "image": "/images/idea-sales-copilot.jpg",
+      "summary": "AI sales assistant that joins calls, takes notes, suggests responses, and auto-generates follow-ups.",
+      "status": "raw",
+      "tags": ["B2B", "AI", "SaaS"]
+    },
+    {
+      "id": "idea-splashboard",
+      "title": "SplashBoard",
+      "image": "/images/idea-splashboard.png",
+      "summary": "Visual dashboard builder — drag-and-drop KPI boards with live data connections and AI-generated insights.",
+      "status": "raw",
+      "tags": ["SaaS", "Data", "Tool"]
     }
   ],
   "lastUpdated": "2026-03-29T08:30:00Z"

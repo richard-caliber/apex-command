@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+/* ─── Types ─── */
+
 interface Task {
   text: string;
   owner: string;
@@ -15,110 +17,197 @@ interface Project {
   id: string;
   name: string;
   image: string;
-  status: "urgent" | "attention" | "good" | "parked";
-  statusLine: string;
+  stage: string;
+  status: string;
+  bottleneck: string;
   keyMetric: { label: string; value: string };
+  overdueTasks: number;
+  blockedTasks: number;
   tasks: Task[];
+}
+
+interface Idea {
+  id: string;
+  title: string;
+  image?: string;
+  summary: string;
+  status: string;
+  tags: string[];
 }
 
 interface Data {
   projects: Project[];
+  ideas: Idea[];
   lastUpdated: string;
 }
 
-const STATUS_ORDER: Record<string, number> = { urgent: 0, attention: 1, good: 2, parked: 3 };
-const AURA_CLASS: Record<string, string> = {
-  urgent: "card-urgent",
-  attention: "card-attention",
-  good: "card-good",
-  parked: "card-parked",
-};
-const STATUS_LABEL: Record<string, { text: string; color: string }> = {
-  urgent: { text: "URGENT", color: "text-red-400" },
-  attention: { text: "ATTENTION", color: "text-amber-400" },
-  good: { text: "ON TRACK", color: "text-green-400" },
-  parked: { text: "PARKED", color: "text-gray-500" },
-};
-const TOKEN = "apex-live-2026";
+/* ─── Constants ─── */
 
-export default function Dashboard() {
+const STATUS_PRIORITY: Record<string, number> = {
+  blocked: 0,
+  attention: 1,
+  scaling: 2,
+  "on-track": 3,
+  parked: 4,
+  zombie: 5,
+};
+
+const AURA: Record<string, string> = {
+  attention: "aura-attention",
+  "on-track": "aura-on-track",
+  scaling: "aura-scaling",
+  parked: "aura-parked",
+  zombie: "aura-zombie",
+  blocked: "aura-blocked",
+};
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  attention: { label: "ATTENTION", color: "text-amber-400", bg: "bg-amber-400/15" },
+  "on-track": { label: "ON TRACK", color: "text-teal-400", bg: "bg-teal-400/15" },
+  scaling: { label: "SCALING", color: "text-cyan-300", bg: "bg-cyan-300/15" },
+  parked: { label: "PARKED", color: "text-slate-500", bg: "bg-slate-500/15" },
+  zombie: { label: "ZOMBIE", color: "text-gray-600", bg: "bg-gray-600/15" },
+  blocked: { label: "BLOCKED", color: "text-red-400", bg: "bg-red-400/15" },
+};
+
+const STAGE_COLOR: Record<string, string> = {
+  Idea: "bg-purple-500/20 text-purple-300",
+  Validation: "bg-blue-500/20 text-blue-300",
+  MVP: "bg-sky-500/20 text-sky-300",
+  Traffic: "bg-amber-500/20 text-amber-300",
+  Conversion: "bg-orange-500/20 text-orange-300",
+  Delivery: "bg-green-500/20 text-green-300",
+  Scale: "bg-cyan-500/20 text-cyan-300",
+};
+
+const IDEA_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  raw: { label: "RAW", color: "text-gray-400" },
+  expanded: { label: "EXPANDED", color: "text-blue-400" },
+  queued: { label: "QUEUED", color: "text-cyan-400" },
+  promoted: { label: "PROMOTED", color: "text-green-400" },
+  zombie: { label: "ZOMBIE", color: "text-gray-600" },
+};
+
+const IDEA_GRADIENTS = [
+  "from-purple-900/40 via-indigo-900/30 to-slate-900/50",
+  "from-blue-900/40 via-cyan-900/30 to-slate-900/50",
+  "from-emerald-900/40 via-teal-900/30 to-slate-900/50",
+  "from-rose-900/40 via-pink-900/30 to-slate-900/50",
+  "from-amber-900/40 via-orange-900/30 to-slate-900/50",
+  "from-indigo-900/40 via-violet-900/30 to-slate-900/50",
+];
+
+/* ─── Helpers for API mapping ─── */
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function mapStatus(apiStatus: string): string {
+  const map: Record<string, string> = {
+    active: "on-track",
+    blocked: "blocked",
+    paused: "parked",
+    completed: "on-track",
+  };
+  return map[apiStatus] ?? apiStatus;
+}
+
+function firstMetric(metrics?: Record<string, string>): { label: string; value: string } {
+  if (!metrics) return { label: "", value: "" };
+  const keys = Object.keys(metrics);
+  if (keys.length === 0) return { label: "", value: "" };
+  return { label: capitalize(keys[0].replace(/_/g, " ")), value: metrics[keys[0]] };
+}
+
+/* ─── Main Dashboard ─── */
+
+export default function WarRoom() {
   const [data, setData] = useState<Data | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(new Date());
 
   const fetchData = useCallback(async () => {
-    const res = await fetch("/api/status");
-    if (res.ok) setData(await res.json());
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list" }),
+      });
+      if (!res.ok) return;
+      const store = await res.json();
+      const apiProjects: Project[] = (store.projects || []).map((p: Record<string, unknown>) => ({
+        id: p.id as string,
+        name: p.name as string,
+        image: (p.image_url as string) || `/images/${p.id}-card.jpg`,
+        stage: capitalize(p.stage as string || "mvp"),
+        status: mapStatus(p.status as string),
+        bottleneck: (p.blocker as string) || "",
+        keyMetric: firstMetric(p.metrics as Record<string, string> | undefined),
+        overdueTasks: 0,
+        blockedTasks: 0,
+        tasks: [],
+      }));
+      // Fetch ideas from old endpoint for now
+      let ideas: Idea[] = [];
+      try {
+        const ideasRes = await fetch("/api/status");
+        if (ideasRes.ok) {
+          const old = await ideasRes.json();
+          ideas = old.ideas || [];
+        }
+      } catch { /* ignore */ }
+      setData({
+        projects: apiProjects,
+        ideas,
+        lastUpdated: store.lastUpdated || new Date().toISOString(),
+      });
+    } catch {
+      // silent fail — will retry
+    }
   }, []);
 
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60000);
     const clock = setInterval(() => setNow(new Date()), 1000);
-    return () => { clearInterval(interval); clearInterval(clock); };
+    return () => {
+      clearInterval(interval);
+      clearInterval(clock);
+    };
   }, [fetchData]);
 
-  useEffect(() => {
-    if (data && window.innerWidth >= 768) {
-      setExpanded(new Set(data.projects.map((p) => p.id)));
-    }
-  }, [data]);
+  const sortedProjects = data
+    ? [...data.projects].sort(
+        (a, b) => (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99)
+      )
+    : [];
 
-  const toggleTask = async (projectId: string, taskIndex: number) => {
-    if (!data) return;
-    const updated = structuredClone(data);
-    const project = updated.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    project.tasks[taskIndex].done = !project.tasks[taskIndex].done;
-    setData(updated);
-    await fetch("/api/status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-      body: JSON.stringify(updated),
-    });
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const sorted = data ? [...data.projects].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]) : [];
+  const ideas = data?.ideas ?? [];
 
   return (
     <div className="min-h-dvh relative">
       <Particles />
 
-      <header className="relative z-10 border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-4">
+      {/* ─── Header ─── */}
+      <header className="hidden sm:block relative z-10 border-b border-[#1e293b] px-4 sm:px-6 lg:px-8 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-6">
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
               APEX COMMAND CENTRE
             </h1>
-            <nav className="flex items-center gap-4">
+            <nav className="hidden sm:flex items-center gap-4">
               <span className="text-sm text-white font-medium">War Room</span>
-              <Link href="/pipeline" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">
-                Pipeline
-              </Link>
-              <Link href="/finance" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">
-                Finance
-              </Link>
-              <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">
-                Prompts
-              </Link>
-              <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">
-                Squad
-              </Link>
-              <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">
-                Map Room
-              </Link>
+              <Link href="/finance" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Finance</Link>
+              <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompt Library</Link>
+              <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
+              <Link href="/vault" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Keys</Link>
+              <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Map Room</Link>
+              <Link href="/content-factory" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Content Factory</Link>
+              <Link href="/action-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Action Room</Link>
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm text-[#94a3b8]">
-            <span className="font-mono">
+            <span className="font-mono text-xs">
               {now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
               {" "}
               {now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
@@ -131,68 +220,106 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {/* ─── Main Grid ─── */}
       <main className="relative z-10 max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
-          {sorted.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              isExpanded={expanded.has(project.id)}
-              onToggle={() => toggleExpand(project.id)}
-              onTaskToggle={(i) => toggleTask(project.id, i)}
-            />
-          ))}
-        </div>
+        {/* Section: Active Projects */}
+        {sortedProjects.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-5">
+              <h2 className="text-sm font-bold tracking-widest uppercase text-[#64748b]">Projects</h2>
+              <span className="text-xs text-[#475569] font-mono">{sortedProjects.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
+              {sortedProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Section: Ideas */}
+        {ideas.length > 0 && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <h2 className="text-sm font-bold tracking-widest uppercase text-[#64748b]">Ideas</h2>
+              <span className="text-xs text-[#475569] font-mono">{ideas.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
+              {ideas.map((idea, i) => (
+                <IdeaCard key={idea.id} idea={idea} index={i} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!data && (
+          <div className="flex items-center justify-center py-24">
+            <div className="text-center">
+              <div className="text-4xl mb-3 opacity-30">&#9678;</div>
+              <p className="text-[#475569] text-sm">Loading command wall...</p>
+            </div>
+          </div>
+        )}
       </main>
 
+      {/* ─── Footer ─── */}
       <footer className="relative z-10 text-center text-xs text-[#475569] py-6">
         Last updated: {data ? new Date(data.lastUpdated).toLocaleString("en-GB") : "—"}
-        {" • "}Auto-refreshes every 60s
+        {" · "}Auto-refreshes every 60s
       </footer>
-
-      <div className="relative z-10 text-center text-xs text-[#475569] pb-6 flex items-center justify-center gap-4 flex-wrap">
-        <span>👤 Ginge</span>
-        <span>🧭 Atlas</span>
-        <span>🔄 Darwin</span>
-        <span>🔬 Newton</span>
-      </div>
     </div>
   );
 }
 
-function ProjectCard({
-  project,
-  isExpanded,
-  onToggle,
-  onTaskToggle,
-}: {
-  project: Project;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onTaskToggle: (i: number) => void;
-}) {
-  const statusInfo = STATUS_LABEL[project.status];
-  const doneTasks = project.tasks.filter((t) => t.done).length;
+/* ─── Project Card ─── */
+
+function ProjectCard({ project }: { project: Project }) {
+  const statusCfg = STATUS_CONFIG[project.status] ?? STATUS_CONFIG["on-track"];
+  const stageColor = STAGE_COLOR[project.stage] ?? "bg-slate-500/20 text-slate-300";
+  const auraClass = AURA[project.status] ?? "";
+
+  const signals: string[] = [];
+  if (project.overdueTasks > 0) signals.push(`${project.overdueTasks} overdue`);
+  if (project.blockedTasks > 0) signals.push(`${project.blockedTasks} blocked`);
 
   return (
-    <div className={`rounded-2xl overflow-hidden bg-[#111827] border border-[#1e293b] transition-all duration-300 ${AURA_CLASS[project.status]}`}>
-      <Link href={`/project/${project.id}`} className="w-full relative aspect-video cursor-pointer group block">
+    <Link
+      href={`/map-room/pipeline?project=${project.id}`}
+      className={`block rounded-2xl overflow-hidden bg-[#111827] border border-[#1e293b] transition-all duration-300 hover:scale-[1.02] hover:brightness-110 cursor-pointer group ${auraClass}`}
+    >
+      {/* Image + overlays */}
+      <div className="relative aspect-video">
         <Image
           src={project.image}
           alt={project.name}
           fill
           className="object-cover"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          unoptimized={project.image.endsWith(".svg") || project.image.startsWith("http")}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
+
+        {/* Stage badge — top left */}
+        <div className="absolute top-3 left-3">
+          <span className={`stage-badge ${stageColor}`}>
+            {project.stage}
+          </span>
+        </div>
+
+        {/* Status badge — top right */}
+        <div className="absolute top-3 right-3">
+          <span className={`text-[9px] font-bold tracking-wider ${statusCfg.color} ${statusCfg.bg} px-2 py-0.5 rounded`}>
+            {statusCfg.label}
+          </span>
+        </div>
+
+        {/* Name + Metric — bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-          <div className="text-left">
-            <h2 className="text-lg font-bold text-white leading-tight">{project.name}</h2>
-            <span className={`text-xs font-semibold tracking-wider ${statusInfo.color}`}>
-              {statusInfo.text}
-            </span>
-          </div>
-          <div className="text-right">
+          <h2 className="text-lg font-bold text-white leading-tight group-hover:text-cyan-100 transition-colors">
+            {project.name}
+          </h2>
+          <div className="text-right flex-shrink-0 ml-3">
             <div className="text-2xl font-extrabold text-white leading-none">
               {project.keyMetric.value}
             </div>
@@ -201,48 +328,110 @@ function ProjectCard({
             </div>
           </div>
         </div>
-        <div className="absolute top-3 right-3 text-white/40 group-hover:text-white/80 transition-colors text-xs">
-          →
-        </div>
-      </Link>
+      </div>
 
-      <button onClick={onToggle} className="w-full px-4 py-3 border-t border-[#1e293b] cursor-pointer flex items-center justify-between hover:bg-[#1e293b]/30 transition-colors">
-        <p className="text-xs text-[#94a3b8] leading-relaxed text-left">{project.statusLine}</p>
-        <span className="text-xs text-[#475569] ml-2 flex-shrink-0">{isExpanded ? "▲" : "▼"}</span>
-      </button>
-
-      {isExpanded && (
-        <div className="px-4 pb-4 border-t border-[#1e293b] pt-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-wider text-[#64748b] font-semibold">
-              Tasks
-            </span>
-            <span className="text-[10px] text-[#64748b]">
-              {doneTasks}/{project.tasks.length}
-            </span>
-          </div>
-          <ul className="space-y-2">
-            {project.tasks.map((task, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <input
-                  type="checkbox"
-                  className="task-checkbox mt-0.5"
-                  checked={task.done}
-                  onChange={() => onTaskToggle(i)}
-                />
-                <span className={`dot-${task.priority} w-2 h-2 rounded-full mt-1.5 flex-shrink-0`} />
-                <span className={`text-sm leading-snug flex-1 ${task.done ? "line-through text-[#475569]" : "text-[#cbd5e1]"}`}>
-                  {task.text}
-                </span>
-                <span className="text-sm flex-shrink-0" title="Owner">{task.owner}</span>
-              </li>
+      {/* Bottleneck line + signals */}
+      <div className="px-4 py-3 border-t border-[#1e293b]/60">
+        <p className="text-xs text-[#94a3b8] leading-relaxed truncate">
+          {project.bottleneck}
+        </p>
+        {signals.length > 0 && (
+          <div className="flex items-center gap-3 mt-1.5">
+            {signals.map((s) => (
+              <span
+                key={s}
+                className="text-[10px] font-semibold text-red-400/80 flex items-center gap-1"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400/70 flex-shrink-0" />
+                {s}
+              </span>
             ))}
-          </ul>
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </Link>
   );
 }
+
+/* ─── Idea Card ─── */
+
+function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
+  const statusCfg = IDEA_STATUS_CONFIG[idea.status] ?? IDEA_STATUS_CONFIG["raw"];
+  const isZombie = idea.status === "zombie";
+  const gradient = IDEA_GRADIENTS[index % IDEA_GRADIENTS.length];
+
+  return (
+    <Link
+      href={`/map-room/ideas/${idea.id}`}
+      className={`block rounded-2xl overflow-hidden bg-[#111827] border border-[#1e293b] transition-all duration-300 hover:scale-[1.02] hover:brightness-110 cursor-pointer group ${isZombie ? "aura-idea-zombie" : "aura-idea"}`}
+    >
+      {/* Visual area — image or gradient fallback */}
+      <div className={`relative aspect-video ${!idea.image ? `bg-gradient-to-br ${gradient}` : ""}`}>
+        {idea.image ? (
+          <>
+            <Image
+              src={idea.image}
+              alt={idea.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+          </>
+        ) : (
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "24px 24px",
+          }} />
+        )}
+
+        {/* Status badge — top right */}
+        <div className="absolute top-3 right-3">
+          <span className={`text-[9px] font-bold tracking-wider ${statusCfg.color} bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded`}>
+            {statusCfg.label}
+          </span>
+        </div>
+
+        {/* Idea indicator — top left */}
+        <div className="absolute top-3 left-3">
+          <span className="stage-badge bg-purple-500/20 text-purple-300">
+            Idea
+          </span>
+        </div>
+
+        {/* Title — bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h2 className="text-base font-bold text-white leading-tight group-hover:text-purple-200 transition-colors">
+            {idea.title}
+          </h2>
+        </div>
+      </div>
+
+      {/* Summary + tags */}
+      <div className="px-4 py-3 border-t border-[#1e293b]/60">
+        {idea.summary && (
+          <p className="text-xs text-[#94a3b8] leading-relaxed truncate mb-2">
+            {idea.summary}
+          </p>
+        )}
+        {idea.tags.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {idea.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] text-[#64748b] bg-[#1e293b] px-2 py-0.5 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+/* ─── Particles ─── */
 
 function Particles() {
   return (

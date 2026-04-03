@@ -18,7 +18,74 @@ body {
   min-height: 100dvh;
 }
 
-/* Aura effects */
+/* ─── War Room Aura Effects ─── */
+
+.aura-attention {
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.5), 0 0 35px rgba(245, 158, 11, 0.2);
+  animation: pulse-amber 3s ease-in-out infinite;
+}
+.aura-on-track {
+  box-shadow: 0 0 15px rgba(20, 184, 166, 0.45), 0 0 30px rgba(20, 184, 166, 0.15);
+}
+.aura-scaling {
+  box-shadow: 0 0 25px rgba(0, 212, 212, 0.6), 0 0 50px rgba(0, 212, 212, 0.25), 0 0 80px rgba(0, 212, 212, 0.1);
+  animation: pulse-scale 2.5s ease-in-out infinite;
+}
+.aura-parked {
+  box-shadow: 0 0 8px rgba(100, 116, 139, 0.25);
+  opacity: 0.55;
+  filter: saturate(0.5);
+}
+.aura-zombie {
+  box-shadow: none;
+  opacity: 0.35;
+  filter: saturate(0.3) brightness(0.7);
+}
+.aura-blocked {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.55), 0 0 40px rgba(239, 68, 68, 0.25);
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+/* Idea cards — lighter, subtler */
+.aura-idea {
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2), 0 0 20px rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25) !important;
+}
+.aura-idea-zombie {
+  box-shadow: none;
+  opacity: 0.35;
+  filter: saturate(0.3) brightness(0.7);
+  border: 1px solid rgba(100, 100, 100, 0.2) !important;
+}
+
+@keyframes pulse-amber {
+  0%, 100% {
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.5), 0 0 35px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.65), 0 0 50px rgba(245, 158, 11, 0.3);
+  }
+}
+
+@keyframes pulse-scale {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(0, 212, 212, 0.6), 0 0 50px rgba(0, 212, 212, 0.25), 0 0 80px rgba(0, 212, 212, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(0, 212, 212, 0.75), 0 0 70px rgba(0, 212, 212, 0.35), 0 0 100px rgba(0, 212, 212, 0.15);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.55), 0 0 40px rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.75), 0 0 60px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* Legacy aura classes (used by other pages) */
 .card-urgent {
   box-shadow: 0 0 20px rgba(255, 50, 50, 0.6), 0 0 40px rgba(255, 50, 50, 0.3);
   animation: pulse-red 2s ease-in-out infinite;
@@ -34,16 +101,18 @@ body {
   opacity: 0.7;
 }
 
-@keyframes pulse-red {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(255, 50, 50, 0.6), 0 0 40px rgba(255, 50, 50, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(255, 50, 50, 0.8), 0 0 60px rgba(255, 50, 50, 0.5);
-  }
+/* ─── Stage Badge ─── */
+.stage-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
 }
 
-/* Particle background */
+/* ─── Particle background ─── */
 .particles {
   position: fixed;
   inset: 0;
@@ -78,7 +147,7 @@ body {
   }
 }
 
-/* Priority dots */
+/* ─── Priority dots ─── */
 .dot-red {
   background: #ef4444;
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
@@ -92,7 +161,7 @@ body {
   box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
 }
 
-/* Checkbox */
+/* ─── Checkbox ─── */
 .task-checkbox {
   appearance: none;
   width: 18px;
@@ -120,7 +189,7 @@ body {
   font-weight: 700;
 }
 
-/* Refresh pulse */
+/* ─── Refresh pulse ─── */
 @keyframes refresh-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -133,7 +202,19 @@ body {
   animation: refresh-pulse 2s ease-in-out infinite;
 }
 
-/* Scrollbar */
+/* ─── Action Room slide-in ─── */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
   width: 6px;
 }
