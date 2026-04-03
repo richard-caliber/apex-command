@@ -57,6 +57,8 @@ interface ParsedStrategy {
   content_rules?: string;
   rules_structured?: Record<string, any>; // raw parsed rules object for sub-section rendering
   cadence?: string;
+  production_text?: string; // plain text production workflow
+  production_chain?: { task: string; time: string; trigger: string; owner: string; duration: string; description: string }[];
   kpis?: string | string[];
   metric_targets?: MetricTarget[]; // structured success metrics
   north_star?: string;
@@ -103,6 +105,17 @@ function parseStrategy(s: Strategy): ParsedStrategy {
       if (sched.days?.length) parts.push(`Days: ${sched.days.join(", ")}`);
       if (parts.length > 0) parsed.cadence = parts.join("\n");
     }
+  }
+
+  // Parse production workflow (may be string or array)
+  const rawProd = s.production as any;
+  if (rawProd && typeof rawProd === "string" && rawProd.length > 0) {
+    parsed.production_text = rawProd;
+  }
+  // Extract production_chain from schedule JSON
+  const schedParsed = safeParse(s.schedule);
+  if (schedParsed?.production_chain && Array.isArray(schedParsed.production_chain)) {
+    parsed.production_chain = schedParsed.production_chain;
   }
 
   // Parse rules JSON string — store both structured and flattened
@@ -218,7 +231,12 @@ function StrategyInner() {
                 </div>
               )}
 
-              {/* 2. SCHEDULE */}
+              {/* 2. PRODUCTION WORKFLOW */}
+              {parsed!.production_chain && parsed!.production_chain.length > 0 && (
+                <ProductionWorkflow chain={parsed!.production_chain} />
+              )}
+
+              {/* 3. SCHEDULE */}
               {parsed!.cadence && (
                 <Section title={"\uD83D\uDCC5 Schedule"}>
                   <pre className="text-xs whitespace-pre-wrap leading-relaxed" style={{ color: "#e0e0ee", fontFamily: "inherit" }}>{parsed!.cadence}</pre>
@@ -459,6 +477,100 @@ function StrategyInner() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Production Workflow ── */
+
+const TRIGGER_CFG: Record<string, { icon: string; color: string; label: string; bg: string }> = {
+  cron: { icon: "\u23F0", color: "#22c55e", label: "cron", bg: "rgba(34,197,94,0.1)" },
+  chain: { icon: "\uD83D\uDD17", color: "#3b82f6", label: "chain", bg: "rgba(59,130,246,0.1)" },
+  manual: { icon: "\uD83D\uDC64", color: "#f59e0b", label: "manual", bg: "rgba(245,158,11,0.1)" },
+  continuous: { icon: "\uD83D\uDD01", color: "#a78bfa", label: "ongoing", bg: "rgba(167,139,250,0.1)" },
+  auto: { icon: "\u26A1", color: "#6b7280", label: "auto", bg: "rgba(107,107,128,0.1)" },
+};
+
+const WF_OWNER_COLOR: Record<string, string> = { newton: "#3b82f6", darwin: "#22c55e", atlas: "#00d4d4", "claude-code": "#a855f7", ginge: "#f59e0b", auto: "#6b7280", system: "#6b7280" };
+const WF_OWNER_EMOJI: Record<string, string> = { newton: "\uD83D\uDD2C", darwin: "\uD83D\uDD04", atlas: "\uD83E\uDDED", "claude-code": "\uD83D\uDCBB", ginge: "\uD83D\uDC51", auto: "\u26A1", system: "\u2699\uFE0F" };
+
+function ProductionWorkflow({ chain }: { chain: { task: string; time: string; trigger: string; owner: string; duration: string; description: string }[] }) {
+  // Group by day pattern
+  const groups: { label: string; items: typeof chain }[] = [];
+  let currentGroup: { label: string; items: typeof chain } | null = null;
+
+  for (const step of chain) {
+    const t = step.time.toLowerCase();
+    let dayLabel: string;
+    if (t.startsWith("mon")) dayLabel = "\uD83D\uDCC5 MONDAY (Batch Day)";
+    else if (t.includes("daily")) dayLabel = "\uD83D\uDD04 DAILY (Publish)";
+    else if (t.includes("every")) dayLabel = "\uD83D\uDCC8 RECURRING";
+    else if (t.includes("sun") || t.includes("weekly")) dayLabel = "\uD83D\uDCCA WEEKLY REVIEW";
+    else dayLabel = "\u23F0 " + step.time.split(" ")[0].toUpperCase();
+
+    if (!currentGroup || currentGroup.label !== dayLabel) {
+      currentGroup = { label: dayLabel, items: [] };
+      groups.push(currentGroup);
+    }
+    currentGroup.items.push(step);
+  }
+
+  return (
+    <div className="rounded-lg overflow-hidden" style={{ background: "#111118", border: "1px solid #1e1e2e" }}>
+      <div className="px-4 py-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "#00d4d4" }}>{"\u2699\uFE0F"} Production Workflow</h3>
+      </div>
+      <div className="border-t" style={{ borderColor: "#1e1e2e" }}>
+        {groups.map((group, gi) => (
+          <div key={gi}>
+            {/* Day header */}
+            <div className="px-4 py-2" style={{ background: "rgba(0,212,212,0.03)", borderBottom: "1px solid #1e1e2e" }}>
+              <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: "#00d4d4" }}>{group.label}</span>
+            </div>
+            {/* Steps */}
+            {group.items.map((step, si) => {
+              const trigger = TRIGGER_CFG[step.trigger] || TRIGGER_CFG.auto;
+              const ownerColor = WF_OWNER_COLOR[step.owner] || "#6b7280";
+              return (
+                <div key={si} className="flex items-start gap-3 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(30,30,46,0.5)" }}>
+                  {/* Timeline dot + line */}
+                  <div className="flex flex-col items-center flex-shrink-0 pt-1">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: trigger.color, boxShadow: `0 0 6px ${trigger.color}40` }} />
+                    {si < group.items.length - 1 && <div className="w-px flex-1 mt-1" style={{ background: "rgba(30,30,46,0.8)", minHeight: 16 }} />}
+                  </div>
+
+                  {/* Time */}
+                  <span className="text-[10px] font-mono flex-shrink-0 pt-0.5" style={{ color: "#6b6b80", minWidth: 80 }}>
+                    {step.time.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s*/i, "").replace("GMT+8", "").trim() || step.time}
+                  </span>
+
+                  {/* Task info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-mono font-bold" style={{ color: "#00d4d4" }}>{step.task}</span>
+                      <span className="text-xs" style={{ color: "#e0e0ee" }}>{step.description}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      {/* Owner */}
+                      <span className="text-[10px]" style={{ color: ownerColor }}>
+                        {WF_OWNER_EMOJI[step.owner] || ""} {step.owner}
+                      </span>
+                      {/* Duration */}
+                      {step.duration && (
+                        <span className="text-[9px] font-mono" style={{ color: "#4a4a5e" }}>{step.duration}</span>
+                      )}
+                      {/* Trigger badge */}
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ color: trigger.color, background: trigger.bg }}>
+                        {trigger.icon} {trigger.label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
