@@ -10,7 +10,7 @@ interface PipelineTask {
   project_id: string;
   name: string;
   description: string;
-  status: "not_started" | "in_progress" | "done" | "blocked" | "skipped" | "continuous";
+  status: "not_started" | "in_progress" | "done" | "blocked" | "skipped";
   automation: "manual" | "semi-auto" | "fully-auto";
   owner: string;
   model: string;
@@ -200,8 +200,8 @@ export default function PipelinePage() {
   // Sort: continuous tasks go to bottom, then by order
   const sortTasks = (tasks: PipelineTask[]) =>
     [...tasks].sort((a, b) => {
-      const ac = a.status === "continuous" ? 1 : 0;
-      const bc = b.status === "continuous" ? 1 : 0;
+      const ac = a.blocker === "continuous" ? 1 : 0;
+      const bc = b.blocker === "continuous" ? 1 : 0;
       if (ac !== bc) return ac - bc;
       return a.order - b.order;
     });
@@ -506,10 +506,11 @@ function ProjectDropdown({ projects, value, onChange }: { projects: Project[]; v
 
 function TaskRow({ task, compact }: { task: PipelineTask & { _fromTemplate?: boolean }; compact?: boolean }) {
   const [outputExpanded, setOutputExpanded] = useState(false);
-  const cfg = STATUS_CFG[task.status] || STATUS_CFG.not_started;
+  const isContinuous = task.blocker === "continuous";
+  const cfg = isContinuous ? STATUS_CFG.continuous : (STATUS_CFG[task.status] || STATUS_CFG.not_started);
   const emoji = OWNER_EMOJI[task.owner] || "\uD83D\uDC64";
   const isFromTemplate = !!(task as { _fromTemplate?: boolean })._fromTemplate;
-  const borderLeft = isFromTemplate ? "3px solid transparent" : task.status === "blocked" ? `3px solid ${TOKENS.error}` : task.status === "done" ? `3px solid ${TOKENS.success}` : task.status === "continuous" ? `3px solid ${TOKENS.purple}` : "3px solid transparent";
+  const borderLeft = isFromTemplate ? "3px solid transparent" : isContinuous ? `3px solid ${TOKENS.purple}` : task.status === "blocked" ? `3px solid ${TOKENS.error}` : task.status === "done" ? `3px solid ${TOKENS.success}` : "3px solid transparent";
   const hasDoneOutput = task.status === "done" && task.output;
   const taskScore = extractScore(task.output);
 

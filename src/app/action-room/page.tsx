@@ -606,7 +606,7 @@ function GingeActionsView({ allTasks, projects }: { allTasks: PipelineTask[]; pr
   );
   // 3. BOT TASKS — non-ginge tasks not done (informational)
   const botTasks = useMemo(
-    () => allTasks.filter((t) => t.owner !== "ginge" && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous" && t.project_id !== "_template").slice(0, 20),
+    () => allTasks.filter((t) => t.owner !== "ginge" && t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous" && t.project_id !== "_template").slice(0, 20),
     [allTasks]
   );
 
@@ -824,7 +824,7 @@ function VaultPanel({ entries, emptyText }: { entries: VaultEntry[]; emptyText: 
 function NextStepsPanel({ tasks }: { tasks: PipelineTask[] }) {
   const nextTasks = useMemo(() => {
     return tasks
-      .filter((t) => t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
+      .filter((t) => t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous")
       .sort((a, b) => {
         const sa = PIPELINE_STAGES.indexOf(a.stage);
         const sb = PIPELINE_STAGES.indexOf(b.stage);

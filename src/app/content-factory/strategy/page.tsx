@@ -39,7 +39,7 @@ function safeParse(val: any): any {
 }
 
 interface Project { id: string; name: string; stage: string }
-interface PipelineTask { id: string; project_id: string; stage: string; name: string; description: string; status: string; owner: string; output: string; order: number }
+interface PipelineTask { id: string; project_id: string; stage: string; name: string; description: string; status: string; owner: string; output: string; order: number; blocker: string | null }
 
 const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
 const OWNER_EMOJI: Record<string, string> = { atlas: "\u{1F9ED}", newton: "\u{1F52C}", darwin: "\u{1F504}", "claude-code": "\u{1F4BB}", ginge: "\u{1F464}", auto: "\u26A1" };
@@ -182,7 +182,7 @@ function StrategyInner() {
 
   const trafficTasks = useMemo(() => {
     return tasks
-      .filter((t) => t.project_id === selected && (t.stage === "traffic" || t.stage === "conversion") && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
+      .filter((t) => t.project_id === selected && (t.stage === "traffic" || t.stage === "conversion") && t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous")
       .sort((a, b) => a.order - b.order);
   }, [tasks, selected]);
 

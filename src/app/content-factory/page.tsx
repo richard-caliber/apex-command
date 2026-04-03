@@ -5,7 +5,7 @@ import Link from "next/link";
 
 interface Project { id: string; name: string; image_url: string; stage: string; status: string }
 interface Strategy { id: string; project_id: string; approved_at: string }
-interface PipelineTask { id: string; project_id: string; stage: string; name: string; status: string; owner: string; order: number; output: string }
+interface PipelineTask { id: string; project_id: string; stage: string; name: string; status: string; owner: string; order: number; output: string; blocker: string | null }
 
 const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
 const STAGE_LABEL: Record<string, string> = { traffic: "Traffic", conversion: "Conversion", delivery: "Delivery", scale: "Scale" };
@@ -68,7 +68,7 @@ export default function ContentFactoryDashboard() {
     const result: CardData[] = contentProjects.map((p) => {
       const hasStrategy = strategies.some((s) => s.project_id === p.id);
       const projectTasks = tasks
-        .filter((t) => t.project_id === p.id && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
+        .filter((t) => t.project_id === p.id && t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous")
         .sort((a, b) => {
           const sa = stageOrder.indexOf(a.stage);
           const sb = stageOrder.indexOf(b.stage);

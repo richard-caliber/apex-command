@@ -21,6 +21,7 @@ interface Task {
   next_task: string;
   order: number;
   status: string;
+  blocker: string | null;
 }
 
 interface Project { id: string; name: string; stage: string }
@@ -104,7 +105,7 @@ export default function ContentTasksPage() {
   }));
 
   // Next undone task
-  const nextTask = tasks.find((t) => t.status !== "done" && t.status !== "skipped");
+  const nextTask = tasks.find((t) => t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous");
 
   return (
     <div className="space-y-4">

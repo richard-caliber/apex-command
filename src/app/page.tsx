@@ -151,7 +151,7 @@ export default function WarRoom() {
 
       // Fetch all tasks to extract Darwin gate scores + next actions
       const stageOrder = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
-      let allTasks: { id: string; project_id: string; stage: string; output: string; order: number; status: string; owner: string; name: string }[] = [];
+      let allTasks: { id: string; project_id: string; stage: string; output: string; order: number; status: string; owner: string; name: string; blocker: string | null }[] = [];
       try {
         const tasksRes = await fetch("/api/pipeline-tasks", {
           method: "POST",
@@ -185,7 +185,7 @@ export default function WarRoom() {
       for (const pid of [...new Set(allTasks.map((t) => t.project_id))]) {
         if (pid === "_template") continue;
         const projectTasks = allTasks
-          .filter((t) => t.project_id === pid && t.status !== "done" && t.status !== "skipped" && t.status !== "continuous")
+          .filter((t) => t.project_id === pid && t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous")
           .sort((a, b) => {
             const sa = stageOrder.indexOf(a.stage);
             const sb = stageOrder.indexOf(b.stage);
