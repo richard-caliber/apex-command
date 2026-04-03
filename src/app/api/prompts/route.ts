@@ -52,29 +52,31 @@ async function getData(): Promise<PromptsData> {
 }
 
 export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const { action } = body;
+
+  // ── Read operations (no auth) ──
+  if (action === "list") {
+    const data = await getData();
+    return NextResponse.json(data.items);
+  }
+
+  if (action === "get") {
+    const { id } = body;
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const data = await getData();
+    const item = data.items.find((p) => p.id === id);
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(item);
+  }
+
+  // ── Write operations (auth required) ──
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${TOKEN}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { action } = body;
-
   switch (action) {
-    case "list": {
-      const data = await getData();
-      return NextResponse.json(data.items);
-    }
-
-    case "get": {
-      const { id } = body;
-      if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-      const data = await getData();
-      const item = data.items.find((p) => p.id === id);
-      if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      return NextResponse.json(item);
-    }
-
     case "set": {
       const { id, name, stage, taskId, category, owner, model, tags, prompt: promptContent } = body;
       if (!id || !name) return NextResponse.json({ error: "id and name required" }, { status: 400 });

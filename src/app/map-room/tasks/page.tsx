@@ -23,7 +23,11 @@ interface Task {
 interface Prompt {
   id: string;
   name: string;
-  text: string;
+  text?: string;
+  prompt?: string | { role?: string; context?: string; objective?: string; constraints?: string; process?: string; outputFormat?: string; qualityBar?: string };
+  category?: string;
+  stage?: string;
+  taskId?: string;
 }
 
 /* ── Constants ── */
@@ -96,13 +100,13 @@ export default function TaskLibraryPage() {
   const fetchAll = useCallback(async () => {
     const [taskData, promptData] = await Promise.all([
       apiPost("/api/tasks", { action: "list", project_id: "_template" }),
-      fetch("/api/map-room/prompts").then((r) => r.json()),
+      apiPost("/api/prompts", { action: "list" }),
     ]);
     if (taskData?.tasks) {
       setTasks(taskData.tasks.sort((a: Task, b: Task) => a.order - b.order));
     }
-    if (promptData?.items) {
-      setPrompts(promptData.items);
+    if (Array.isArray(promptData)) {
+      setPrompts(promptData);
     }
   }, []);
 
@@ -153,6 +157,19 @@ export default function TaskLibraryPage() {
 
   function getPrompt(promptId: string): Prompt | undefined {
     return prompts.find((p) => p.id === promptId);
+  }
+
+  function getPromptText(p: Prompt): string {
+    // Handle string prompt field
+    if (typeof p.prompt === "string" && p.prompt) return p.prompt;
+    // Handle object prompt field (PromptContent)
+    if (p.prompt && typeof p.prompt === "object") {
+      const parts = [p.prompt.role, p.prompt.context, p.prompt.objective, p.prompt.process, p.prompt.outputFormat, p.prompt.constraints, p.prompt.qualityBar].filter(Boolean);
+      if (parts.length > 0) return parts.join("\n\n");
+    }
+    // Fallback to text field
+    if (p.text) return p.text;
+    return "Prompt content not loaded";
   }
 
   /* ── Stage counts ── */
@@ -361,7 +378,7 @@ export default function TaskLibraryPage() {
                               className="text-[11px] leading-relaxed whitespace-pre-wrap"
                               style={{ color: "#a0a0b0" }}
                             >
-                              {prompt.text || "Prompt content not loaded"}
+                              {getPromptText(prompt)}
                             </pre>
                           </>
                         ) : hasPrompt ? (
