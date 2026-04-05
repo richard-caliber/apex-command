@@ -138,19 +138,15 @@ export default function ActionRoom() {
     return m;
   }, [projects]);
 
-  // ── Daily Pulse: extract metrics for each card ──
-  const caliberMetrics = useMemo(
-    () => metrics.filter((m) => m.project_id === "caliber"),
-    [metrics]
-  );
-  const gemSnapMetrics = useMemo(
-    () => metrics.filter((m) => m.project_id === "gemsnap"),
-    [metrics]
-  );
-  const adMetrics = useMemo(
-    () => metrics.filter((m) => m.section === "traffic" && m.name.toLowerCase().includes("ad")),
-    [metrics]
-  );
+  // ── Daily Pulse: find data sources by ID, parse JSON value ──
+  const parsePulse = (id: string): Record<string, any> | null => {
+    const item = metrics.find((m) => m.id === id);
+    if (!item?.value) return null;
+    try { return JSON.parse(item.value); } catch { return null; }
+  };
+  const caliberIG = useMemo(() => parsePulse("caliber-ig"), [metrics]);
+  const gemSnapData = useMemo(() => parsePulse("gemsnap-posthog"), [metrics]);
+  const adSpendData = useMemo(() => parsePulse("gemsnap-ads"), [metrics]);
 
   // ── Ad-hoc actions: ID starts with "A-", not done ──
   const adhocBase = useMemo(
@@ -226,43 +222,56 @@ export default function ActionRoom() {
           <h3 className="text-xs font-bold tracking-widest uppercase text-[#64748b] mb-3">Daily Pulse</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card 1: Caliber IG */}
-            <PulseCard
-              title="Caliber IG"
-              emoji={"\uD83D\uDCF8"}
-              accentColor="#f59e0b"
-              metrics={caliberMetrics}
-              fallbackFields={[
-                { label: "Followers", key: "followers" },
-                { label: "Last Post Engagement", key: "engagement" },
-              ]}
-            />
+            <PulseShell title="Caliber IG" emoji={"\uD83D\uDCF8"} accentColor="#f59e0b">
+              {caliberIG ? (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-bold text-white">
+                    {caliberIG.followers ?? "–"} followers {"\u00B7"} {caliberIG.posts ?? "–"} posts
+                  </p>
+                  <p className="text-[11px] text-[#94a3b8]">
+                    Last post: {caliberIG.last_post_likes ?? 0}{"\u2764\uFE0F"}{" "}
+                    {caliberIG.last_post_comments ?? 0}{"\uD83D\uDCAC"}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-[#475569] py-2">No data yet</p>
+              )}
+            </PulseShell>
 
             {/* Card 2: GemSnap */}
-            <PulseCard
-              title="GemSnap"
-              emoji={"\uD83D\uDC8E"}
-              accentColor="#00d4d4"
-              metrics={gemSnapMetrics}
-              fallbackFields={[
-                { label: "Pageviews (24h)", key: "pageviews" },
-                { label: "CTA Clicks", key: "cta_clicks" },
-                { label: "Scans", key: "scans" },
-                { label: "Conversions", key: "conversions" },
-              ]}
-            />
+            <PulseShell title="GemSnap" emoji={"\uD83D\uDC8E"} accentColor="#00d4d4">
+              {gemSnapData ? (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-bold text-white">
+                    {gemSnapData.pageviews_24h ?? "–"} views {"\u00B7"} {gemSnapData.cta_clicks_24h ?? "–"} CTA clicks
+                  </p>
+                  <p className="text-[11px] text-[#94a3b8]">
+                    {gemSnapData.sample_gallery_clicked ?? 0} sample scans {"\u00B7"}{" "}
+                    {gemSnapData.real_scans_24h ?? 0} real scan{(gemSnapData.real_scans_24h ?? 0) !== 1 ? "s" : ""} {"\u00B7"}{" "}
+                    {gemSnapData.conversions_24h ?? 0} conversions
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-[#475569] py-2">No data yet</p>
+              )}
+            </PulseShell>
 
             {/* Card 3: Ad Spend */}
-            <PulseCard
-              title="Ad Spend"
-              emoji={"\uD83D\uDCB0"}
-              accentColor="#ef4444"
-              metrics={adMetrics}
-              fallbackFields={[
-                { label: "Daily Spend", key: "spend" },
-                { label: "CPC", key: "cpc" },
-                { label: "CTR", key: "ctr" },
-              ]}
-            />
+            <PulseShell title="Ad Spend" emoji={"\uD83D\uDCB0"} accentColor="#ef4444">
+              {adSpendData ? (
+                adSpendData.note ? (
+                  <p className="text-[11px] text-[#f59e0b] py-2">{adSpendData.note}</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-bold text-white">
+                      ${adSpendData.spend ?? "–"} spent {"\u00B7"} {adSpendData.clicks ?? "–"} clicks {"\u00B7"} ${adSpendData.cpc ?? "–"} CPC
+                    </p>
+                  </div>
+                )
+              ) : (
+                <p className="text-xs text-[#475569] py-2">No data yet</p>
+              )}
+            </PulseShell>
           </div>
         </section>
 
@@ -457,39 +466,19 @@ function ActionCard({
   );
 }
 
-/* ── Pulse Card Component ── */
+/* ── Pulse Shell (shared card wrapper) ── */
 
-function PulseCard({
+function PulseShell({
   title,
   emoji,
   accentColor,
-  metrics,
-  fallbackFields,
-  emptyMessage,
+  children,
 }: {
   title: string;
   emoji: string;
   accentColor: string;
-  metrics: Metric[];
-  fallbackFields: { label: string; key: string }[];
-  emptyMessage?: string;
+  children: React.ReactNode;
 }) {
-  // Try to match metrics to fallback fields by name substring
-  const displayItems = fallbackFields.map((field) => {
-    const match = metrics.find(
-      (m) =>
-        m.name.toLowerCase().includes(field.key.toLowerCase()) ||
-        m.id.toLowerCase().includes(field.key.toLowerCase())
-    );
-    return {
-      label: field.label,
-      value: match?.value || null,
-      state: match?.state || "missing",
-    };
-  });
-
-  const hasAnyData = displayItems.some((d) => d.value !== null) || metrics.length > 0;
-
   return (
     <div
       className="rounded-2xl border border-[#1e293b] p-5"
@@ -501,33 +490,7 @@ function PulseCard({
           {title}
         </h4>
       </div>
-
-      {!hasAnyData ? (
-        <p className="text-xs text-[#475569] py-2">
-          {emptyMessage || "No data yet"}
-        </p>
-      ) : metrics.length > 0 && !displayItems.some((d) => d.value) ? (
-        // Has metrics but none match our fields — show whatever exists
-        <div className="space-y-2">
-          {metrics.slice(0, 4).map((m) => (
-            <div key={m.id} className="flex items-center justify-between">
-              <span className="text-[11px] text-[#94a3b8]">{m.name}</span>
-              <span className="text-sm font-bold text-white">{m.value}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {displayItems.map((item) => (
-            <div key={item.label} className="flex items-center justify-between">
-              <span className="text-[11px] text-[#94a3b8]">{item.label}</span>
-              <span className="text-sm font-bold text-white">
-                {item.value || <span className="text-[#475569] font-normal text-[11px]">No data yet</span>}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      {children}
     </div>
   );
 }
