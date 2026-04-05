@@ -11,17 +11,15 @@ interface QueueItem {
   id: string; project_id: string; title: string; format: string;
   platforms: string[]; scheduled_date: string; status: string;
   pipeline_step: string; pillar: string; backburner: boolean;
+  trigger_word?: string;
 }
 
 const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
 
 const COLUMNS = [
-  { id: "approved", label: "Approved Queue", statuses: ["approved", "not_started"], color: "#f59e0b" },
-  { id: "style_test", label: "Style Test", statuses: ["style_test"], color: "#a78bfa" },
-  { id: "review", label: "In Review", statuses: ["review", "review_research", "review_assets"], color: "#3b82f6" },
-  { id: "production", label: "Production", statuses: ["production", "create"], color: "#00d4d4" },
+  { id: "approved", label: "Approved Queue", statuses: ["approved", "not_started", "style_test", "review", "review_research", "review_assets", "production", "create"], color: "#f59e0b" },
   { id: "scheduled", label: "Scheduled", statuses: ["scheduled", "ready_to_post"], color: "#22c55e" },
-  { id: "published", label: "Published", statuses: ["done", "published"], color: "#22c55e" },
+  { id: "published", label: "Published", statuses: ["done", "published"], color: "#3b82f6" },
 ];
 
 const PROJECT_COLOR: Record<string, { bg: string; border: string; text: string; dot: string }> = {
@@ -36,6 +34,22 @@ const FORMAT_ICON: Record<string, string> = {
   carousel: "\uD83D\uDCF8", reel: "\uD83C\uDFAC", ad: "\uD83D\uDCE3",
   thread: "\uD83D\uDC26", listing: "\uD83D\uDCCB", story: "\uD83D\uDCF1", post: "\uD83D\uDCDD",
 };
+
+function calcScheduledDaysRemaining(items: QueueItem[]): number {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const scheduledItems = items.filter((q) => {
+    if (!["scheduled", "ready_to_post"].includes(q.status)) return false;
+    if (!q.scheduled_date || q.scheduled_date === "TBD") return false;
+    return new Date(q.scheduled_date) >= now;
+  });
+  if (scheduledItems.length === 0) return 0;
+  const dates = scheduledItems.map((q) => new Date(q.scheduled_date).getTime());
+  const lastDate = new Date(Math.max(...dates));
+  lastDate.setHours(0, 0, 0, 0);
+  const diffMs = lastDate.getTime() - now.getTime();
+  return Math.max(0, Math.round(diffMs / 86400000) + 1);
+}
 
 export default function QueuePage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -62,7 +76,8 @@ export default function QueuePage() {
     return queue.filter((q) => q.project_id === selectedProject);
   }, [queue, selectedProject]);
 
-  // Map items to columns
+  const daysRemaining = useMemo(() => calcScheduledDaysRemaining(filtered), [filtered]);
+
   const columnItems = useMemo(() => {
     const map: Record<string, QueueItem[]> = {};
     for (const col of COLUMNS) map[col.id] = [];
@@ -77,7 +92,7 @@ export default function QueuePage() {
           break;
         }
       }
-      if (!placed) map["approved"].push(item); // default to approved queue
+      if (!placed) map["approved"].push(item);
     }
     return map;
   }, [filtered]);
@@ -86,11 +101,35 @@ export default function QueuePage() {
 
   return (
     <div className="space-y-4">
+      {/* Days Remaining Banner */}
+      <div className="rounded-xl px-5 py-4 flex items-center gap-4" style={{
+        background: daysRemaining > 7
+          ? "linear-gradient(135deg, rgba(34,197,94,0.08), rgba(34,197,94,0.02))"
+          : daysRemaining > 3
+          ? "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))"
+          : "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02))",
+        border: `1px solid ${daysRemaining > 7 ? "rgba(34,197,94,0.25)" : daysRemaining > 3 ? "rgba(245,158,11,0.25)" : "rgba(239,68,68,0.25)"}`,
+      }}>
+        <span className="text-3xl font-black tabular-nums" style={{
+          color: daysRemaining > 7 ? "#22c55e" : daysRemaining > 3 ? "#f59e0b" : "#ef4444",
+        }}>
+          {daysRemaining}
+        </span>
+        <div>
+          <span className="text-sm font-semibold block" style={{ color: "#e0e0ee" }}>
+            days of scheduled content remaining
+          </span>
+          <span className="text-[10px]" style={{ color: "#6b6b80" }}>
+            {daysRemaining === 0 ? "No future content scheduled" : `Through ${new Date(Date.now() + (daysRemaining - 1) * 86400000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
+          </span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-lg font-bold text-white">Production Board</h2>
         <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
-          className="text-sm bg-transparent border rounded-lg px-3 py-2 cursor-pointer focus:outline-none"
+          className="text-sm bg-[#0a0a0f] border rounded-lg px-3 py-2 cursor-pointer focus:outline-none [&>option]:bg-[#0a0a0f] [&>option]:text-white"
           style={{ borderColor: "#1e1e2e", color: "#f1f5f9" }}>
           <option value="all">All Projects</option>
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -98,8 +137,8 @@ export default function QueuePage() {
         <span className="text-[10px] font-mono ml-auto" style={{ color: "#4a4a5e" }}>{filtered.length} items</span>
       </div>
 
-      {/* Kanban Board */}
-      <div className="grid grid-cols-6 gap-3 overflow-x-auto" style={{ minWidth: 900 }}>
+      {/* Kanban Board — 3 columns */}
+      <div className="grid grid-cols-3 gap-3">
         {COLUMNS.map((col) => {
           const items = columnItems[col.id] || [];
           return (
@@ -114,7 +153,7 @@ export default function QueuePage() {
               </div>
 
               {/* Cards */}
-              <div className="flex-1 p-2 space-y-2 overflow-y-auto" style={{ maxHeight: 500 }}>
+              <div className="flex-1 p-2 space-y-2 overflow-y-auto" style={{ maxHeight: 600 }}>
                 {items.map((item) => {
                   const pc = PROJECT_COLOR[item.project_id] || DEFAULT_PC;
                   const isExpanded = expandedCard === item.id;
@@ -123,11 +162,14 @@ export default function QueuePage() {
                       className="rounded-lg px-2.5 py-2 cursor-pointer transition-all hover:brightness-110"
                       style={{ background: pc.bg, border: `1px solid ${pc.border}` }}
                       onClick={() => setExpandedCard(isExpanded ? null : item.id)}>
-                      {/* Project badge */}
+                      {/* Project badge + format icon */}
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: pc.dot }} />
                         <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: pc.text }}>
                           {projects.find((p) => p.id === item.project_id)?.name || item.project_id}
+                        </span>
+                        <span className="ml-auto text-xs" title={item.format}>
+                          {FORMAT_ICON[item.format] || "\uD83D\uDCDD"}
                         </span>
                       </div>
 
@@ -136,14 +178,16 @@ export default function QueuePage() {
                         {item.title}
                       </p>
 
-                      {/* Format + date */}
+                      {/* Date + trigger word */}
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[9px] px-1.5 py-0.5 rounded capitalize" style={{ background: "rgba(107,107,128,0.1)", color: "#94a3b8" }}>
-                          {FORMAT_ICON[item.format] || "\uD83D\uDCDD"} {item.format}
-                        </span>
                         {item.scheduled_date && item.scheduled_date !== "TBD" && (
                           <span className="text-[9px] font-mono" style={{ color: "#4a4a5e" }}>
                             {new Date(item.scheduled_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                          </span>
+                        )}
+                        {item.trigger_word && (
+                          <span className="text-[8px] font-mono px-1.5 py-0.5 rounded" style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa" }}>
+                            {item.trigger_word}
                           </span>
                         )}
                       </div>
@@ -151,9 +195,12 @@ export default function QueuePage() {
                       {/* Expanded details */}
                       {isExpanded && (
                         <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${pc.border}` }}>
+                          <div className="text-[9px] mb-1" style={{ color: "#6b6b80" }}>
+                            {FORMAT_ICON[item.format] || "\uD83D\uDCDD"} {item.format}
+                          </div>
                           {item.pillar && <div className="text-[9px] mb-1" style={{ color: "#6b6b80" }}>Pillar: {item.pillar}</div>}
                           {item.platforms?.length > 0 && <div className="text-[9px] mb-1" style={{ color: "#6b6b80" }}>Platforms: {item.platforms.join(", ")}</div>}
-                          <div className="text-[9px]" style={{ color: "#4a4a5e" }}>Status: {item.status} · Step: {item.pipeline_step}</div>
+                          <div className="text-[9px]" style={{ color: "#4a4a5e" }}>Status: {item.status}</div>
                         </div>
                       )}
                     </div>

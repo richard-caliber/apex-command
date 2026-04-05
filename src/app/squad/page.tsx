@@ -162,7 +162,7 @@ export default function SquadPage() {
 /* ── Neural Net View ── */
 function NeuralNetView({ agents, connections }: { agents: Agent[]; connections: [string, string][] }) {
   return (
-    <div className="max-w-[1100px] mx-auto px-4 py-8 relative">
+    <div className="max-w-[1300px] mx-auto px-4 py-8 relative">
       {/* SVG Connection Lines */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>

@@ -284,7 +284,8 @@ function GroupedTaskList({ tasks }: { tasks: (PipelineTask & { _fromTemplate?: b
 function ProjectDropdown({ projects, value, onChange }: { projects: Project[]; value: string; onChange: (v: string) => void }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 16px", color: T.heading, fontSize: 13, fontWeight: 600, cursor: "pointer", minWidth: 200 }}>
+      style={{ background: "#0a0a0f", border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 16px", color: T.heading, fontSize: 13, fontWeight: 600, cursor: "pointer", minWidth: 200 }}
+      className="[&>option]:bg-[#0a0a0f] [&>option]:text-white">
       <option value="">Select a project...</option>
       {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
     </select>

@@ -3,7 +3,7 @@ import { kv } from "@vercel/kv";
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-const KV_KEY = "apex:squad:v3";
+const KV_KEY = "apex:squad:v4";
 const TOKEN = "apex-live-2026";
 
 export interface WorkspaceFile {
@@ -64,18 +64,19 @@ const GINGE: Agent = {
   model_strategy: "Delegates to agents, reviews outputs, makes final calls",
   current_task: "Building Apex Command Centre",
   task_since: new Date().toISOString(),
-  layout: { row: 0, col: 1, x: 50, y: 8, connects_to: ["atlas", "newton", "darwin"] },
+  layout: { row: 0, col: 1, x: 50, y: 8, connects_to: ["atlas", "newton", "darwin", "jimmy"] },
   soul_text: "",
   memory_text: "",
   workspace_files: [],
   last_updated: new Date().toISOString(),
 };
 
-// Layout positions for the 3 AI agents
+// Layout positions for the 4 AI agents — org-chart style
 const LAYOUTS: Record<string, Agent["layout"]> = {
-  atlas:  { row: 1, col: 1, x: 50, y: 42, connects_to: ["ginge", "newton", "darwin"] },
-  newton: { row: 2, col: 0, x: 22, y: 78, connects_to: ["ginge", "atlas"] },
-  darwin: { row: 2, col: 2, x: 78, y: 78, connects_to: ["ginge", "atlas"] },
+  atlas:  { row: 1, col: 1, x: 50, y: 42, connects_to: ["ginge", "newton", "darwin", "jimmy"] },
+  newton: { row: 2, col: 0, x: 16, y: 78, connects_to: ["ginge", "atlas"] },
+  jimmy:  { row: 2, col: 1, x: 50, y: 78, connects_to: ["atlas"] },
+  darwin: { row: 2, col: 2, x: 84, y: 78, connects_to: ["ginge", "atlas"] },
 };
 
 async function buildSeed(): Promise<SquadData> {

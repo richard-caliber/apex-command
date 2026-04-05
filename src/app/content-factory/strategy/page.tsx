@@ -206,7 +206,7 @@ function StrategyInner() {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <select value={selected} onChange={(e) => setSelected(e.target.value)}
-          className="text-sm bg-transparent border rounded-lg px-3 py-2 cursor-pointer focus:outline-none"
+          className="text-sm bg-[#0a0a0f] border rounded-lg px-3 py-2 cursor-pointer focus:outline-none [&>option]:bg-[#0a0a0f] [&>option]:text-white"
           style={{ borderColor: "#1e1e2e", color: "#f1f5f9" }}>
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>

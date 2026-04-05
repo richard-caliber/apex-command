@@ -71,8 +71,6 @@ export default function IdeasPage() {
   const [captureTitle, setCaptureTitle] = useState("");
   const [captureTags, setCaptureTags] = useState("");
 
-  // Feeds
-  const [feedsOpen, setFeedsOpen] = useState<Record<string, boolean>>({});
 
   const fetchData = useCallback(async () => {
     try {
@@ -130,11 +128,6 @@ export default function IdeasPage() {
     fetchData();
   };
 
-  const captureFromFeed = (title: string, source: string) => {
-    setCaptureTitle(title);
-    setCaptureTags(source);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const filtered = useMemo(() => {
     let items = ideas;
@@ -250,25 +243,6 @@ export default function IdeasPage() {
         </div>
       )}
 
-      {/* ── Inspiration Feeds ── */}
-      <div className="space-y-3 pt-4">
-        <h3 className="text-sm font-bold tracking-widest uppercase text-[#64748b]">Inspiration Feeds</h3>
-
-        {/* X/Twitter */}
-        <FeedSection title="📡 X / Twitter Signals" id="twitter" open={!!feedsOpen.twitter} onToggle={() => setFeedsOpen((p) => ({ ...p, twitter: !p.twitter }))}>
-          <TweetCapture onCapture={captureFromFeed} />
-        </FeedSection>
-
-        {/* YouTube */}
-        <FeedSection title="📺 YouTube Watchlist" id="youtube" open={!!feedsOpen.youtube} onToggle={() => setFeedsOpen((p) => ({ ...p, youtube: !p.youtube }))}>
-          <p className="text-xs text-[#475569] italic">Coming soon — connect YouTube Data API key via Vault to see latest videos from tracked channels.</p>
-        </FeedSection>
-
-        {/* News */}
-        <FeedSection title="📰 News & Trends" id="news" open={!!feedsOpen.news} onToggle={() => setFeedsOpen((p) => ({ ...p, news: !p.news }))}>
-          <p className="text-xs text-[#475569] italic">Coming soon — RSS integration for industry sources.</p>
-        </FeedSection>
-      </div>
     </div>
   );
 }
@@ -407,47 +381,6 @@ function EditField({ label, value, onChange, multiline, mono }: {
   );
 }
 
-/* ── Tweet Capture ── */
-function TweetCapture({ onCapture }: { onCapture: (title: string, source: string) => void }) {
-  const [url, setUrl] = useState("");
-
-  const capture = () => {
-    if (!url.trim()) return;
-    const title = `Tweet capture: ${url.trim().substring(0, 80)}`;
-    onCapture(title, `x.com,${url.trim()}`);
-    setUrl("");
-  };
-
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-[#94a3b8]">Paste a tweet URL to capture as an idea</p>
-      <div className="flex items-center gap-2">
-        <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && capture()}
-          placeholder="https://x.com/..."
-          className="flex-1 bg-[#0a0e1a] border border-[#1e293b] rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#00d4d4]" />
-        <button onClick={capture}
-          className="px-3 py-2 rounded-lg text-xs font-semibold bg-[#00d4d4]/10 text-[#00d4d4] border border-[#00d4d4]/30 hover:bg-[#00d4d4]/20 transition-colors cursor-pointer">
-          Capture as Idea
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Feed Section ── */
-function FeedSection({ title, id, open, onToggle, children }: {
-  title: string; id: string; open: boolean; onToggle: () => void; children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border overflow-hidden" style={{ background: "#111827", borderColor: open ? "#00d4d420" : "#1e293b", borderLeftColor: "#00d4d4", borderLeftWidth: "3px" }}>
-      <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
-        <span className="text-sm font-semibold text-white flex-1 text-left">{title}</span>
-        <span className="text-xs text-[#475569]">{open ? "\u25B2" : "\u25BC"}</span>
-      </button>
-      {open && <div className="border-t border-[#1e293b] px-4 pb-4 pt-3">{children}</div>}
-    </div>
-  );
-}
 
 /* ── Filter Tab ── */
 function FilterTab({ label, count, active, onClick, color }: {

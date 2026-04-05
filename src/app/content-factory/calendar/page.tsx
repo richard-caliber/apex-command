@@ -7,21 +7,22 @@ function api(url: string, body: Record<string, unknown>) {
 }
 
 interface QueueItem {
-  id: string;
-  project_id: string;
-  title: string;
-  format: string;
-  platforms: string[];
-  scheduled_date: string;
-  status: string;
-  pipeline_step: string;
-  topic?: string;
+  id: string; project_id: string; title: string; format: string; platforms: string[];
+  scheduled_date: string; status: string; pipeline_step: string;
 }
-
+interface LibraryItem {
+  id: string; project_id: string; title: string; format: string; platforms: string[];
+  posted_date: string; performance_tag: string;
+}
 interface Project { id: string; name: string; stage?: string }
 
-/* ── Constants ── */
-const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+// Unified calendar item
+interface CalendarItem {
+  id: string; project_id: string; title: string; format: string;
+  date: string; type: "published" | "scheduled" | "missed";
+}
+
+const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
 const PROJECT_COLOR: Record<string, { bg: string; border: string; text: string; dot: string }> = {
   caliber: { bg: "rgba(0,212,212,0.06)", border: "rgba(0,212,212,0.25)", text: "#00d4d4", dot: "#00d4d4" },
@@ -32,25 +33,12 @@ const PROJECT_COLOR: Record<string, { bg: string; border: string; text: string; 
 const DEFAULT_COLOR = { bg: "rgba(107,107,128,0.06)", border: "rgba(107,107,128,0.2)", text: "#6b6b80", dot: "#6b6b80" };
 
 const FORMAT_ICON: Record<string, string> = {
-  carousel: "\uD83D\uDCF8",
-  reel: "\uD83C\uDFAC",
-  ad: "\uD83D\uDCE3",
-  thread: "\uD83D\uDC26",
-  listing: "\uD83D\uDCCB",
-  story: "\uD83D\uDCF1",
-  post: "\uD83D\uDCDD",
-};
-
-const STATUS_DOT: Record<string, string> = {
-  scheduled: "#22c55e",
-  done: "#22c55e",
-  not_started: "#f59e0b",
-  blocked: "#ef4444",
+  carousel: "\uD83D\uDCF8", reel: "\uD83C\uDFAC", ad: "\uD83D\uDCE3", thread: "\uD83D\uDC26",
+  listing: "\uD83D\uDCCB", story: "\uD83D\uDCF1", post: "\uD83D\uDCDD",
 };
 
 const CONTENT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
 
-/* ── Helpers ── */
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -63,52 +51,63 @@ function formatDateShort(d: Date) {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-function projectName(projects: Project[], id: string): string {
-  return projects.find((p) => p.id === id)?.name || id;
-}
-
-/* ── Component ── */
 export default function CalendarPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([]);
   const [selectedProject, setSelectedProject] = useState("all");
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const [pData, qData] = await Promise.all([
+    const [pData, qData, lData] = await Promise.all([
       api("/api/projects", { action: "list" }),
       api("/api/content-queue", { action: "list" }),
+      api("/api/content-library", { action: "list" }),
     ]);
     const allProjects: Project[] = pData?.projects || [];
     const queueItems: QueueItem[] = qData?.items || [];
-    const projectIds = new Set(queueItems.map((q) => q.project_id));
-    const relevant = allProjects.filter((p) => CONTENT_STAGES.has(p.stage || "") || projectIds.has(p.id));
-    setProjects(relevant);
-    setQueue(queueItems);
+    const libraryItems: LibraryItem[] = lData?.items || [];
+    const today = new Date().toISOString().split("T")[0];
 
-    // Default to the week that has content
-    if (queueItems.length > 0) {
-      const firstDate = queueItems.find((q) => q.scheduled_date !== "TBD")?.scheduled_date;
-      if (firstDate) {
-        const target = getWeekStart(new Date(firstDate));
-        const now = getWeekStart(new Date());
-        const diff = Math.round((target.getTime() - now.getTime()) / (7 * 86400000));
-        setWeekOffset(diff);
+    // Build unified items
+    const items: CalendarItem[] = [];
+
+    // Published items from library (green)
+    for (const lib of libraryItems) {
+      if (lib.posted_date) {
+        items.push({ id: lib.id, project_id: lib.project_id, title: lib.title, format: lib.format, date: lib.posted_date, type: "published" });
       }
     }
+
+    // Published library IDs for matching
+    const publishedIds = new Set(libraryItems.map((l) => l.id));
+
+    // Queue items
+    for (const q of queueItems) {
+      if (q.scheduled_date === "TBD" || publishedIds.has(q.id)) continue;
+      if (q.scheduled_date < today) {
+        // Past scheduled date but not in library = missed
+        items.push({ id: q.id, project_id: q.project_id, title: q.title, format: q.format, date: q.scheduled_date, type: "missed" });
+      } else {
+        // Future = scheduled (blue)
+        items.push({ id: q.id, project_id: q.project_id, title: q.title, format: q.format, date: q.scheduled_date, type: "scheduled" });
+      }
+    }
+
+    const projectIds = new Set(items.map((i) => i.project_id));
+    const relevant = allProjects.filter((p) => CONTENT_STAGES.has(p.stage || "") || projectIds.has(p.id));
+    setProjects(relevant);
+    setCalendarItems(items);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  // Filter queue by project
   const filtered = useMemo(() => {
-    if (selectedProject === "all") return queue;
-    return queue.filter((q) => q.project_id === selectedProject);
-  }, [queue, selectedProject]);
+    if (selectedProject === "all") return calendarItems;
+    return calendarItems.filter((i) => i.project_id === selectedProject);
+  }, [calendarItems, selectedProject]);
 
-  // Week dates
   const weekStart = useMemo(() => {
     const ws = getWeekStart(new Date());
     ws.setDate(ws.getDate() + weekOffset * 7);
@@ -121,16 +120,30 @@ export default function CalendarPage() {
     return d;
   }), [weekStart]);
 
-  // Unscheduled items
-  const unscheduled = useMemo(() => filtered.filter((q) => q.scheduled_date === "TBD"), [filtered]);
+  const todayStr = new Date().toISOString().split("T")[0];
 
-  // Count items in current week
-  const weekItemCount = useMemo(() => {
-    return weekDates.reduce((sum, d) => {
-      const dateStr = d.toISOString().split("T")[0];
-      return sum + filtered.filter((q) => q.scheduled_date === dateStr).length;
-    }, 0);
-  }, [weekDates, filtered]);
+  // Stats
+  const stats = useMemo(() => {
+    const now = new Date();
+    const weekStartDate = getWeekStart(now);
+    const weekEndDate = new Date(weekStartDate);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const next7Start = new Date(now);
+    next7Start.setDate(next7Start.getDate() + 1);
+    const next7End = new Date(now);
+    next7End.setDate(next7End.getDate() + 7);
+
+    const wsStr = weekStartDate.toISOString().split("T")[0];
+    const weStr = weekEndDate.toISOString().split("T")[0];
+    const n7sStr = next7Start.toISOString().split("T")[0];
+    const n7eStr = next7End.toISOString().split("T")[0];
+
+    const publishedThisWeek = filtered.filter((i) => i.type === "published" && i.date >= wsStr && i.date <= weStr).length;
+    const scheduledNext7 = filtered.filter((i) => i.type === "scheduled" && i.date >= n7sStr && i.date <= n7eStr).length;
+    return { publishedThisWeek, scheduledNext7 };
+  }, [filtered]);
+
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name || id;
 
   if (loading) return <p className="text-xs text-center py-20" style={{ color: "#4a4a5e" }}>Loading...</p>;
 
@@ -139,47 +152,63 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
-          className="text-sm bg-transparent border rounded-lg px-3 py-2 cursor-pointer focus:outline-none"
+          className="text-sm bg-[#0a0a0f] border rounded-lg px-3 py-2 cursor-pointer focus:outline-none [&>option]:bg-[#0a0a0f] [&>option]:text-white"
           style={{ borderColor: "#1e1e2e", color: "#f1f5f9" }}>
           <option value="all">All Projects</option>
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
 
         <span className="text-xs font-mono" style={{ color: "#4a4a5e" }}>
-          {formatDateShort(weekDates[0])} — {formatDateShort(weekDates[5])}
+          {formatDateShort(weekDates[0])} — {formatDateShort(weekDates[6])}
         </span>
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "rgba(0,212,212,0.08)", color: "#00d4d4" }}>
-          {weekItemCount} item{weekItemCount !== 1 ? "s" : ""}
-        </span>
+
+        {/* Stats pills */}
+        {stats.publishedThisWeek > 0 && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e" }}>
+            {stats.publishedThisWeek} published this week
+          </span>
+        )}
+        {stats.scheduledNext7 > 0 && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "rgba(59,130,246,0.1)", color: "#3b82f6" }}>
+            {stats.scheduledNext7} scheduled next 7 days
+          </span>
+        )}
 
         <div className="flex items-center gap-2 ml-auto">
           <button onClick={() => setWeekOffset(weekOffset - 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>{"\u2190"} Prev</button>
-          <button onClick={() => setWeekOffset(0)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors" style={{ color: weekOffset === 0 ? "#00d4d4" : "#6b6b80", border: `1px solid ${weekOffset === 0 ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`, background: weekOffset === 0 ? "rgba(0,212,212,0.06)" : "transparent" }}>This Week</button>
+          <button onClick={() => setWeekOffset(0)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors" style={{ color: weekOffset === 0 ? "#00d4d4" : "#6b6b80", border: `1px solid ${weekOffset === 0 ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`, background: weekOffset === 0 ? "rgba(0,212,212,0.06)" : "transparent" }}>Today</button>
           <button onClick={() => setWeekOffset(weekOffset + 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>Next {"\u2192"}</button>
         </div>
       </div>
 
-      {/* Calendar Grid — Mon-Sat */}
-      <div className="grid grid-cols-6 gap-2">
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-[10px]">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: "#22c55e" }} /> Published</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: "#3b82f6" }} /> Scheduled</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: "#ef4444" }} /> Missed</span>
+      </div>
+
+      {/* Calendar Grid — Mon-Sun */}
+      <div className="grid grid-cols-7 gap-2">
         {WEEKDAYS.map((day, i) => {
           const date = weekDates[i];
           const dateStr = date.toISOString().split("T")[0];
-          const isToday = new Date().toISOString().split("T")[0] === dateStr;
-          const dayItems = filtered.filter((q) => q.scheduled_date === dateStr);
+          const isToday = todayStr === dateStr;
+          const dayItems = filtered.filter((item) => item.date === dateStr);
 
           return (
             <div key={day} className="rounded-lg min-h-[160px] flex flex-col"
               style={{
-                background: isToday ? "rgba(0,212,212,0.03)" : "#111118",
-                border: `1px solid ${isToday ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`,
+                background: isToday ? "rgba(0,212,212,0.04)" : "#111118",
+                border: isToday ? "2px solid rgba(0,212,212,0.4)" : "1px solid #1e1e2e",
               }}>
               {/* Day header */}
-              <div className="px-2.5 py-2 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(30,30,46,0.5)" }}>
+              <div className="px-2 py-2 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(30,30,46,0.5)" }}>
                 <div>
                   <span className="text-[10px] font-bold uppercase block" style={{ color: isToday ? "#00d4d4" : "#6b6b80" }}>
                     {day.slice(0, 3)}
                   </span>
-                  <span className="text-[10px] font-mono" style={{ color: "#4a4a5e" }}>{formatDateShort(date)}</span>
+                  <span className="text-[10px] font-mono" style={{ color: isToday ? "#00d4d4" : "#4a4a5e" }}>{date.getDate()}</span>
                 </div>
                 {dayItems.length > 0 && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,212,212,0.12)", color: "#00d4d4" }}>
@@ -189,14 +218,9 @@ export default function CalendarPage() {
               </div>
 
               {/* Content cards */}
-              <div className="flex-1 p-1.5 space-y-1.5">
-                {dayItems.length === 0 && (
-                  <div className="flex items-center justify-center h-full">
-                    <span className="text-[10px]" style={{ color: "#2a2a3e" }}>{"\u2014"}</span>
-                  </div>
-                )}
+              <div className="flex-1 p-1.5 space-y-1">
                 {dayItems.map((item) => (
-                  <ContentCard key={item.id} item={item} projects={projects} />
+                  <CalendarCard key={item.id} item={item} projectName={projectName(item.project_id)} />
                 ))}
               </div>
             </div>
@@ -204,60 +228,37 @@ export default function CalendarPage() {
         })}
       </div>
 
-      {/* Unscheduled section */}
-      {unscheduled.length > 0 && (
-        <div className="rounded-lg overflow-hidden" style={{ background: "#111118", border: "1px dashed rgba(245,158,11,0.3)" }}>
-          <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: "rgba(245,158,11,0.04)", borderBottom: "1px solid rgba(245,158,11,0.15)" }}>
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#f59e0b" }}>{"\uD83D\uDCC5"} Unscheduled</span>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>{unscheduled.length}</span>
-          </div>
-          <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {unscheduled.map((item) => (
-              <ContentCard key={item.id} item={item} projects={projects} />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Empty state */}
       {filtered.length === 0 && (
         <div className="text-center py-16 rounded-lg" style={{ background: "#111118", border: "1px dashed #1e1e2e" }}>
-          <p className="text-sm" style={{ color: "#6b6b80" }}>No content in the queue yet.</p>
+          <p className="text-sm" style={{ color: "#6b6b80" }}>No content in the pipeline yet.</p>
         </div>
       )}
     </div>
   );
 }
 
-/* ── Content Card ── */
-function ContentCard({ item, projects }: { item: QueueItem; projects: Project[] }) {
+function CalendarCard({ item, projectName }: { item: CalendarItem; projectName: string }) {
   const pc = PROJECT_COLOR[item.project_id] || DEFAULT_COLOR;
   const formatIcon = FORMAT_ICON[item.format] || "\uD83D\uDCDD";
-  const statusDot = STATUS_DOT[item.status] || "#6b6b80";
-  const name = projectName(projects, item.project_id);
+
+  const typeConfig = {
+    published: { indicator: "\u2705", borderColor: "rgba(34,197,94,0.3)", bg: "rgba(34,197,94,0.04)" },
+    scheduled: { indicator: "\uD83D\uDD35", borderColor: "rgba(59,130,246,0.3)", bg: "rgba(59,130,246,0.04)" },
+    missed: { indicator: "\u274C", borderColor: "rgba(239,68,68,0.3)", bg: "rgba(239,68,68,0.04)" },
+  };
+  const tc = typeConfig[item.type];
 
   return (
-    <div className="rounded-lg px-2.5 py-2 transition-all hover:brightness-110"
-      style={{ background: pc.bg, border: `1px solid ${pc.border}` }}>
-      {/* Project name */}
-      <div className="flex items-center gap-1.5 mb-1">
+    <div className="rounded-md px-2 py-1.5 transition-all hover:brightness-110"
+      style={{ background: tc.bg, border: `1px solid ${tc.borderColor}` }}>
+      <div className="flex items-center gap-1 mb-0.5">
+        <span className="text-[8px]">{tc.indicator}</span>
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: pc.dot }} />
-        <span className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: pc.text }}>{name}</span>
+        <span className="text-[8px] font-bold uppercase tracking-wider truncate" style={{ color: pc.text }}>{projectName}</span>
+        <span className="ml-auto text-[10px]" title={item.format}>{formatIcon}</span>
       </div>
-
-      {/* Title */}
-      <p className="text-[11px] font-medium leading-snug mb-1.5 line-clamp-2" style={{ color: "#e0e0ee" }}>{item.title}</p>
-
-      {/* Format + status */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded capitalize" style={{ background: "rgba(107,107,128,0.1)", color: "#94a3b8" }}>
-          {formatIcon} {item.format}
-        </span>
-        <span className="flex items-center gap-1 ml-auto">
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusDot }} />
-          <span className="text-[9px]" style={{ color: statusDot }}>{item.status.replace(/_/g, " ")}</span>
-        </span>
-      </div>
+      <p className="text-[10px] font-medium leading-snug line-clamp-2" style={{ color: "#e0e0ee" }}>{item.title}</p>
     </div>
   );
 }

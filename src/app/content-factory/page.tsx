@@ -67,15 +67,12 @@ export default function ContentFactoryDashboard() {
 
     const result: CardData[] = contentProjects.map((p) => {
       const hasStrategy = strategies.some((s) => s.project_id === p.id);
-      const projectTasks = tasks
-        .filter((t) => t.project_id === p.id && t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous")
-        .sort((a, b) => {
-          const sa = stageOrder.indexOf(a.stage);
-          const sb = stageOrder.indexOf(b.stage);
-          if (sa !== sb) return sa - sb;
-          return a.order - b.order;
-        });
-      return { project: p, hasStrategy, nextTask: projectTasks[0] || null, darwinScore: scoreMap[p.id] || null };
+      // Only pick next task from the project's CURRENT stage
+      const currentStageTasks = tasks
+        .filter((t) => t.project_id === p.id && t.stage === p.stage)
+        .sort((a, b) => a.order - b.order);
+      const nextTask = currentStageTasks.find((t) => t.status !== "done" && t.status !== "in_progress" && t.status !== "skipped" && t.blocker !== "continuous");
+      return { project: p, hasStrategy, nextTask: nextTask || null, darwinScore: scoreMap[p.id] || null };
     });
 
     setCards(result);

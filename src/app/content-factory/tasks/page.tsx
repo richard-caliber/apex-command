@@ -104,21 +104,25 @@ export default function ContentTasksPage() {
     count: tasks.filter((t) => t.stage === s.id).length,
   }));
 
-  // Next undone task
-  const nextTask = tasks.find((t) => t.status !== "done" && t.status !== "skipped" && t.blocker !== "continuous");
+  // Next undone task — only from the project's CURRENT stage
+  const currentProject = projects.find((p) => p.id === selectedProject);
+  const currentStage = currentProject?.stage || "";
+  const currentStageTasks = tasks.filter((t) => t.stage === currentStage);
+  const nextTask = currentStageTasks.find((t) => t.status !== "done" && t.status !== "in_progress" && t.status !== "skipped" && t.blocker !== "continuous");
+  const allCurrentStageActive = !nextTask && currentStageTasks.length > 0 && currentStageTasks.every((t) => t.status === "done" || t.status === "in_progress");
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold text-white">Content Tasks</h1>
         <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
-          className="text-sm bg-[#111118] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white cursor-pointer focus:outline-none focus:border-[#00d4d4]">
+          className="text-sm bg-[#0a0a0f] border border-[#1e1e2e] rounded-lg px-3 py-2 text-white cursor-pointer focus:outline-none focus:border-[#00d4d4] [&>option]:bg-[#0a0a0f] [&>option]:text-white">
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
 
       {/* Next undone task highlight */}
-      {nextTask && (
+      {nextTask ? (
         <div className="rounded-xl p-4" style={{ background: "rgba(0,212,212,0.04)", border: "1px solid rgba(0,212,212,0.2)" }}>
           <div className="text-[9px] uppercase tracking-wider font-bold mb-1" style={{ color: "#00d4d4" }}>Next Task</div>
           <div className="flex items-center gap-3">
@@ -128,7 +132,12 @@ export default function ContentTasksPage() {
           </div>
           {nextTask.description && <p className="text-xs mt-1" style={{ color: "#94a3b8" }}>{nextTask.description}</p>}
         </div>
-      )}
+      ) : allCurrentStageActive ? (
+        <div className="rounded-xl p-4" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.2)" }}>
+          <div className="text-[9px] uppercase tracking-wider font-bold mb-1" style={{ color: "#f59e0b" }}>Stage Gate</div>
+          <span className="text-sm text-white">All tasks active — review stage gate.</span>
+        </div>
+      ) : null}
 
       {/* Stage navigation */}
       <div className="flex items-center gap-2">
