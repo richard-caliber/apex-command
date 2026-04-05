@@ -47,6 +47,7 @@ export default function VaultPage() {
               <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompt Library</Link>
               <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
               <span className="text-sm text-white font-medium">Keys</span>
+              <Link href="/tasks" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Task List</Link>
               <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Map Room</Link>
               <Link href="/content-factory" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Content Factory</Link>
               <Link href="/action-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Action Room</Link>
