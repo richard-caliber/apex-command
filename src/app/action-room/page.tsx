@@ -139,10 +139,12 @@ export default function ActionRoom() {
   }, [projects]);
 
   // ── Daily Pulse: find data sources by ID, parse JSON value ──
-  const parsePulse = (id: string): Record<string, any> | null => {
+  const parsePulse = (id: string): { data: Record<string, any>; state: string } | null => {
     const item = metrics.find((m) => m.id === id);
-    if (!item?.value) return null;
-    try { return JSON.parse(item.value); } catch { return null; }
+    if (!item) return null;
+    let data: Record<string, any> = {};
+    if (item.value) { try { data = JSON.parse(item.value); } catch { /* keep empty */ } }
+    return { data, state: item.state };
   };
   const caliberIG = useMemo(() => parsePulse("caliber-ig"), [metrics]);
   const gemSnapData = useMemo(() => parsePulse("gemsnap-posthog"), [metrics]);
@@ -226,11 +228,11 @@ export default function ActionRoom() {
               {caliberIG ? (
                 <div className="space-y-1.5">
                   <p className="text-sm font-bold text-white">
-                    {caliberIG.followers ?? "–"} followers {"\u00B7"} {caliberIG.posts ?? "–"} posts
+                    {caliberIG.data.followers ?? "–"} followers {"\u00B7"} {caliberIG.data.posts ?? "–"} posts
                   </p>
                   <p className="text-[11px] text-[#94a3b8]">
-                    Last post: {caliberIG.last_post_likes ?? 0}{"\u2764\uFE0F"}{" "}
-                    {caliberIG.last_post_comments ?? 0}{"\uD83D\uDCAC"}
+                    Last post: {caliberIG.data.last_post_likes ?? 0}{"\u2764\uFE0F"}{" "}
+                    {caliberIG.data.last_post_comments ?? 0}{"\uD83D\uDCAC"}
                   </p>
                 </div>
               ) : (
@@ -243,12 +245,12 @@ export default function ActionRoom() {
               {gemSnapData ? (
                 <div className="space-y-1.5">
                   <p className="text-sm font-bold text-white">
-                    {gemSnapData.pageviews_24h ?? "–"} views {"\u00B7"} {gemSnapData.cta_clicks_24h ?? "–"} CTA clicks
+                    {gemSnapData.data.pageviews_24h ?? "–"} views {"\u00B7"} {gemSnapData.data.cta_clicks_24h ?? "–"} CTA clicks
                   </p>
                   <p className="text-[11px] text-[#94a3b8]">
-                    {gemSnapData.sample_gallery_clicked ?? 0} sample scans {"\u00B7"}{" "}
-                    {gemSnapData.real_scans_24h ?? 0} real scan{(gemSnapData.real_scans_24h ?? 0) !== 1 ? "s" : ""} {"\u00B7"}{" "}
-                    {gemSnapData.conversions_24h ?? 0} conversions
+                    {gemSnapData.data.sample_gallery_clicked ?? 0} sample scans {"\u00B7"}{" "}
+                    {gemSnapData.data.real_scans_24h ?? 0} real scan{(gemSnapData.data.real_scans_24h ?? 0) !== 1 ? "s" : ""} {"\u00B7"}{" "}
+                    {gemSnapData.data.conversions_24h ?? 0} conversions
                   </p>
                 </div>
               ) : (
@@ -259,12 +261,12 @@ export default function ActionRoom() {
             {/* Card 3: Ad Spend */}
             <PulseShell title="Ad Spend" emoji={"\uD83D\uDCB0"} accentColor="#ef4444">
               {adSpendData ? (
-                adSpendData.note ? (
-                  <p className="text-[11px] text-[#f59e0b] py-2">{adSpendData.note}</p>
+                adSpendData.data.note ? (
+                  <p className="text-[11px] text-[#f59e0b] py-2">{"\u26A0\uFE0F"} {adSpendData.data.note}</p>
                 ) : (
                   <div className="space-y-1.5">
                     <p className="text-sm font-bold text-white">
-                      ${adSpendData.spend ?? "–"} spent {"\u00B7"} {adSpendData.clicks ?? "–"} clicks {"\u00B7"} ${adSpendData.cpc ?? "–"} CPC
+                      ${adSpendData.data.spend ?? "–"} spent {"\u00B7"} {adSpendData.data.clicks ?? "–"} clicks {"\u00B7"} ${adSpendData.data.cpc ?? "–"} CPC
                     </p>
                   </div>
                 )
