@@ -12,6 +12,7 @@ const TABS = [
   { href: "/tasks", label: "Tasks", icon: "\uD83D\uDCCB" },
   { href: "/finance", label: "Finance", icon: "\u00A3" },
   { href: "/content-factory", label: "Content", icon: "\uD83C\uDFAC" },
+  { href: "/machine-room", label: "Machine", icon: "\uD83D\uDD27" },
   { href: "/action-room", label: "Action", icon: "\u26A1" },
 ];
 

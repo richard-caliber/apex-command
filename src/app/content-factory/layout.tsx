@@ -23,6 +23,7 @@ const TOP_NAV = [
   { name: "Task List", href: "/tasks" },
   { name: "Map Room", href: "/map-room" },
   { name: "Content Factory", href: "/content-factory", active: true },
+  { name: "Machine Room", href: "/machine-room" },
   { name: "Action Room", href: "/action-room" },
 ];
 

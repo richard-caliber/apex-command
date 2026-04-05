@@ -2,16 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
 
 const TABS = [
-  { name: "Overview", href: "/map-room" },
-  { name: "Pipeline", href: "/map-room/pipeline" },
-  { name: "Tasks", href: "/map-room/tasks" },
-  { name: "Data", href: "/map-room/data" },
-  { name: "Ideas", href: "/map-room/ideas" },
-  { name: "IP Vault", href: "/map-room/ip-vault" },
-  { name: "Flow Map", href: "/map-room/flow-map" },
+  { name: "Automation Map", href: "/machine-room/automation-map" },
+  { name: "Heartbeat", href: "/machine-room/heartbeat" },
 ];
 
 const TOP_NAV = [
@@ -21,23 +15,16 @@ const TOP_NAV = [
   { name: "Squad", href: "/squad" },
   { name: "Keys", href: "/vault" },
   { name: "Task List", href: "/tasks" },
-  { name: "Map Room", href: "/map-room", active: true },
+  { name: "Map Room", href: "/map-room" },
   { name: "Content Factory", href: "/content-factory" },
-  { name: "Machine Room", href: "/machine-room" },
+  { name: "Machine Room", href: "/machine-room", active: true },
   { name: "Action Room", href: "/action-room" },
 ];
 
-export default function MapRoomLayout({ children }: { children: React.ReactNode }) {
+export default function MachineRoomLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const clock = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(clock);
-  }, []);
 
   const isActiveTab = (href: string) => {
-    if (href === "/map-room") return pathname === "/map-room";
     return pathname.startsWith(href);
   };
 
@@ -62,21 +49,10 @@ export default function MapRoomLayout({ children }: { children: React.ReactNode 
               ))}
             </nav>
           </div>
-          <div className="flex items-center gap-4 text-sm" style={{ color: "#a0a0b0" }}>
-            <span className="font-mono">
-              {now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-              {" "}
-              {now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
-              <span className="text-xs">LIVE</span>
-            </span>
-          </div>
         </div>
       </header>
 
-      {/* Sub Nav — 9 tabs */}
+      {/* Sub Nav */}
       <div className="border-b px-4 sm:px-6 lg:px-8" style={{ borderColor: "#1e1e2e", background: "#0d0d14" }}>
         <div className="max-w-[1800px] mx-auto overflow-x-auto scrollbar-hide">
           <nav className="flex items-center gap-1 py-2 min-w-max">
