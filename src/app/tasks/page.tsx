@@ -122,6 +122,12 @@ export default function MasterTaskList() {
     })).filter((s) => stageFilter === "_all" || s.id === stageFilter);
   }, [templateTasks, applyFilters, stageFilter]);
 
+  // Completed tasks (done/skipped from any source, for archive section)
+  const completedTasks = useMemo(() => {
+    const done = allTasks.filter((t) => (t.status === "done" || t.status === "skipped") && t.project_id !== "_template");
+    return applyFilters(done).sort((a, b) => a.id.localeCompare(b.id));
+  }, [allTasks, applyFilters]);
+
   const totalCount = adhocTasks.length + templateTasks.length;
   const filteredCount = filteredAdhoc.length + templateSections.reduce((sum, s) => sum + s.tasks.length, 0);
 
@@ -366,6 +372,56 @@ export default function MasterTaskList() {
             );
           })}
         </div>
+
+        {/* ═══════ SECTION 3: Completed Archive ═══════ */}
+        {completedTasks.length > 0 && (
+          <CollapsibleSection
+            id="_completed"
+            label={"\u2705 Completed"}
+            count={completedTasks.length}
+            isOpen={expanded.has("_completed")}
+            onToggle={toggleSection}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-t border-[#1e293b]/50">
+                    <Th>ID</Th>
+                    <Th>Name</Th>
+                    <Th>Owner</Th>
+                    <Th>Project</Th>
+                    <Th>Status</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completedTasks.map((task) => {
+                    const ow = OWNER_STYLE[task.owner] || { emoji: "\u2753", label: task.owner };
+                    const ss = STATUS_STYLE[task.status] || STATUS_STYLE.done;
+                    return (
+                      <tr key={task.id} className="border-b border-[#1e293b]/30 hover:bg-white/[0.02]" style={{ opacity: 0.5 }}>
+                        <td className="px-4 py-2.5">
+                          <span className="text-xs font-mono font-bold" style={{ color: "#475569" }}>{task.id}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-xs text-[#94a3b8]">{task.name}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-xs text-[#64748b]">{ow.emoji} {ow.label}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded" style={{ background: "rgba(100,116,139,0.08)", color: "#64748b" }}>{task.project_id}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: ss.bg, color: ss.text }}>{ss.label}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CollapsibleSection>
+        )}
       </main>
 
       {/* Toast */}

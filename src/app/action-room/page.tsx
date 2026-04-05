@@ -79,8 +79,6 @@ const STAGE_COLOR: Record<string, string> = {
   scale: "bg-cyan-500/20 text-cyan-300",
 };
 
-const TOKEN = "apex-live-2026";
-
 /* ── Main Component ── */
 
 export default function ActionRoom() {
@@ -88,10 +86,6 @@ export default function ActionRoom() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [markingDone, setMarkingDone] = useState<Set<string>>(new Set());
-  const [doneTasks, setDoneTasks] = useState<Set<string>>(new Set());
-  const [toast, setToast] = useState<string | null>(null);
-
   // Fetch all data on mount
   const fetchAll = useCallback(async () => {
     const [tasksRes, dataRes, squadRes, projectsRes] = await Promise.allSettled([
@@ -190,34 +184,6 @@ export default function ActionRoom() {
     () => agents.filter((a) => ["atlas", "newton", "darwin", "jimmy"].includes(a.id)),
     [agents]
   );
-
-  // Mark task done
-  const handleMarkDone = async (taskId: string) => {
-    setMarkingDone((prev) => new Set([...prev, taskId]));
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({ action: "set", id: taskId, status: "done" }),
-      });
-      if (res.ok) {
-        setDoneTasks((prev) => new Set([...prev, taskId]));
-        setToast(`Marked done \u2705 \u2014 tell Atlas to verify`);
-        setTimeout(() => setToast(null), 3000);
-      }
-    } catch {
-      /* silent */
-    } finally {
-      setMarkingDone((prev) => {
-        const next = new Set(prev);
-        next.delete(taskId);
-        return next;
-      });
-    }
-  };
 
   return (
     <div className="min-h-dvh" style={{ background: "#0a0a0f" }}>
@@ -328,9 +294,7 @@ export default function ActionRoom() {
                     key={task.id}
                     task={task}
                     projectName={projectMap[task.project_id] || task.project_id}
-                    isMarking={markingDone.has(task.id)}
-                    isDone={doneTasks.has(task.id)}
-                    onMarkDone={handleMarkDone}
+                    isDone={task.status === "done"}
                   />
                 ))}
                 {totalGingeTasks > 10 && (
@@ -366,9 +330,7 @@ export default function ActionRoom() {
                     key={task.id}
                     task={task}
                     projectName={projectMap[task.project_id] || task.project_id}
-                    isMarking={markingDone.has(task.id)}
-                    isDone={doneTasks.has(task.id)}
-                    onMarkDone={handleMarkDone}
+                    isDone={task.status === "done"}
                     showOwner
                   />
                 ))}
@@ -435,15 +397,6 @@ export default function ActionRoom() {
         </section>
       </main>
 
-      {/* Toast */}
-      {toast && (
-        <div
-          className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-xl text-sm font-semibold"
-          style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)", animation: "fadeIn 0.3s ease-out" }}
-        >
-          {toast}
-        </div>
-      )}
     </div>
   );
 }
@@ -461,16 +414,12 @@ const AGENT_BADGE: Record<string, { emoji: string; color: string; label: string 
 function ActionCard({
   task,
   projectName,
-  isMarking,
   isDone,
-  onMarkDone,
   showOwner,
 }: {
   task: PipelineTask;
   projectName: string;
-  isMarking: boolean;
   isDone?: boolean;
-  onMarkDone: (id: string) => void;
   showOwner?: boolean;
 }) {
   const emoji = isDone ? "\u2705" : (STATUS_EMOJI[task.status] || "\uD83D\uDFE2");
@@ -506,19 +455,6 @@ function ActionCard({
           {task.description || "No description"}
         </p>
       </div>
-      {isDone ? (
-        <span className="flex-shrink-0 text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg text-green-400/50">
-          {"\u2713"} Done
-        </span>
-      ) : (
-        <button
-          onClick={() => onMarkDone(task.id)}
-          disabled={isMarking}
-          className="flex-shrink-0 text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {isMarking ? "..." : "\u2713 Done"}
-        </button>
-      )}
     </div>
   );
 }
