@@ -164,7 +164,8 @@ export default function ActionRoom() {
           t.stage === "adhoc" &&
           t.project_id !== "_template" &&
           t.status !== "done" &&
-          t.status !== "skipped"
+          t.status !== "skipped" &&
+          t.status !== "abandoned"
       ),
     [tasks]
   );
@@ -295,7 +296,6 @@ export default function ActionRoom() {
                 { label: "CPC", key: "cpc" },
                 { label: "CTR", key: "ctr" },
               ]}
-              emptyMessage={"\u26A0\uFE0F Token needs ads_read"}
             />
           </div>
         </section>
