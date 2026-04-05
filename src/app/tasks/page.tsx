@@ -63,6 +63,12 @@ const AUTO_STYLE: Record<string, { bg: string; text: string; label: string }> = 
 type SortKey = "id" | "name" | "owner" | "project_id" | "stage" | "status" | "automation";
 type SortDir = "asc" | "desc";
 
+/* ── Section IDs: adhoc first, then stages ── */
+const SECTIONS = [
+  { id: "_adhoc", label: "Ad Hoc", defaultOpen: true },
+  ...STAGES.map((s) => ({ id: s.id, label: s.label, defaultOpen: false })),
+];
+
 /* ── Page ── */
 
 export default function MasterTaskList() {
@@ -75,7 +81,9 @@ export default function MasterTaskList() {
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [markingDone, setMarkingDone] = useState<Set<string>>(new Set());
+  const [doneTasks, setDoneTasks] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(SECTIONS.filter((s) => s.defaultOpen).map((s) => s.id)));
 
   const fetchTasks = useCallback(async () => {
     const res = await fetch("/api/pipeline-tasks", {
@@ -122,14 +130,27 @@ export default function MasterTaskList() {
   }, [tasks, ownerFilter, projectFilter, stageFilter, statusFilter, search]);
 
   // Sort
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
+  const sortTasks = useCallback((list: PipelineTask[]) => {
+    return [...list].sort((a, b) => {
       const av = a[sortKey] ?? "";
       const bv = b[sortKey] ?? "";
       const cmp = String(av).localeCompare(String(bv), undefined, { numeric: true });
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [sortKey, sortDir]);
+
+  // Group filtered tasks into sections
+  const sections = useMemo(() => {
+    const adhocTasks = sortTasks(filtered.filter((t) => t.id.startsWith("A-")));
+    const nonAdhoc = filtered.filter((t) => !t.id.startsWith("A-"));
+    const result: { id: string; label: string; tasks: PipelineTask[] }[] = [
+      { id: "_adhoc", label: "Ad Hoc", tasks: adhocTasks },
+    ];
+    for (const stage of STAGES) {
+      result.push({ id: stage.id, label: stage.label, tasks: sortTasks(nonAdhoc.filter((t) => t.stage === stage.id)) });
+    }
+    return result;
+  }, [filtered, sortTasks]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -145,6 +166,15 @@ export default function MasterTaskList() {
     return sortDir === "asc" ? " \u25B2" : " \u25BC";
   }
 
+  function toggleSection(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   const handleMarkDone = async (taskId: string) => {
     setMarkingDone((prev) => new Set([...prev, taskId]));
     try {
@@ -154,6 +184,7 @@ export default function MasterTaskList() {
         body: JSON.stringify({ action: "set", id: taskId, status: "done" }),
       });
       if (res.ok) {
+        setDoneTasks((prev) => new Set([...prev, taskId]));
         setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "done" } : t)));
         setToast(`${taskId} marked done`);
         setTimeout(() => setToast(null), 3000);
@@ -169,7 +200,33 @@ export default function MasterTaskList() {
     }
   };
 
+  const handleUndo = async (taskId: string) => {
+    setMarkingDone((prev) => new Set([...prev, taskId]));
+    try {
+      const res = await fetch("/api/pipeline-tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+        body: JSON.stringify({ action: "set", id: taskId, status: "not_started" }),
+      });
+      if (res.ok) {
+        setDoneTasks((prev) => { const next = new Set(prev); next.delete(taskId); return next; });
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "not_started" } : t)));
+        setToast(`${taskId} restored`);
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setMarkingDone((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    }
+  };
+
   const activeFilters = [ownerFilter, projectFilter, stageFilter, statusFilter].filter((f) => f !== "_all").length + (search ? 1 : 0);
+  const totalFiltered = filtered.length;
 
   return (
     <div className="min-h-dvh" style={{ background: "#0a0a0f" }}>
@@ -199,7 +256,7 @@ export default function MasterTaskList() {
           <span className="text-3xl">{"\uD83D\uDCCB"}</span>
           <div>
             <h2 className="text-2xl font-extrabold text-white">Master Task List</h2>
-            <p className="text-xs text-[#64748b]">{sorted.length} of {tasks.length} tasks</p>
+            <p className="text-xs text-[#64748b]">{totalFiltered} of {tasks.length} tasks</p>
           </div>
         </div>
 
@@ -262,104 +319,158 @@ export default function MasterTaskList() {
           )}
         </div>
 
-        {/* Table */}
-        <div className="rounded-2xl border border-[#1e293b] overflow-hidden" style={{ background: "#111827" }}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-[#1e293b]">
-                  {([
-                    ["id", "ID"],
-                    ["name", "Name"],
-                    ["owner", "Owner"],
-                    ["project_id", "Project"],
-                    ["stage", "Stage"],
-                    ["status", "Status"],
-                    ["automation", "Automation"],
-                  ] as [SortKey, string][]).map(([key, label]) => (
-                    <th
-                      key={key}
-                      onClick={() => toggleSort(key)}
-                      className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest cursor-pointer select-none transition-colors hover:text-white"
-                      style={{ color: sortKey === key ? "#00d4d4" : "#64748b" }}
-                    >
-                      {label}{sortIndicator(key)}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: "#64748b" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-[#475569]">No tasks match your filters.</td>
-                  </tr>
-                ) : (
-                  sorted.map((task) => {
-                    const ss = STATUS_STYLE[task.status] || STATUS_STYLE.not_started;
-                    const ow = OWNER_STYLE[task.owner] || { emoji: "\u2753", label: task.owner };
-                    const au = AUTO_STYLE[task.automation] || AUTO_STYLE.manual;
-                    const isAdhoc = task.id.startsWith("A-");
-                    const isDone = task.status === "done";
+        {/* Collapsible Sections */}
+        <div className="space-y-3">
+          {sections.map((section) => {
+            const isOpen = expanded.has(section.id);
+            const count = section.tasks.length;
+            const isAdhoc = section.id === "_adhoc";
 
-                    return (
-                      <tr
-                        key={task.id}
-                        className="border-b border-[#1e293b]/50 transition-colors hover:bg-white/[0.02]"
-                        style={{ opacity: isDone ? 0.4 : 1 }}
-                      >
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono font-bold" style={{ color: "#00d4d4" }}>{task.id}</span>
-                            {isAdhoc && (
-                              <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.3)" }}>
-                                Ad Hoc
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-xs text-white" title={task.description}>{task.name}</span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-xs text-[#94a3b8]">{ow.emoji} {ow.label}</span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded" style={{ background: "rgba(100,116,139,0.12)", color: "#94a3b8" }}>
-                            {task.project_id}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-xs text-[#94a3b8] capitalize">{task.stage}</span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: ss.bg, color: ss.text }}>
-                            {ss.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: au.bg, color: au.text }}>
-                            {au.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {!isDone && (
-                            <button
-                              onClick={() => handleMarkDone(task.id)}
-                              disabled={markingDone.has(task.id)}
-                              className="text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              {markingDone.has(task.id) ? "..." : "\u2713 Done"}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+            if (count === 0 && !isAdhoc) return null;
+
+            return (
+              <div key={section.id} className="rounded-2xl border border-[#1e293b] overflow-hidden" style={{ background: "#111827" }}>
+                {/* Section Header */}
+                <button
+                  onClick={() => toggleSection(section.id)}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 cursor-pointer select-none transition-colors hover:bg-white/[0.02]"
+                >
+                  <span
+                    className="text-xs transition-transform duration-200"
+                    style={{ color: "#64748b", transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+                  >
+                    {"\u25B6"}
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: isAdhoc ? "#00d4d4" : "#94a3b8" }}>
+                    {isAdhoc ? "\u26A1 Ad Hoc Actions" : section.label}
+                  </span>
+                  <span
+                    className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[10px] font-bold"
+                    style={{
+                      background: count > 0 ? (isAdhoc ? "rgba(0,212,212,0.2)" : "rgba(100,116,139,0.15)") : "rgba(100,116,139,0.08)",
+                      color: count > 0 ? (isAdhoc ? "#00d4d4" : "#94a3b8") : "#475569",
+                    }}
+                  >
+                    {count}
+                  </span>
+                </button>
+
+                {/* Section Body */}
+                <div
+                  className="transition-all duration-200 ease-in-out overflow-hidden"
+                  style={{ maxHeight: isOpen ? `${count * 60 + 60}px` : "0px", opacity: isOpen ? 1 : 0 }}
+                >
+                  {count === 0 ? (
+                    <div className="px-5 py-6 text-center text-sm text-[#475569] border-t border-[#1e293b]/50">
+                      No ad hoc tasks.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="border-t border-[#1e293b]/50">
+                            {([
+                              ["id", "ID"],
+                              ["name", "Name"],
+                              ["owner", "Owner"],
+                              ["project_id", "Project"],
+                              ["stage", "Stage"],
+                              ["status", "Status"],
+                              ["automation", "Automation"],
+                            ] as [SortKey, string][]).map(([key, label]) => (
+                              <th
+                                key={key}
+                                onClick={() => toggleSort(key)}
+                                className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest cursor-pointer select-none transition-colors hover:text-white"
+                                style={{ color: sortKey === key ? "#00d4d4" : "#64748b" }}
+                              >
+                                {label}{sortIndicator(key)}
+                              </th>
+                            ))}
+                            <th className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: "#64748b" }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {section.tasks.map((task) => {
+                            const ss = STATUS_STYLE[task.status] || STATUS_STYLE.not_started;
+                            const ow = OWNER_STYLE[task.owner] || { emoji: "\u2753", label: task.owner };
+                            const au = AUTO_STYLE[task.automation] || AUTO_STYLE.manual;
+                            const taskIsAdhoc = task.id.startsWith("A-");
+                            const justDone = doneTasks.has(task.id);
+                            const isDone = task.status === "done";
+
+                            return (
+                              <tr
+                                key={task.id}
+                                className="border-b border-[#1e293b]/30 transition-all hover:bg-white/[0.02]"
+                                style={{ opacity: justDone ? 0.4 : isDone ? 0.5 : 1 }}
+                              >
+                                <td className="px-4 py-2.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-mono font-bold" style={{ color: "#00d4d4" }}>{task.id}</span>
+                                    {taskIsAdhoc && (
+                                      <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,212,212,0.15)", color: "#00d4d4", border: "1px solid rgba(0,212,212,0.3)" }}>
+                                        Ad Hoc
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="text-xs text-white" title={task.description}>{task.name}</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="text-xs text-[#94a3b8]">{ow.emoji} {ow.label}</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded" style={{ background: "rgba(100,116,139,0.12)", color: "#94a3b8" }}>
+                                    {task.project_id}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="text-xs text-[#94a3b8] capitalize">{task.stage}</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: ss.bg, color: ss.text }}>
+                                    {ss.label}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: au.bg, color: au.text }}>
+                                    {au.label}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  {justDone ? (
+                                    <button
+                                      onClick={() => handleUndo(task.id)}
+                                      disabled={markingDone.has(task.id)}
+                                      className="text-[10px] font-medium text-[#94a3b8] hover:text-white transition-colors cursor-pointer disabled:opacity-40"
+                                    >
+                                      {markingDone.has(task.id) ? "..." : "Undo"}
+                                    </button>
+                                  ) : isDone ? (
+                                    <span className="text-[10px] text-[#475569]">{"\u2713"} Done</span>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleMarkDone(task.id)}
+                                      disabled={markingDone.has(task.id)}
+                                      className="text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                      {markingDone.has(task.id) ? "..." : "\u2713 Done"}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </main>
 
