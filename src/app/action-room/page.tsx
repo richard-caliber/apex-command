@@ -224,7 +224,7 @@ export default function ActionRoom() {
           <h3 className="text-xs font-bold tracking-widest uppercase text-[#64748b] mb-3">Daily Pulse</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card 1: Caliber IG */}
-            <PulseShell title="Caliber IG" emoji={"\uD83D\uDCF8"} accentColor="#f59e0b">
+            <PulseShell title="Caliber IG" emoji={"\uD83D\uDCF8"} accentColor="#f59e0b" period={caliberIG?.data.period}>
               {caliberIG ? (
                 <div className="space-y-1.5">
                   <p className="text-sm font-bold text-white">
@@ -241,7 +241,7 @@ export default function ActionRoom() {
             </PulseShell>
 
             {/* Card 2: GemSnap */}
-            <PulseShell title="GemSnap" emoji={"\uD83D\uDC8E"} accentColor="#00d4d4">
+            <PulseShell title="GemSnap" emoji={"\uD83D\uDC8E"} accentColor="#00d4d4" period={gemSnapData?.data.period}>
               {gemSnapData ? (
                 <div className="space-y-1.5">
                   <p className="text-sm font-bold text-white">
@@ -259,7 +259,7 @@ export default function ActionRoom() {
             </PulseShell>
 
             {/* Card 3: Ad Spend */}
-            <PulseShell title="Ad Spend" emoji={"\uD83D\uDCB0"} accentColor="#ef4444">
+            <PulseShell title="Ad Spend" emoji={"\uD83D\uDCB0"} accentColor="#ef4444" period={adSpendData?.data.period}>
               {adSpendData ? (
                 adSpendData.data.note ? (
                   <p className="text-[11px] text-[#f59e0b] py-2">{"\u26A0\uFE0F"} {adSpendData.data.note}</p>
@@ -474,11 +474,13 @@ function PulseShell({
   title,
   emoji,
   accentColor,
+  period,
   children,
 }: {
   title: string;
   emoji: string;
   accentColor: string;
+  period?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -486,11 +488,14 @@ function PulseShell({
       className="rounded-2xl border border-[#1e293b] p-5"
       style={{ background: "#111827" }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-lg">{emoji}</span>
-        <h4 className="text-xs font-bold tracking-widest uppercase" style={{ color: accentColor }}>
-          {title}
-        </h4>
+      <div className="mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{emoji}</span>
+          <h4 className="text-xs font-bold tracking-widest uppercase" style={{ color: accentColor }}>
+            {title}
+          </h4>
+        </div>
+        {period && <p className="text-[10px] text-[#475569] mt-1 ml-7">{period}</p>}
       </div>
       {children}
     </div>
