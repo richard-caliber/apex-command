@@ -22,14 +22,11 @@ export default function FinancePage() {
             <nav className="flex items-center gap-4">
               <Link href="/" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">War Room</Link>
               <Link href="/action-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Briefing Room</Link>
-              <span className="text-sm text-white font-medium">Finance</span>
-              <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompt Library</Link>
-              <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
-              <Link href="/vault" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Keys</Link>
-              <Link href="/tasks" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Task List</Link>
               <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Launchpad</Link>
               <Link href="/content-factory" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Content Factory</Link>
               <Link href="/machine-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Machine Room</Link>
+              <Link href="/schematics" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Schematics</Link>
+              <span className="text-sm text-white font-medium">Finance</span>
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm text-[#94a3b8]">

@@ -6,14 +6,11 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "War Room", icon: "\u2302" },
   { href: "/action-room", label: "Briefing", icon: "\u26A1" },
-  { href: "/squad", label: "Squad", icon: "\u2725" },
   { href: "/map-room", label: "Launch", icon: "\u{1F680}" },
-  { href: "/prompts", label: "Prompts", icon: "\uD83D\uDCDC" },
-  { href: "/vault", label: "Keys", icon: "\u{1F511}" },
-  { href: "/tasks", label: "Tasks", icon: "\uD83D\uDCCB" },
-  { href: "/finance", label: "Finance", icon: "\u00A3" },
   { href: "/content-factory", label: "Content", icon: "\uD83C\uDFAC" },
   { href: "/machine-room", label: "Machine", icon: "\uD83D\uDD27" },
+  { href: "/schematics", label: "Schematic", icon: "\uD83D\uDCC2" },
+  { href: "/finance", label: "Finance", icon: "\u00A3" },
 ];
 
 export function MobileNav() {

@@ -17,14 +17,11 @@ const TABS = [
 const TOP_NAV = [
   { name: "War Room", href: "/" },
   { name: "Briefing Room", href: "/action-room" },
-  { name: "Finance", href: "/finance" },
-  { name: "Prompt Library", href: "/prompts" },
-  { name: "Squad", href: "/squad" },
-  { name: "Keys", href: "/vault" },
-  { name: "Task List", href: "/tasks" },
   { name: "Launchpad", href: "/map-room" },
   { name: "Content Factory", href: "/content-factory", active: true },
   { name: "Machine Room", href: "/machine-room" },
+  { name: "Schematics", href: "/schematics" },
+  { name: "Finance", href: "/finance" },
 ];
 
 export default function ContentFactoryLayout({ children }: { children: React.ReactNode }) {
