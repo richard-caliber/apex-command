@@ -156,13 +156,12 @@ export default function ActionRoom() {
     [metrics]
   );
 
-  // ── Adhoc tasks (stage=adhoc, not template, not done) ──
+  // ── Ad-hoc actions: ID starts with "A-", not done ──
   const adhocBase = useMemo(
     () =>
       tasks.filter(
         (t) =>
-          t.stage === "adhoc" &&
-          t.project_id !== "_template" &&
+          t.id.startsWith("A-") &&
           t.status !== "done" &&
           t.status !== "skipped" &&
           t.status !== "abandoned"
@@ -170,16 +169,16 @@ export default function ActionRoom() {
     [tasks]
   );
 
-  const sortByPriority = (list: PipelineTask[]) =>
+  const sortByEmoji = (list: PipelineTask[]) =>
     [...list].sort((a, b) => (PRIORITY_ORDER[a.status] ?? 3) - (PRIORITY_ORDER[b.status] ?? 3));
 
   // Your Actions (owner=ginge)
-  const gingeActions = useMemo(() => sortByPriority(adhocBase.filter((t) => t.owner === "ginge")), [adhocBase]);
+  const gingeActions = useMemo(() => sortByEmoji(adhocBase.filter((t) => t.owner === "ginge")), [adhocBase]);
   const totalGingeTasks = gingeActions.length;
 
-  // Squad Actions (owner=atlas/newton/darwin/jimmy)
+  // Squad Actions (owner !== ginge)
   const squadActions = useMemo(
-    () => sortByPriority(adhocBase.filter((t) => ["atlas", "newton", "darwin", "jimmy"].includes(t.owner))),
+    () => sortByEmoji(adhocBase.filter((t) => t.owner !== "ginge")),
     [adhocBase]
   );
   const totalSquadTasks = squadActions.length;
