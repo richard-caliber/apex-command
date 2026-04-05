@@ -56,6 +56,8 @@ export default function CalendarPage() {
   const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([]);
   const [selectedProject, setSelectedProject] = useState("all");
   const [weekOffset, setWeekOffset] = useState(0);
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
+  const [monthOffset, setMonthOffset] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -120,6 +122,35 @@ export default function CalendarPage() {
     return d;
   }), [weekStart]);
 
+  // Month view data
+  const monthDate = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + monthOffset);
+    d.setDate(1);
+    return d;
+  }, [monthOffset]);
+
+  const monthDays = useMemo(() => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    // Start from Monday before the 1st
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const start = new Date(firstDay);
+    start.setDate(start.getDate() - startOffset);
+    // Build 6 rows of 7 days (42 cells)
+    const days: Date[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  }, [monthDate]);
+
+  const monthLabel = monthDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
   const todayStr = new Date().toISOString().split("T")[0];
 
   // Stats
@@ -158,8 +189,14 @@ export default function CalendarPage() {
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
 
+        {/* View toggle */}
+        <div className="flex items-center rounded-lg overflow-hidden" style={{ border: "1px solid #1e1e2e" }}>
+          <button onClick={() => setViewMode("week")} className="text-xs px-3 py-1.5 cursor-pointer transition-colors" style={{ background: viewMode === "week" ? "rgba(0,212,212,0.1)" : "transparent", color: viewMode === "week" ? "#00d4d4" : "#6b6b80" }}>Week</button>
+          <button onClick={() => setViewMode("month")} className="text-xs px-3 py-1.5 cursor-pointer transition-colors" style={{ background: viewMode === "month" ? "rgba(0,212,212,0.1)" : "transparent", color: viewMode === "month" ? "#00d4d4" : "#6b6b80" }}>Month</button>
+        </div>
+
         <span className="text-xs font-mono" style={{ color: "#4a4a5e" }}>
-          {formatDateShort(weekDates[0])} — {formatDateShort(weekDates[6])}
+          {viewMode === "week" ? `${formatDateShort(weekDates[0])} — ${formatDateShort(weekDates[6])}` : monthLabel}
         </span>
 
         {/* Stats pills */}
@@ -175,9 +212,19 @@ export default function CalendarPage() {
         )}
 
         <div className="flex items-center gap-2 ml-auto">
-          <button onClick={() => setWeekOffset(weekOffset - 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>{"\u2190"} Prev</button>
-          <button onClick={() => setWeekOffset(0)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors" style={{ color: weekOffset === 0 ? "#00d4d4" : "#6b6b80", border: `1px solid ${weekOffset === 0 ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`, background: weekOffset === 0 ? "rgba(0,212,212,0.06)" : "transparent" }}>Today</button>
-          <button onClick={() => setWeekOffset(weekOffset + 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>Next {"\u2192"}</button>
+          {viewMode === "week" ? (
+            <>
+              <button onClick={() => setWeekOffset(weekOffset - 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>{"\u2190"} Prev</button>
+              <button onClick={() => setWeekOffset(0)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors" style={{ color: weekOffset === 0 ? "#00d4d4" : "#6b6b80", border: `1px solid ${weekOffset === 0 ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`, background: weekOffset === 0 ? "rgba(0,212,212,0.06)" : "transparent" }}>Today</button>
+              <button onClick={() => setWeekOffset(weekOffset + 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>Next {"\u2192"}</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setMonthOffset(monthOffset - 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>{"\u2190"} Prev</button>
+              <button onClick={() => setMonthOffset(0)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors" style={{ color: monthOffset === 0 ? "#00d4d4" : "#6b6b80", border: `1px solid ${monthOffset === 0 ? "rgba(0,212,212,0.3)" : "#1e1e2e"}`, background: monthOffset === 0 ? "rgba(0,212,212,0.06)" : "transparent" }}>Today</button>
+              <button onClick={() => setMonthOffset(monthOffset + 1)} className="text-xs px-2.5 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.04]" style={{ color: "#6b6b80", border: "1px solid #1e1e2e", background: "transparent" }}>Next {"\u2192"}</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -188,45 +235,112 @@ export default function CalendarPage() {
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: "#ef4444" }} /> Missed</span>
       </div>
 
-      {/* Calendar Grid — Mon-Sun */}
-      <div className="grid grid-cols-7 gap-2">
-        {WEEKDAYS.map((day, i) => {
-          const date = weekDates[i];
-          const dateStr = date.toISOString().split("T")[0];
-          const isToday = todayStr === dateStr;
-          const dayItems = filtered.filter((item) => item.date === dateStr);
+      {/* Calendar Grid */}
+      {viewMode === "week" ? (
+        /* ── Week View ── */
+        <div className="grid grid-cols-7 gap-2">
+          {WEEKDAYS.map((day, i) => {
+            const date = weekDates[i];
+            const dateStr = date.toISOString().split("T")[0];
+            const isToday = todayStr === dateStr;
+            const dayItems = filtered.filter((item) => item.date === dateStr);
 
-          return (
-            <div key={day} className="rounded-lg min-h-[160px] flex flex-col"
-              style={{
-                background: isToday ? "rgba(0,212,212,0.04)" : "#111118",
-                border: isToday ? "2px solid rgba(0,212,212,0.4)" : "1px solid #1e1e2e",
-              }}>
-              {/* Day header */}
-              <div className="px-2 py-2 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(30,30,46,0.5)" }}>
-                <div>
-                  <span className="text-[10px] font-bold uppercase block" style={{ color: isToday ? "#00d4d4" : "#6b6b80" }}>
-                    {day.slice(0, 3)}
-                  </span>
-                  <span className="text-[10px] font-mono" style={{ color: isToday ? "#00d4d4" : "#4a4a5e" }}>{date.getDate()}</span>
+            return (
+              <div key={day} className="rounded-lg min-h-[160px] flex flex-col"
+                style={{
+                  background: isToday ? "rgba(0,212,212,0.04)" : "#111118",
+                  border: isToday ? "2px solid rgba(0,212,212,0.4)" : "1px solid #1e1e2e",
+                }}>
+                <div className="px-2 py-2 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(30,30,46,0.5)" }}>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase block" style={{ color: isToday ? "#00d4d4" : "#6b6b80" }}>
+                      {day.slice(0, 3)}
+                    </span>
+                    <span className="text-[10px] font-mono" style={{ color: isToday ? "#00d4d4" : "#4a4a5e" }}>{date.getDate()}</span>
+                  </div>
+                  {dayItems.length > 0 && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,212,212,0.12)", color: "#00d4d4" }}>
+                      {dayItems.length}
+                    </span>
+                  )}
                 </div>
-                {dayItems.length > 0 && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(0,212,212,0.12)", color: "#00d4d4" }}>
-                    {dayItems.length}
-                  </span>
-                )}
+                <div className="flex-1 p-1.5 space-y-1">
+                  {dayItems.map((item) => (
+                    <CalendarCard key={item.id} item={item} projectName={projectName(item.project_id)} />
+                  ))}
+                </div>
               </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* ── Month View ── */
+        <div>
+          {/* Day headers */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {WEEKDAYS.map((day) => (
+              <div key={day} className="text-center text-[10px] font-bold uppercase py-1" style={{ color: "#6b6b80" }}>
+                {day.slice(0, 3)}
+              </div>
+            ))}
+          </div>
+          {/* Day cells */}
+          <div className="grid grid-cols-7 gap-1">
+            {monthDays.map((date, i) => {
+              const dateStr = date.toISOString().split("T")[0];
+              const isToday = todayStr === dateStr;
+              const isCurrentMonth = date.getMonth() === monthDate.getMonth();
+              const dayItems = filtered.filter((item) => item.date === dateStr);
 
-              {/* Content cards */}
-              <div className="flex-1 p-1.5 space-y-1">
-                {dayItems.map((item) => (
-                  <CalendarCard key={item.id} item={item} projectName={projectName(item.project_id)} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              return (
+                <div key={i} className="rounded-lg min-h-[90px] flex flex-col"
+                  style={{
+                    background: isToday ? "rgba(0,212,212,0.06)" : isCurrentMonth ? "#111118" : "#0c0c12",
+                    border: isToday ? "2px solid rgba(0,212,212,0.5)" : "1px solid #1e1e2e",
+                    opacity: isCurrentMonth ? 1 : 0.35,
+                  }}>
+                  {/* Date number */}
+                  <div className="px-1.5 py-1 flex items-center justify-between">
+                    <span
+                      className="text-[11px] font-bold"
+                      style={{
+                        color: isToday ? "#0a0a0f" : "#6b6b80",
+                        background: isToday ? "#00d4d4" : "transparent",
+                        borderRadius: isToday ? "9999px" : "0",
+                        padding: isToday ? "1px 6px" : "0",
+                      }}
+                    >
+                      {date.getDate()}
+                    </span>
+                    {dayItems.length > 0 && (
+                      <span className="text-[8px] font-bold px-1 py-0.5 rounded-full" style={{ background: "rgba(0,212,212,0.12)", color: "#00d4d4" }}>
+                        {dayItems.length}
+                      </span>
+                    )}
+                  </div>
+                  {/* Content — compact in month view */}
+                  <div className="flex-1 px-1 pb-1 space-y-0.5 overflow-hidden">
+                    {dayItems.slice(0, 3).map((item) => {
+                      const pc = PROJECT_COLOR[item.project_id] || DEFAULT_COLOR;
+                      const tc = item.type === "published" ? "#22c55e" : item.type === "scheduled" ? "#3b82f6" : "#ef4444";
+                      return (
+                        <div key={item.id} className="flex items-center gap-1 truncate">
+                          <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: tc }} />
+                          <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: pc.dot }} />
+                          <span className="text-[8px] truncate" style={{ color: "#a0a0b0" }}>{item.title}</span>
+                        </div>
+                      );
+                    })}
+                    {dayItems.length > 3 && (
+                      <span className="text-[7px]" style={{ color: "#4a4a5e" }}>+{dayItems.length - 3} more</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Empty state */}
       {filtered.length === 0 && (
