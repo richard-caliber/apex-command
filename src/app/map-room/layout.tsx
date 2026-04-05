@@ -16,15 +16,15 @@ const TABS = [
 
 const TOP_NAV = [
   { name: "War Room", href: "/" },
+  { name: "Briefing Room", href: "/action-room" },
   { name: "Finance", href: "/finance" },
   { name: "Prompt Library", href: "/prompts" },
   { name: "Squad", href: "/squad" },
   { name: "Keys", href: "/vault" },
   { name: "Task List", href: "/tasks" },
-  { name: "Map Room", href: "/map-room", active: true },
+  { name: "Launchpad", href: "/map-room", active: true },
   { name: "Content Factory", href: "/content-factory" },
   { name: "Machine Room", href: "/machine-room" },
-  { name: "Action Room", href: "/action-room" },
 ];
 
 export default function MapRoomLayout({ children }: { children: React.ReactNode }) {
