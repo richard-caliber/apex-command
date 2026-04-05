@@ -103,7 +103,7 @@ export default function TaskLibraryPage() {
       apiPost("/api/prompts", { action: "list" }),
     ]);
     if (taskData?.tasks) {
-      setTasks(taskData.tasks.sort((a: Task, b: Task) => a.order - b.order));
+      setTasks(taskData.tasks.filter((t: Task) => !t.id.startsWith("A-")).sort((a: Task, b: Task) => a.order - b.order));
     }
     if (Array.isArray(promptData)) {
       setPrompts(promptData);

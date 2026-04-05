@@ -20,6 +20,7 @@ const TOP_NAV = [
   { name: "Prompt Library", href: "/prompts" },
   { name: "Squad", href: "/squad" },
   { name: "Keys", href: "/vault" },
+  { name: "Task List", href: "/tasks" },
   { name: "Map Room", href: "/map-room" },
   { name: "Content Factory", href: "/content-factory", active: true },
   { name: "Action Room", href: "/action-room" },

@@ -89,6 +89,8 @@ export default function ActionRoom() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [markingDone, setMarkingDone] = useState<Set<string>>(new Set());
+  const [doneTasks, setDoneTasks] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
 
   // Fetch all data on mount
   const fetchAll = useCallback(async () => {
@@ -202,9 +204,9 @@ export default function ActionRoom() {
         body: JSON.stringify({ action: "set", id: taskId, status: "done" }),
       });
       if (res.ok) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? { ...t, status: "done" } : t))
-        );
+        setDoneTasks((prev) => new Set([...prev, taskId]));
+        setToast(`Marked done \u2705 \u2014 tell Atlas to verify`);
+        setTimeout(() => setToast(null), 3000);
       }
     } catch {
       /* silent */
@@ -232,6 +234,7 @@ export default function ActionRoom() {
               <Link href="/prompts" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Prompt Library</Link>
               <Link href="/squad" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Squad</Link>
               <Link href="/vault" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Keys</Link>
+              <Link href="/tasks" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Task List</Link>
               <Link href="/map-room" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Map Room</Link>
               <Link href="/content-factory" className="text-sm text-[#64748b] hover:text-white transition-colors font-medium">Content Factory</Link>
               <span className="text-sm text-white font-medium">Action Room</span>
@@ -326,12 +329,13 @@ export default function ActionRoom() {
                     task={task}
                     projectName={projectMap[task.project_id] || task.project_id}
                     isMarking={markingDone.has(task.id)}
+                    isDone={doneTasks.has(task.id)}
                     onMarkDone={handleMarkDone}
                   />
                 ))}
                 {totalGingeTasks > 10 && (
                   <div className="text-center pt-2">
-                    <Link href="/map-room" className="text-[11px] text-[#00d4d4] hover:underline">
+                    <Link href="/tasks" className="text-[11px] text-[#00d4d4] hover:underline">
                       View all {totalGingeTasks} tasks {"\u2192"}
                     </Link>
                   </div>
@@ -363,13 +367,14 @@ export default function ActionRoom() {
                     task={task}
                     projectName={projectMap[task.project_id] || task.project_id}
                     isMarking={markingDone.has(task.id)}
+                    isDone={doneTasks.has(task.id)}
                     onMarkDone={handleMarkDone}
                     showOwner
                   />
                 ))}
                 {totalSquadTasks > 10 && (
                   <div className="text-center pt-2">
-                    <Link href="/map-room" className="text-[11px] text-[#00d4d4] hover:underline">
+                    <Link href="/tasks" className="text-[11px] text-[#00d4d4] hover:underline">
                       View all {totalSquadTasks} tasks {"\u2192"}
                     </Link>
                   </div>
@@ -429,6 +434,16 @@ export default function ActionRoom() {
           </div>
         </section>
       </main>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-xl text-sm font-semibold"
+          style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)", animation: "fadeIn 0.3s ease-out" }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
@@ -447,22 +462,24 @@ function ActionCard({
   task,
   projectName,
   isMarking,
+  isDone,
   onMarkDone,
   showOwner,
 }: {
   task: PipelineTask;
   projectName: string;
   isMarking: boolean;
+  isDone?: boolean;
   onMarkDone: (id: string) => void;
   showOwner?: boolean;
 }) {
-  const emoji = STATUS_EMOJI[task.status] || "\uD83D\uDFE2";
+  const emoji = isDone ? "\u2705" : (STATUS_EMOJI[task.status] || "\uD83D\uDFE2");
   const ownerBadge = AGENT_BADGE[task.owner];
 
   return (
     <div
-      className="rounded-xl border border-[#1e293b] px-4 py-3 flex items-start gap-3"
-      style={{ background: "#111827" }}
+      className="rounded-xl border border-[#1e293b] px-4 py-3 flex items-start gap-3 transition-opacity"
+      style={{ background: "#111827", opacity: isDone ? 0.4 : 1 }}
     >
       <span className="text-sm mt-0.5 flex-shrink-0">{emoji}</span>
       <div className="flex-1 min-w-0">
@@ -471,6 +488,11 @@ function ActionCard({
           <span className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-300">
             {projectName}
           </span>
+          {isDone && (
+            <span className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded" style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}>
+              {"\u2705"} Done
+            </span>
+          )}
           {showOwner && ownerBadge && (
             <span
               className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded"
@@ -484,13 +506,19 @@ function ActionCard({
           {task.description || "No description"}
         </p>
       </div>
-      <button
-        onClick={() => onMarkDone(task.id)}
-        disabled={isMarking}
-        className="flex-shrink-0 text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {isMarking ? "..." : "\u2713 Done"}
-      </button>
+      {isDone ? (
+        <span className="flex-shrink-0 text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg text-green-400/50">
+          {"\u2713"} Done
+        </span>
+      ) : (
+        <button
+          onClick={() => onMarkDone(task.id)}
+          disabled={isMarking}
+          className="flex-shrink-0 text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isMarking ? "..." : "\u2713 Done"}
+        </button>
+      )}
     </div>
   );
 }

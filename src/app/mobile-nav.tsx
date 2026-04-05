@@ -9,6 +9,7 @@ const TABS = [
   { href: "/map-room", label: "Map", icon: "\u25A6" },
   { href: "/prompts", label: "Prompts", icon: "\uD83D\uDCDC" },
   { href: "/vault", label: "Keys", icon: "\u{1F511}" },
+  { href: "/tasks", label: "Tasks", icon: "\uD83D\uDCCB" },
   { href: "/finance", label: "Finance", icon: "\u00A3" },
   { href: "/content-factory", label: "Content", icon: "\uD83C\uDFAC" },
   { href: "/action-room", label: "Action", icon: "\u26A1" },

@@ -158,18 +158,20 @@ export default function PipelinePage() {
     const h = { "Content-Type": "application/json" };
     const post = (pid: string) => fetch("/api/tasks", { method: "POST", headers: h, body: JSON.stringify({ action: "list", project_id: pid }), signal: ac.signal }).then((r) => r.json()).catch(() => null);
 
+    const excludeAdhoc = (tasks: PipelineTask[]) => tasks.filter((t) => !t.id.startsWith("A-"));
+
     if (selectedProject === "_template") {
       post("_template").then((data) => {
-        if (data?.tasks) setTemplateTasks(data.tasks);
+        if (data?.tasks) setTemplateTasks(excludeAdhoc(data.tasks));
         setProjectTasks([]);
         setExpandedStages(new Set());
       });
     } else {
       // Always fetch BOTH project tasks and template tasks
       Promise.all([post(selectedProject), post("_template")]).then(([projData, tmplData]) => {
-        if (projData?.tasks) setProjectTasks(projData.tasks);
+        if (projData?.tasks) setProjectTasks(excludeAdhoc(projData.tasks));
         else setProjectTasks([]);
-        if (tmplData?.tasks) setTemplateTasks(tmplData.tasks);
+        if (tmplData?.tasks) setTemplateTasks(excludeAdhoc(tmplData.tasks));
         else setTemplateTasks([]);
         const proj = projects.find((p) => p.id === selectedProject);
         if (proj?.stage) setExpandedStages(new Set([proj.stage]));
