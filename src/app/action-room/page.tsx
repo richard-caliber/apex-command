@@ -19,6 +19,18 @@ interface PipelineTask {
   blocker: string | null;
 }
 
+interface AdhocTask {
+  id: string;
+  stage: string;
+  name: string;
+  description: string;
+  status: string;
+  owner: string;
+  priority: string;
+  source: string;
+  created_at: string;
+}
+
 interface Metric {
   id: string;
   project_id: string;
@@ -67,6 +79,21 @@ const AGENT_STATUS_STYLE: Record<string, { dot: string; label: string }> = {
   error: { dot: "bg-red-500", label: "Error" },
 };
 
+const ADHOC_PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+const ADHOC_PRIORITY_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  high: { bg: "bg-red-500/20", text: "text-red-400", label: "HIGH" },
+  medium: { bg: "bg-amber-500/20", text: "text-amber-400", label: "MED" },
+  low: { bg: "bg-slate-500/20", text: "text-slate-400", label: "LOW" },
+};
+
+const AGENT_BADGE: Record<string, { emoji: string; color: string; label: string }> = {
+  atlas: { emoji: "\uD83E\uDDED", color: "#00d4d4", label: "Atlas" },
+  newton: { emoji: "\uD83D\uDD2C", color: "#3b82f6", label: "Newton" },
+  darwin: { emoji: "\uD83D\uDD04", color: "#22c55e", label: "Darwin" },
+  jimmy: { emoji: "\uD83C\uDFA8", color: "#ec4899", label: "Jimmy" },
+  ginge: { emoji: "\uD83D\uDC51", color: "#f59e0b", label: "Ginge" },
+};
+
 const STAGE_COLOR: Record<string, string> = {
   inbox: "bg-gray-500/20 text-gray-300",
   idea: "bg-purple-500/20 text-purple-300",
@@ -83,12 +110,13 @@ const STAGE_COLOR: Record<string, string> = {
 
 export default function ActionRoom() {
   const [tasks, setTasks] = useState<PipelineTask[]>([]);
+  const [adhocTasks, setAdhocTasks] = useState<AdhocTask[]>([]);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   // Fetch all data on mount
   const fetchAll = useCallback(async () => {
-    const [tasksRes, dataRes, squadRes, projectsRes] = await Promise.allSettled([
+    const [tasksRes, dataRes, squadRes, projectsRes, adhocRes] = await Promise.allSettled([
       fetch("/api/pipeline-tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,6 +132,11 @@ export default function ActionRoom() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "list" }),
+      }),
+      fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list", stage: "adhoc" }),
       }),
     ]);
 
@@ -122,6 +155,11 @@ export default function ActionRoom() {
     if (projectsRes.status === "fulfilled" && projectsRes.value.ok) {
       const store = await projectsRes.value.json();
       setProjects(store.projects || []);
+    }
+    if (adhocRes.status === "fulfilled" && adhocRes.value.ok) {
+      const store = await adhocRes.value.json();
+      const all = (store.tasks || []) as AdhocTask[];
+      setAdhocTasks(all.filter((t: AdhocTask) => t.status !== "done"));
     }
   }, []);
 
@@ -176,6 +214,30 @@ export default function ActionRoom() {
     [adhocBase]
   );
   const totalSquadTasks = squadActions.length;
+
+  // ── Ad Hoc Tasks: sorted by priority then created_at ──
+  const sortedAdhoc = useMemo(
+    () =>
+      [...adhocTasks].sort((a, b) => {
+        const pa = ADHOC_PRIORITY_ORDER[a.priority] ?? 2;
+        const pb = ADHOC_PRIORITY_ORDER[b.priority] ?? 2;
+        if (pa !== pb) return pa - pb;
+        return (a.created_at || "").localeCompare(b.created_at || "");
+      }),
+    [adhocTasks]
+  );
+
+  const markAdhocDone = async (id: string) => {
+    setAdhocTasks((prev) => prev.filter((t) => t.id !== id));
+    await fetch("/api/tasks", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer apex-live-2026",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "set", id, status: "done" }),
+    });
+  };
 
   // ── Team Status: AI agents only ──
   const teamAgents = useMemo(
@@ -356,6 +418,75 @@ export default function ActionRoom() {
         </section>
 
         {/* ══════════════════════════════════════════════
+            AD HOC TASKS
+        ══════════════════════════════════════════════ */}
+        <section>
+          <div className="flex items-center gap-3 mb-3">
+            <h3 className="text-xs font-bold tracking-widest uppercase text-[#64748b]">
+              {"\u26A1"} Ad Hoc Tasks
+            </h3>
+            <span className="text-[10px] text-[#475569] font-mono">
+              {sortedAdhoc.length} active
+            </span>
+          </div>
+
+          {sortedAdhoc.length === 0 ? (
+            <div className="rounded-2xl border border-[#1e293b] p-8 text-center" style={{ background: "#111827" }}>
+              <p className="text-sm text-[#475569]">No ad hoc tasks. All clear.</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-[#1e293b] overflow-hidden" style={{ background: "#111827" }}>
+              <div className="divide-y divide-[#1e293b]/60">
+                {sortedAdhoc.map((task) => {
+                  const pStyle = ADHOC_PRIORITY_STYLE[task.priority] || ADHOC_PRIORITY_STYLE.low;
+                  const ownerBadge = AGENT_BADGE[task.owner];
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                      onClick={() => markAdhocDone(task.id)}
+                      title="Click to mark done"
+                    >
+                      {/* Priority badge */}
+                      <span className={`text-[9px] font-bold tracking-wider px-2 py-0.5 rounded ${pStyle.bg} ${pStyle.text} flex-shrink-0`}>
+                        {pStyle.label}
+                      </span>
+
+                      {/* Task name */}
+                      <span className="text-xs font-semibold text-white flex-1 min-w-0 truncate">
+                        {task.name}
+                      </span>
+
+                      {/* Owner */}
+                      {ownerBadge && (
+                        <span
+                          className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded flex-shrink-0"
+                          style={{ color: ownerBadge.color, background: `${ownerBadge.color}15` }}
+                        >
+                          {ownerBadge.emoji} {ownerBadge.label}
+                        </span>
+                      )}
+
+                      {/* Source */}
+                      {task.source && (
+                        <span className="text-[9px] text-[#64748b] flex-shrink-0">
+                          via {task.source}
+                        </span>
+                      )}
+
+                      {/* Done checkmark on hover */}
+                      <span className="text-[10px] text-[#475569] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        {"\u2714"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ══════════════════════════════════════════════
             BOTTOM SECTION — Team Status
         ══════════════════════════════════════════════ */}
         <section>
@@ -411,14 +542,6 @@ export default function ActionRoom() {
 }
 
 /* ── Action Card Component ── */
-
-const AGENT_BADGE: Record<string, { emoji: string; color: string; label: string }> = {
-  atlas: { emoji: "\uD83E\uDDED", color: "#00d4d4", label: "Atlas" },
-  newton: { emoji: "\uD83D\uDD2C", color: "#3b82f6", label: "Newton" },
-  darwin: { emoji: "\uD83D\uDD04", color: "#22c55e", label: "Darwin" },
-  jimmy: { emoji: "\uD83C\uDFA8", color: "#ec4899", label: "Jimmy" },
-  ginge: { emoji: "\uD83D\uDC51", color: "#f59e0b", label: "Ginge" },
-};
 
 function ActionCard({
   task,
