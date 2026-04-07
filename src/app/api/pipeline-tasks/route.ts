@@ -30,7 +30,7 @@ interface TaskStore {
   lastUpdated: string;
 }
 
-const VALID_STAGES = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
+const VALID_STAGES = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale", "adhoc"];
 const VALID_STATUSES = ["not_started", "in_progress", "done", "blocked", "skipped"];
 const VALID_AUTOMATION = ["manual", "semi-auto", "fully-auto"];
 
