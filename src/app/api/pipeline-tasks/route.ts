@@ -23,6 +23,9 @@ interface PipelineTask {
   order: number;
   created_at: string;
   updated_at: string;
+  priority?: string;
+  source?: string;
+  [key: string]: unknown;
 }
 
 interface TaskStore {
@@ -198,6 +201,7 @@ export async function POST(req: NextRequest) {
       const { action: _a, ...cleanFields } = fields;
       store.tasks[idx] = { ...existing, ...cleanFields, id, updated_at: now };
     } else {
+      const { action: _b, ...extraFields } = fields;
       const task: PipelineTask = {
         id,
         stage: fields.stage || "inbox",
@@ -216,6 +220,7 @@ export async function POST(req: NextRequest) {
         order: fields.order || 0,
         created_at: now,
         updated_at: now,
+        ...extraFields,
       };
       store.tasks.push(task);
     }
