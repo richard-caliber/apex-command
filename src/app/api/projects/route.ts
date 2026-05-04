@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
+// Canonical project store. Reads and writes both target apex:warroom:projects.
+// The legacy apex:projects key is being deprecated — /api/status and /api/map-room/projects
+// now read from this canonical store via Phase 1 read-shims. Phase 6 will retire
+// the legacy keys entirely.
 const KV_KEY = "apex:warroom:projects";
-const TOKEN = "apex-live-2026";
-
 /* ── Schema ── */
 interface Project {
   id: string;
@@ -191,10 +194,9 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Writes require auth ──
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   // ── SET (create or update) ──
   if (action === "set") {

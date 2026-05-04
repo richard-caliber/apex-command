@@ -1,0 +1,36 @@
+Verify run @ 2026-05-04T09:09:41.307Z
+BASE = http://localhost:3000
+Probing IDs: caliber, gemsnap, edge-auto, storyquest
+
+/api/projects (list) → 200, 36 projects
+/api/map-room/projects → 200, 36 items
+
+── caliber ──
+  /api/projects list: name="Caliber Peptides" stage="traffic" status="paused"
+  /api/status/caliber: 200 name="Caliber Peptides" stage="traffic" status="paused"
+  /api/map-room/projects list: name="Caliber Peptides" stage_idx=4 status="paused"
+  /api/map-room/projects/caliber: 200 name="Caliber Peptides" stage_idx=4 status="paused"
+  ✓ all four stores agree
+
+── gemsnap ──
+  /api/projects list: name="GemSnap" stage="traffic" status="paused"
+  /api/status/gemsnap: 200 name="GemSnap" stage="traffic" status="paused"
+  /api/map-room/projects list: name="GemSnap" stage_idx=5 status="paused"
+  /api/map-room/projects/gemsnap: 200 name="GemSnap" stage_idx=5 status="paused"
+  ✓ all four stores agree
+
+── edge-auto ──
+  /api/projects list: name="Edge Auto" stage="mvp" status="paused"
+  /api/status/edge-auto: 200 name="Edge Auto" stage="mvp" status="paused"
+  /api/map-room/projects list: name="Edge Auto" stage_idx=2 status="paused"
+  /api/map-room/projects/edge-auto: 200 name="Edge Auto" stage_idx=2 status="paused"
+  ✓ all four stores agree
+
+── storyquest ──
+  /api/projects list: name="StoryQuest" stage="idea" status="paused"
+  /api/status/storyquest: 200 name="StoryQuest" stage="idea" status="paused"
+  /api/map-room/projects list: name="StoryQuest" stage_idx=1 status="paused"
+  /api/map-room/projects/storyquest: 200 name="StoryQuest" stage_idx=1 status="paused"
+  ✓ all four stores agree
+
+SUMMARY: 4/4 passed, 0 failed

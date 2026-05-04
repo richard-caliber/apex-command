@@ -1,0 +1,24 @@
+Phase 1 route-fix smoke test @ 2026-05-04T09:15:15.350Z
+BASE = http://localhost:3000
+
+── map-room/ideas/[id] ──
+  GET /api/map-room/ideas/atlas-ideas-comment → 200 ✓
+  body: {"id":"atlas-ideas-comment","title":"atlas assessment","description":"Pipeline is live — 5 carousels stored, 5 more pending Newton dosing research. Next batch: reels. Ideas page will populate as Newton surfaces opportunities from content performance data.","status":"note","tags":[],"image_url":"","n
+
+── map-room/capabilities/[id] (gap) ──
+  GET /api/map-room/capabilities/gap-1 → 200 ✓
+  body: {"section":"gaps","id":"gap-1","name":"Social posting automation","current_process":"Manual copy-paste to Instagram","impact":"Save 3+ hours/week, consistent posting schedule","approach":"integrate","priority":"high","status":"identified"}
+
+── map-room/capabilities/[id] (research) ──
+  GET /api/map-room/capabilities/res-1 → 200 ✓
+  body: {"section":"research","id":"res-1","tool_name":"Later.com","what_it_does":"Social media scheduling with auto-publish to Instagram, TikTok, X","cost":"$25/month","complexity":"easy","notes":"Good for scheduling but doesn't generate content. Could pair with our AI pipeline.","decision":"revisit"}
+
+── map-room/ip-vault/[id] (entry wh-1) ──
+  GET /api/map-room/ip-vault/wh-1 → 200 ✓
+  body: {"section_id":"winning-hooks","id":"wh-1","text":"Your body makes this peptide. Most people don't have enough.","platform":"Instagram","post_id":"CAL-IG-001","metric":"4.2% engagement rate (3x average)"}
+
+── squad/files (PUT v4) ──
+  PUT /api/squad/files → 200 ✓
+  body: {"ok":true,"count":1}
+
+SUMMARY: 5/5 passed, 0 failed

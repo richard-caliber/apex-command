@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
-const KV_KEY = "apex:squad:v2";
-const TOKEN = "apex-live-2026";
-
+// Phase 1: canonical squad store is apex:squad:v4. The v2 key was empty/orphaned.
+const KV_KEY = "apex:squad:v4";
 export async function PUT(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   const { agentId, files } = await req.json();
   if (!agentId || !Array.isArray(files)) {
@@ -26,17 +25,24 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Agent not found" }, { status: 404 });
   }
 
-  // Full replace of workspace_files for this agent
-  agent.workspace_files = files.map((f: Record<string, string>) => ({
-    path: f.path || "",
-    description: f.description || "",
-    owner: agentId,
-    last_modified: f.last_modified || new Date().toISOString(),
-    size: f.size || "",
-    status: f.status || "current",
-  }));
-  agent.last_updated = new Date().toISOString();
-  squadData.lastUpdated = new Date().toISOString();
+  // Full replace of workspace_files for this agent. v4 schema requires
+  // { name, size, updated_at } and accepts optional { path, description, owner, status }.
+  const now = new Date().toISOString();
+  agent.workspace_files = files.map((f: Record<string, string>) => {
+    const path = f.path || "";
+    const name = f.name || (path ? path.split(/[\\/]/).pop() || path : "");
+    return {
+      name,
+      path,
+      description: f.description || "",
+      owner: agentId,
+      size: f.size || "",
+      updated_at: f.updated_at || f.last_modified || now,
+      status: (f.status as "current" | "stale" | "orphan") || "current",
+    };
+  });
+  agent.last_updated = now;
+  squadData.lastUpdated = now;
 
   await kv.set(KV_KEY, squadData);
   return NextResponse.json({ ok: true, count: files.length });
