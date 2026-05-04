@@ -65,8 +65,6 @@ const OWNER_LABEL: Record<string, string> = {
 };
 const PRIORITY_ORDER: Record<string, number> = { red: 0, amber: 1, green: 2 };
 const STATUS_ORDER: Record<string, number> = { blocked: 0, "in-progress": 1, todo: 2, done: 3 };
-const TOKEN = "apex-live-2026";
-
 function sortTasks(tasks: ProjectTask[]): { active: ProjectTask[]; done: ProjectTask[] } {
   const active = tasks
     .filter((t) => t.status !== "done")
@@ -102,7 +100,7 @@ export default function ProjectDetailPage() {
     setNotesSaved(false);
     await fetch(`/api/project/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notes: value }),
     });
     setNotesSaved(true);

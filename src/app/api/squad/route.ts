@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { requireWriteAuth } from "@/lib/auth";
 
 const KV_KEY = "apex:squad:v4";
-const TOKEN = "apex-live-2026";
-
 export interface WorkspaceFile {
   name: string;
   path?: string;
@@ -117,10 +116,9 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
   const body = await req.json();
   body.lastUpdated = new Date().toISOString();
   await kv.set(KV_KEY, body);
@@ -128,10 +126,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   const { agentId, ...updates } = await req.json();
   if (!agentId) {

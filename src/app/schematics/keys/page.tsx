@@ -3,15 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 
-const TOKEN = "apex-live-2026";
-
 /* ── Types ── */
 interface VaultKey { id: string; name: string; service: string; masked: string; updated_at: string }
 
 function vaultApi(body: Record<string, unknown>) {
   return fetch("/api/vault", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }).then((r) => r.json());
 }

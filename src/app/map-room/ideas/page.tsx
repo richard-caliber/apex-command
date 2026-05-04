@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
-const TOKEN = "apex-live-2026";
 const API = "/api/map-room/ideas";
 
 /* ── Commentary Types ── */
@@ -100,7 +99,7 @@ export default function IdeasPage() {
     const tags = captureTags ? captureTags.split(",").map((t) => t.trim()).filter(Boolean) : [];
     await fetch(API, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "set", id, title: captureTitle.trim(), tags, source: "ginge" }),
     });
     setCaptureTitle("");
@@ -111,7 +110,7 @@ export default function IdeasPage() {
   const updateIdea = async (id: string, updates: Partial<Idea>) => {
     await fetch(API, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "set", id, ...updates }),
     });
     setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, ...updates, updated_at: new Date().toISOString() } : i));
@@ -120,7 +119,7 @@ export default function IdeasPage() {
   const deleteIdea = async (id: string) => {
     await fetch(API, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", id }),
     });
     setDeleteConfirm(null);

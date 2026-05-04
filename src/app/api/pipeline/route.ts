@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
 const KV_KEY = "apex:pipeline";
-const TOKEN = "apex-live-2026";
-
 const platforms = ["ig_carousel", "ig_reel", "fb_post", "tiktok", "youtube"] as const;
 const gates = ["research", "review_research", "create_content", "review_content", "publish"] as const;
 
@@ -93,17 +92,16 @@ async function getData() {
   return SEED;
 }
 
-export { getData, KV_KEY, TOKEN };
+export { getData, KV_KEY };
 
 export async function GET() {
   return NextResponse.json(await getData());
 }
 
 export async function POST(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
   const body = await req.json();
   await kv.set(KV_KEY, body);
 

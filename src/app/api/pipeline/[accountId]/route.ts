@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
 const KV_KEY = "apex:pipeline";
-const TOKEN = "apex-live-2026";
-
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ accountId: string }> }
 ) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   const { accountId } = await params;
   const updates = await req.json();

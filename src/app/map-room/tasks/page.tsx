@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const TOKEN = "apex-live-2026";
-
 /* ── Types ── */
 interface Task {
   id: string;
@@ -78,7 +76,6 @@ async function apiWrite(url: string, body: Record<string, unknown>) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${TOKEN}`,
     },
     body: JSON.stringify(body),
   });

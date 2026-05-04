@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 
-const TOKEN = "apex-live-2026";
-
 /* ── Task creation mappings ── */
 const METRIC_TASK_MAP: Record<string, { name: string; description: string; owner: string; stage: string; prompt_id: string }> = {
   "ig-followers": { name: "Connect IG Insights API", description: "Set up Instagram Graph API to pull follower count automatically", owner: "ginge", stage: "traffic", prompt_id: "" },
@@ -167,7 +165,7 @@ export default function DataPage() {
     try {
       await fetch("/api/tasks", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "set",
           id: taskId,

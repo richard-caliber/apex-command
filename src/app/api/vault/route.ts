@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
-
-const TOKEN = "apex-live-2026";
+import { requireWriteAuth } from "@/lib/auth";
 const KV_PREFIX = "vault:apikeys:";
 const KV_INDEX = "vault:apikeys:_index";
 
@@ -91,10 +90,9 @@ interface IndexEntry {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   const body = await req.json();
   const { action } = body;

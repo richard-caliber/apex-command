@@ -20,8 +20,6 @@ interface PipelineTask {
 
 /* ── Constants ── */
 
-const TOKEN = "apex-live-2026";
-
 const STAGES = [
   { id: "inbox", label: "Inbox" },
   { id: "idea", label: "Idea" },
@@ -144,7 +142,7 @@ export default function MasterTaskList() {
     try {
       const res = await fetch("/api/pipeline-tasks", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set", id: taskId, status: "done" }),
       });
       if (res.ok) {
@@ -163,7 +161,7 @@ export default function MasterTaskList() {
     try {
       const res = await fetch("/api/pipeline-tasks", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set", id: taskId, status: "not_started" }),
       });
       if (res.ok) {

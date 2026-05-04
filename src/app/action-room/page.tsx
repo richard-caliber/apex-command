@@ -232,8 +232,7 @@ export default function ActionRoom() {
     await fetch("/api/tasks", {
       method: "POST",
       headers: {
-        Authorization: "Bearer apex-live-2026",
-        "Content-Type": "application/json",
+                "Content-Type": "application/json",
       },
       body: JSON.stringify({ action: "set", id, status: "done" }),
     });

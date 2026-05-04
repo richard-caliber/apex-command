@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 
-const TOKEN = "apex-live-2026";
-
 /* ── Types ── */
 interface IpEntry {
   id: string; project_id: string; category: string; title: string; content: string;
@@ -33,7 +31,7 @@ const OWNER_COLOR: Record<string, string> = { newton: "#3b82f6", darwin: "#22c55
 function vaultApi(body: Record<string, unknown>) {
   return fetch("/api/vault", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }).then((r) => r.json());
 }

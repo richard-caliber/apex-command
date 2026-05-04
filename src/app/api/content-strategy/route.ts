@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
 const KV_KEY = "apex:content-strategy";
-const TOKEN = "apex-live-2026";
-
 interface ContentStrategy {
   id: string;
   project_id: string;
@@ -55,8 +54,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(item);
   }
 
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const unauthorized = requireWriteAuth(req);
+
+
+  if (unauthorized) return unauthorized;
 
   if (action === "set") {
     const { id, ...fields } = body;

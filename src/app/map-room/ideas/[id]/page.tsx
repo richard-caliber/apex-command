@@ -30,8 +30,6 @@ interface IdeaDetail {
 }
 
 /* ── Constants ── */
-const TOKEN = "apex-live-2026";
-
 const STATUS_OPTIONS: { value: string; label: string; bg: string; text: string }[] = [
   { value: "raw", label: "Raw", bg: "rgba(107,107,128,0.15)", text: "#6b6b80" },
   { value: "expanded", label: "Expanded", bg: "rgba(96,165,250,0.15)", text: "#60a5fa" },
@@ -265,7 +263,7 @@ export default function IdeaDetailPage() {
     try {
       await fetch(`/api/map-room/ideas/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(idea),
       });
     } catch {

@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 
-const TOKEN = "apex-live-2026";
-
 /* ── Types ── */
 interface PromptContent {
   role: string;
@@ -98,7 +96,7 @@ export default function PromptsPage() {
       const [promptRes, taskRes] = await Promise.all([
         fetch("/api/prompts", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "list" }),
         }),
         fetch("/api/tasks", {
@@ -188,7 +186,7 @@ export default function PromptsPage() {
     if (!p) return;
     await fetch("/api/prompts", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "set", id: p.id, name: p.name, prompt: text }),
     });
     setEditingInline(null);

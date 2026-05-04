@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
 const KV_FEED = "apex:action-room:feed";
 const KV_SUGGESTIONS = "apex:action-room:suggestions";
-const TOKEN = "apex-live-2026";
-
 interface FeedEntry {
   id: string;
   project_id: string;
@@ -52,10 +51,9 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Write operations (auth required) ──
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   if (action === "feed-add") {
     const { id, project_id, agent, action: entryAction, link, category } = body;

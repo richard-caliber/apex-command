@@ -16,8 +16,6 @@ const C = {
   muted: "#6b6b80",
 };
 
-const TOKEN = "apex-live-2026";
-
 /* ── Types ── */
 interface AutomationGap {
   id: string;
@@ -123,7 +121,7 @@ export default function CapabilitiesPage() {
     };
     await fetch("/api/map-room/capabilities", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target: "gaps", action, item }),
     });
     setAddingGap(false);
@@ -135,7 +133,7 @@ export default function CapabilitiesPage() {
   const deleteGap = async (id: string) => {
     await fetch("/api/map-room/capabilities", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target: "gaps", action: "delete", itemId: id }),
     });
     fetchData();
@@ -154,7 +152,7 @@ export default function CapabilitiesPage() {
     };
     await fetch("/api/map-room/capabilities", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target: "research", action, item }),
     });
     setAddingResearch(false);
@@ -166,7 +164,7 @@ export default function CapabilitiesPage() {
   const deleteResearch = async (id: string) => {
     await fetch("/api/map-room/capabilities", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target: "research", action: "delete", itemId: id }),
     });
     fetchData();
@@ -184,7 +182,7 @@ export default function CapabilitiesPage() {
     };
     await fetch("/api/map-room/capabilities", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target: "boards", action: "add", boardId, item }),
     });
     setAddingOpp(null);
@@ -195,7 +193,7 @@ export default function CapabilitiesPage() {
   const deleteOpp = async (boardId: string, itemId: string) => {
     await fetch("/api/map-room/capabilities", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target: "boards", action: "delete", boardId, itemId }),
     });
     fetchData();

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
 const KV_KEY = "maproom:posts";
-const TOKEN = "apex-live-2026";
-
 interface PostsData {
   items: Record<string, unknown>[];
   lastUpdated: string;
@@ -30,10 +29,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   const { id } = await params;
   const updates = await req.json();

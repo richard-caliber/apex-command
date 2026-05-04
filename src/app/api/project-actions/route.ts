@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { requireWriteAuth } from "@/lib/auth";
 
 const KV_KEY = "apex:project-actions";
-const TOKEN = "apex-live-2026";
-
 /* ── Schema ── */
 export interface ProjectAction {
   id: string;           // A-{slug}-{nnn}  e.g. A-cal-001
@@ -101,10 +100,9 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Writes require auth ──
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   // ── SET (create or update) ──
   if (action === "set") {

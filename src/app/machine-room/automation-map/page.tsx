@@ -131,7 +131,7 @@ export default function AutomationMapPage() {
     try {
       const r = await fetch("/api/automation-map", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer apex-live-2026" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set", id, ...data }),
       });
       const saved = await r.json();

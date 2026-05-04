@@ -63,8 +63,6 @@ interface Agent {
 }
 
 /* ── Constants ── */
-const TOKEN = "apex-live-2026";
-
 const STATUS_STYLE: Record<string, { label: string; color: string; dot: string }> = {
   active: { label: "ACTIVE", color: "text-green-400", dot: "bg-green-500" },
   idle: { label: "IDLE", color: "text-slate-400", dot: "bg-slate-500" },
@@ -119,7 +117,7 @@ export default function AgentDetailPage() {
     try {
       await fetch("/api/squad", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agentId: agent.id, [field]: value }),
       });
       const updates: Record<string, unknown> = { [field]: value, last_updated: new Date().toISOString() };

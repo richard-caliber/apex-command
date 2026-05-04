@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const TOKEN = "apex-live-2026";
 const CONTENT_STAGES = new Set(["traffic", "conversion"]);
 const CONTENT_PROJECT_STAGES = new Set(["traffic", "conversion", "delivery", "scale"]);
 
@@ -59,7 +58,7 @@ function apiPost(url: string, body: Record<string, unknown>) {
 }
 
 function apiWrite(url: string, body: Record<string, unknown>) {
-  return fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` }, body: JSON.stringify(body) }).then((r) => r.json());
+  return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 }
 
 /* ── Component ── */

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
-
-const TOKEN = "apex-live-2026";
-
+import { requireWriteAuth } from "@/lib/auth";
 interface ProjectTask {
   id: string;
   text: string;
@@ -26,10 +24,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; taskId: string }> }
 ) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${TOKEN}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireWriteAuth(req);
+
+  if (unauthorized) return unauthorized;
 
   const { id, taskId } = await params;
   const data = await kv.get<ProjectDetail>(kvKey(id));
