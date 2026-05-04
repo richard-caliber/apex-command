@@ -1,0 +1,92 @@
+{
+  "verified_at": "2026-05-04T10:02:18.456Z",
+  "agents": {
+    "atlas": {
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.7,
+        "max_tokens": 8000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:11.211Z",
+      "preserved_soul_text_length": 8988,
+      "preserved_memory_text_length": 17864,
+      "preserved_workspace_files_count": 9
+    },
+    "newton": {
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-opus-4-7",
+        "temperature": 0.5,
+        "max_tokens": 16000,
+        "thinking_mode": {
+          "enabled": true,
+          "budget_tokens": 5000
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:12.906Z",
+      "preserved_soul_text_length": 13415,
+      "preserved_memory_text_length": 3050,
+      "preserved_workspace_files_count": 5
+    },
+    "darwin": {
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.6,
+        "max_tokens": 8000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:14.907Z",
+      "preserved_soul_text_length": 9461,
+      "preserved_memory_text_length": 4220,
+      "preserved_workspace_files_count": 9
+    },
+    "jimmy": {
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.9,
+        "max_tokens": 6000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:15.973Z",
+      "preserved_soul_text_length": 10826,
+      "preserved_memory_text_length": 1506,
+      "preserved_workspace_files_count": 5
+    },
+    "ginge": {
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.7,
+        "max_tokens": 8000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:17.315Z",
+      "preserved_soul_text_length": 96,
+      "preserved_memory_text_length": 0,
+      "preserved_workspace_files_count": 0
+    }
+  },
+  "untouched_agent_drift": []
+}

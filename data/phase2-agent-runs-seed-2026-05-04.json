@@ -1,0 +1,106 @@
+{
+  "seeded_at": "2026-05-04T10:03:34.843Z",
+  "month": "2026-05",
+  "agents": {
+    "atlas": {
+      "key": "apex:agent-runs:atlas:2026-05",
+      "runs_count": 1,
+      "first_run_id": "6de9fb15-3a89-47b7-ba13-f4ff389ed15d",
+      "last_run_id": "6de9fb15-3a89-47b7-ba13-f4ff389ed15d",
+      "seed_run_added": true,
+      "sample_run": {
+        "run_id": "6de9fb15-3a89-47b7-ba13-f4ff389ed15d",
+        "timestamp": "2026-05-04T10:03:34.843Z",
+        "model_used": "claude-sonnet-4-6",
+        "provider": "anthropic",
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0,
+        "task_id": null,
+        "task_name": null,
+        "status": "success",
+        "latency_ms": 0
+      }
+    },
+    "newton": {
+      "key": "apex:agent-runs:newton:2026-05",
+      "runs_count": 1,
+      "first_run_id": "a5e2921c-32ee-43af-9ed6-c4be4ba7879e",
+      "last_run_id": "a5e2921c-32ee-43af-9ed6-c4be4ba7879e",
+      "seed_run_added": true,
+      "sample_run": {
+        "run_id": "a5e2921c-32ee-43af-9ed6-c4be4ba7879e",
+        "timestamp": "2026-05-04T10:03:34.843Z",
+        "model_used": "claude-opus-4-7",
+        "provider": "anthropic",
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0,
+        "task_id": null,
+        "task_name": null,
+        "status": "success",
+        "latency_ms": 0
+      }
+    },
+    "darwin": {
+      "key": "apex:agent-runs:darwin:2026-05",
+      "runs_count": 1,
+      "first_run_id": "491f2caa-8ee3-44d0-bef1-596ca3a7e264",
+      "last_run_id": "491f2caa-8ee3-44d0-bef1-596ca3a7e264",
+      "seed_run_added": true,
+      "sample_run": {
+        "run_id": "491f2caa-8ee3-44d0-bef1-596ca3a7e264",
+        "timestamp": "2026-05-04T10:03:34.843Z",
+        "model_used": "claude-sonnet-4-6",
+        "provider": "anthropic",
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0,
+        "task_id": null,
+        "task_name": null,
+        "status": "success",
+        "latency_ms": 0
+      }
+    },
+    "jimmy": {
+      "key": "apex:agent-runs:jimmy:2026-05",
+      "runs_count": 1,
+      "first_run_id": "b83a4925-7eca-4cf4-885f-7536af87aff5",
+      "last_run_id": "b83a4925-7eca-4cf4-885f-7536af87aff5",
+      "seed_run_added": true,
+      "sample_run": {
+        "run_id": "b83a4925-7eca-4cf4-885f-7536af87aff5",
+        "timestamp": "2026-05-04T10:03:34.843Z",
+        "model_used": "claude-sonnet-4-6",
+        "provider": "anthropic",
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0,
+        "task_id": null,
+        "task_name": null,
+        "status": "success",
+        "latency_ms": 0
+      }
+    },
+    "ginge": {
+      "key": "apex:agent-runs:ginge:2026-05",
+      "runs_count": 1,
+      "first_run_id": "c30736a4-4bf5-4d48-b1c9-5f5d94d35421",
+      "last_run_id": "c30736a4-4bf5-4d48-b1c9-5f5d94d35421",
+      "seed_run_added": true,
+      "sample_run": {
+        "run_id": "c30736a4-4bf5-4d48-b1c9-5f5d94d35421",
+        "timestamp": "2026-05-04T10:03:34.843Z",
+        "model_used": "claude-sonnet-4-6",
+        "provider": "anthropic",
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0,
+        "task_id": null,
+        "task_name": null,
+        "status": "success",
+        "latency_ms": 0
+      }
+    }
+  }
+}

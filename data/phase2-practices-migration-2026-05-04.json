@@ -1,0 +1,39 @@
+{
+  "built_at": "2026-05-04T10:05:41.487Z",
+  "apply": true,
+  "source_counts": {
+    "vault:ip-entries": {
+      "items": 162,
+      "lastUpdated": "2026-04-26T18:25:37.852Z"
+    },
+    "maproom:ip-vault-v2": {
+      "entries": 4,
+      "lastUpdated": "2026-03-31T06:00:00Z"
+    }
+  },
+  "final_count": 166,
+  "dedup_count": 0,
+  "dedup_details": [],
+  "by_origin_store": {
+    "vault-ip-entries": 162,
+    "maproom-ip-vault-v2": 4
+  },
+  "by_category_top10": {
+    "research": 155,
+    "agent-memory": 2,
+    "winning-hooks": 2,
+    "best-practices": 1,
+    "Best Practices": 1,
+    "strategies": 1,
+    "tool-discovery": 1,
+    "principles": 1,
+    "channel-learnings": 1,
+    "failed-experiments": 1
+  },
+  "by_source": {
+    "newton": 159,
+    "darwin": 1,
+    "atlas": 2,
+    "manual": 4
+  }
+}
