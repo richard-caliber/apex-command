@@ -1,0 +1,266 @@
+Phase 4 MCP local test @ 2026-05-04T10:38:29.554Z
+BASE = http://localhost:3000
+
+── well-known: oauth-protected-resource ──
+{
+  "resource": "http://localhost:3000/api/mcp",
+  "authorization_servers": [
+    "http://localhost:3000"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
+  "scopes_supported": [
+    "apex:full"
+  ]
+}
+
+── well-known: oauth-authorization-server ──
+{
+  "issuer": "http://localhost:3000",
+  "authorization_endpoint": "http://localhost:3000/api/mcp/oauth/authorize",
+  "token_endpoint": "http://localhost:3000/api/mcp/oauth/token",
+  "registration_endpoint": "http://localhost:3000/api/mcp/oauth/register",
+  "response_types_supported": [
+    "code"
+  ],
+  "grant_types_supported": [
+    "authorization_code"
+  ],
+  "code_challenge_methods_supported": [
+    "S256"
+  ],
+  "token_endpoint_auth_methods_supported": [
+    "none"
+  ],
+  "scopes_supported": [
+    "apex:full"
+  ]
+}
+
+── DCR: POST /api/mcp/oauth/register ──
+status: 201
+{
+  "client_id": "apex-mcp-2v4bYUS0lz7QyHhj",
+  "client_id_issued_at": 1777891109,
+  "redirect_uris": [
+    "https://claude.ai/api/mcp/auth_callback"
+  ],
+  "grant_types": [
+    "authorization_code"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "application_type": "web",
+  "client_name": "phase4-local-test"
+}
+
+── Authorize: GET (form should render) ──
+status: 200, content-type: text/html; charset=utf-8
+form contains apex_token field: true
+
+── Authorize: POST with valid APEX_API_TOKEN ──
+status: 302, location: https://claude.ai/api/mcp/auth_callback?code=zSv9Qkm0rccS5J9AV4TWYDevMFLOvCpS&state=G9jdjbcze5k
+code: (received)
+
+── Authorize: POST with WRONG token (should re-render form, not 302) ──
+status: 200 (expect 200, no Location)
+
+── Token: POST /api/mcp/oauth/token ──
+status: 200
+{
+  "access_token": "apex-mcp-tok-yoSSVox-5kE_qry5E1ab4M6oW0poQ2fY6k3jKOB-MBs",
+  "token_type": "Bearer",
+  "scope": "apex:full"
+}
+
+── Token: re-use same code (should fail invalid_grant) ──
+status: 400
+{
+  "error": "invalid_grant",
+  "error_description": "Authorization code is invalid, expired, or already used"
+}
+
+── MCP: initialize ──
+status: 200
+{
+  "result": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {
+      "tools": {
+        "listChanged": true
+      }
+    },
+    "serverInfo": {
+      "name": "mcp-typescript server on vercel",
+      "version": "0.1.0"
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+
+── MCP: tools/list ──
+status: 200, count: 14
+tools: apex_list_projects, apex_get_project, apex_list_tasks, apex_get_task, apex_get_briefing, apex_list_agents, apex_get_agent, apex_search_practices, apex_get_practice, apex_get_audit, apex_set_task, apex_complete_task, apex_update_agent_memory, apex_add_practice
+
+── MCP: call apex_list_projects ──
+status: 200, content[0].text first 400 chars:
+Found 36 project(s)
+
+[
+  {
+    "id": "gemsnap",
+    "name": "GemSnap",
+    "stage": "traffic",
+    "status": "paused",
+    "blocker": "Ads paused (token expired), 0 conversions from 500+ clicks",
+    "tags": [
+      "consumer",
+      "ai",
+      "mobile"
+    ]
+  },
+  {
+    "id": "caliber",
+    "name": "Caliber Peptides",
+    "stage": "traffic",
+    "status": "paused",
+    "blocker": "Revenue model
+
+── MCP: call apex_get_briefing ──
+status: 200, content first 600 chars:
+Apex Briefing
+
+{
+  "active_projects": [
+    {
+      "id": "gemsnap",
+      "name": "GemSnap",
+      "stage": "traffic",
+      "status": "paused",
+      "blocker": "Ads paused (token expired), 0 conversions from 500+ clicks"
+    },
+    {
+      "id": "caliber",
+      "name": "Caliber Peptides",
+      "stage": "traffic",
+      "status": "paused",
+      "blocker": "Revenue model unclear — content paused until conversion path figured out"
+    },
+    {
+      "id": "edge-auto",
+      "name": "Edge Auto",
+      "stage": "mvp",
+      "status": "paused",
+      "blocker": "On hold — may fold into APEX pr
+
+── MCP: call apex_search_practices (q=carousel) ──
+status: 200, content first 500 chars:
+3 practice(s) (of 19 matching, 166 total)
+
+[
+  {
+    "id": "vault-research-2026-03-18-customer-journey-proposal",
+    "title": "Customer Journey Map",
+    "category": "research",
+    "tags": [
+      "funnel",
+      "journey",
+      "conversion"
+    ],
+    "source": "newton",
+    "snippet": "# Caliber Peptides — Complete Customer Journey Proposal\n**Date:** 2026-03-18\n**Requested by:** Atlas / Ginge (ASAP priority)\n**Certainty:** Confirmed (based on proven patterns from active grey-market pepti
+
+── MCP: call apex_set_task (create new) ──
+status: 200, content first 600 chars:
+Task MCP-MOR2GWDD-y7xc saved
+
+{
+  "id": "MCP-MOR2GWDD-y7xc",
+  "stage": "adhoc",
+  "project_id": "edge-auto",
+  "name": "Phase 4 MCP smoke test task",
+  "description": "Created by phase4-mcp-local-test.mjs to verify apex_set_task end-to-end",
+  "status": "not_started",
+  "automation": "manual",
+  "owner": "ginge",
+  "model": "",
+  "prompt_id": "",
+  "output": "",
+  "quality_gate": "",
+  "blocker": null,
+  "next_task": "",
+  "order": 0,
+  "created_at": "2026-05-04T10:38:41.590Z",
+  "updated_at": "2026-05-04T10:38:41.590Z",
+  "priority": "medium"
+}
+created task id: MCP-MOR2GWDD-y7xc
+
+── MCP: call apex_set_task (update existing MCP-MOR2GWDD-y7xc) ──
+status: 200, content first 400 chars:
+Task MCP-MOR2GWDD-y7xc saved
+
+{
+  "id": "MCP-MOR2GWDD-y7xc",
+  "stage": "adhoc",
+  "project_id": "edge-auto",
+  "name": "Phase 4 MCP smoke test task (updated)",
+  "description": "Created by phase4-mcp-local-test.mjs to verify apex_set_task end-to-end",
+  "status": "in_progress",
+  "automation": "manual",
+  "owner": "ginge",
+  "model": "",
+  "prompt_id": "",
+  "output": "",
+  "quality_gate": "",
+  
+
+── MCP: call apex_complete_task (MCP-MOR2GWDD-y7xc) ──
+status: 200, content first 400 chars:
+Task MCP-MOR2GWDD-y7xc marked done
+
+{
+  "id": "MCP-MOR2GWDD-y7xc",
+  "stage": "adhoc",
+  "project_id": "edge-auto",
+  "name": "Phase 4 MCP smoke test task (updated)",
+  "description": "Created by phase4-mcp-local-test.mjs to verify apex_set_task end-to-end",
+  "status": "done",
+  "automation": "manual",
+  "owner": "ginge",
+  "model": "",
+  "prompt_id": "",
+  "output": "",
+  "quality_gate": "",
+  "
+
+── MCP: call apex_get_audit ──
+status: 200, content first 600 chars:
+Audit log for 2026-05 (3 event(s))
+
+{
+  "month": "2026-05",
+  "events": [
+    {
+      "event_id": "cdd77dc8-8c0d-47cc-a625-550fe36ab821",
+      "timestamp": "2026-05-04T10:38:43.475Z",
+      "tool": "apex_set_task",
+      "input": {
+        "project_id": "edge-auto",
+        "name": "Phase 4 MCP smoke test task",
+        "stage": "adhoc",
+        "status": "not_started",
+        "owner": "ginge",
+        "priority": "medium",
+        "description": "Created by phase4-mcp-local-test.mjs to verify apex_set_task end-to-end"
+      },
+      "result_summary": "created task MCP-MOR2GWDD-y7xc (Phase 4
+
+── MCP: unauthenticated request should 401 ──
+status: 401, www-authenticate: Bearer error="invalid_token", error_description="No authorization provided", resource_metadata="http://localhost:3000/.well-known/oauth-protected-resource"
+
+── DONE — saving transcript ──
