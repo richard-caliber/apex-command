@@ -2,41 +2,20 @@ import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import { kv } from "@vercel/kv";
 import { z } from "zod";
-import { getApexApiToken, lookupAccessToken } from "@/lib/mcp-oauth";
+import { randomUUID } from "crypto";
+import { lookupAccessToken } from "@/lib/mcp-oauth";
 import { appendAuditEvent, currentMonth, getAuditMonth } from "@/lib/mcp-audit";
 
 const REQUIRED_SCOPE = "apex:full";
 
-// ────────────────────── Internal API helpers ──────────────────────
+// Write tools mutate KV directly (intra-function HTTP fetches are unreliable on
+// Vercel and hostile to deployment protection). The MCP request has already
+// been authenticated via OAuth at the withMcpAuth layer; calling internal API
+// routes a second time only adds a network hop and a class of failure modes.
 
-function originFromExtra(extra: { request?: Request } | undefined): string {
-  // Prefer the runtime request URL so the same code works on localhost and prod.
-  const req = extra?.request;
-  if (req && typeof req.url === "string") {
-    try { return new URL(req.url).origin; } catch { /* noop */ }
-  }
-  return process.env.APEX_ORIGIN || "http://localhost:3000";
-}
-
-async function apexFetch(origin: string, path: string, init: RequestInit = {}) {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((init.headers as Record<string, string>) ?? {}),
-  };
-  if (init.method && init.method !== "GET") {
-    headers.Authorization = `Bearer ${getApexApiToken()}`;
-  }
-  const res = await fetch(`${origin}${path}`, { ...init, headers });
-  const text = await res.text();
-  let body: unknown;
-  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
-  if (!res.ok) {
-    const err = new Error(`apex ${path} ${res.status}: ${typeof body === "string" ? body : JSON.stringify(body)}`);
-    (err as Error & { status?: number }).status = res.status;
-    throw err;
-  }
-  return body;
-}
+const VALID_PIPELINE_STAGES = new Set(["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale", "adhoc"]);
+const VALID_PIPELINE_STATUSES = new Set(["not_started", "in_progress", "done", "blocked", "skipped"]);
+const VALID_PRACTICE_SOURCES = new Set(["newton", "atlas", "darwin", "jimmy", "ginge", "manual"]);
 
 function asText(label: string, payload: unknown) {
   return { content: [{ type: "text" as const, text: `${label}\n\n${JSON.stringify(payload, null, 2)}` }] };
@@ -400,28 +379,61 @@ const handler = createMcpHandler(
         },
       },
       async (input, extra) => {
-        const origin = originFromExtra(extra as { request?: Request } | undefined);
+        const stage = input.stage || "adhoc";
+        const status = input.status || "not_started";
+        if (!VALID_PIPELINE_STAGES.has(stage)) return { content: [{ type: "text", text: `Invalid stage: ${stage}` }], isError: true };
+        if (!VALID_PIPELINE_STATUSES.has(status)) return { content: [{ type: "text", text: `Invalid status: ${status}` }], isError: true };
+
+        const store = (await kv.get<{ tasks: PipelineTaskRecord[]; lastUpdated: string }>("apex:pipeline-tasks")) ?? { tasks: [], lastUpdated: new Date().toISOString() };
+        const now = new Date().toISOString();
         const id = input.id || `MCP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6)}`;
-        const body = {
-          action: "set",
-          id,
-          project_id: input.project_id,
-          name: input.name,
-          stage: input.stage || "adhoc",
-          status: input.status || "not_started",
-          owner: input.owner,
-          priority: input.priority,
-          blocker: input.blocker ?? null,
-          description: input.description,
-        };
-        const result = (await apexFetch(origin, "/api/pipeline-tasks", {
-          method: "POST",
-          body: JSON.stringify(body),
-        })) as PipelineTaskRecord;
+        const idx = store.tasks.findIndex((t) => t.id === id);
+        let result: PipelineTaskRecord;
+        if (idx >= 0) {
+          const merged: PipelineTaskRecord = {
+            ...store.tasks[idx],
+            project_id: input.project_id,
+            name: input.name,
+            stage,
+            status,
+            owner: input.owner ?? store.tasks[idx].owner,
+            blocker: input.blocker !== undefined ? input.blocker : store.tasks[idx].blocker,
+            description: input.description ?? store.tasks[idx].description,
+            updated_at: now,
+          };
+          if (input.priority !== undefined) (merged as unknown as Record<string, unknown>).priority = input.priority;
+          store.tasks[idx] = merged;
+          result = merged;
+        } else {
+          const created: PipelineTaskRecord = {
+            id,
+            stage,
+            project_id: input.project_id,
+            name: input.name,
+            description: input.description ?? "",
+            status,
+            automation: "manual",
+            owner: input.owner ?? "",
+            model: "",
+            prompt_id: "",
+            output: "",
+            quality_gate: "",
+            blocker: input.blocker ?? null,
+            next_task: "",
+            order: 0,
+            created_at: now,
+            updated_at: now,
+          };
+          if (input.priority !== undefined) (created as unknown as Record<string, unknown>).priority = input.priority;
+          store.tasks.push(created);
+          result = created;
+        }
+        store.lastUpdated = now;
+        await kv.set("apex:pipeline-tasks", store);
         await appendAuditEvent({
           tool: "apex_set_task",
           input,
-          resultSummary: `${input.id ? "updated" : "created"} task ${id} (${input.name})`,
+          resultSummary: `${idx >= 0 ? "updated" : "created"} task ${id} (${input.name})`,
           callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
         });
         return asText(`Task ${id} saved`, result);
@@ -437,25 +449,21 @@ const handler = createMcpHandler(
         inputSchema: { id: z.string().describe("Task id to complete") },
       },
       async ({ id }, extra) => {
-        const origin = originFromExtra(extra as { request?: Request } | undefined);
-        // Need the existing task's project_id and name because /api/pipeline-tasks set-on-existing
-        // uses Object.assign — but the route also requires id and treats missing fields as no-ops on update.
-        const existing = (await kvTasks()).find((t) => t.id === id);
-        if (!existing) {
-          return { content: [{ type: "text", text: `Task not found: ${id}` }], isError: true };
-        }
-        const body = { action: "set", id, project_id: existing.project_id, name: existing.name, status: "done" };
-        const result = (await apexFetch(origin, "/api/pipeline-tasks", {
-          method: "POST",
-          body: JSON.stringify(body),
-        })) as PipelineTaskRecord;
+        const store = await kv.get<{ tasks: PipelineTaskRecord[]; lastUpdated: string }>("apex:pipeline-tasks");
+        if (!store) return { content: [{ type: "text", text: "Pipeline task store not found" }], isError: true };
+        const idx = store.tasks.findIndex((t) => t.id === id);
+        if (idx < 0) return { content: [{ type: "text", text: `Task not found: ${id}` }], isError: true };
+        const now = new Date().toISOString();
+        store.tasks[idx] = { ...store.tasks[idx], status: "done", updated_at: now };
+        store.lastUpdated = now;
+        await kv.set("apex:pipeline-tasks", store);
         await appendAuditEvent({
           tool: "apex_complete_task",
           input: { id },
-          resultSummary: `completed task ${id} (${existing.name})`,
+          resultSummary: `completed task ${id} (${store.tasks[idx].name})`,
           callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
         });
-        return asText(`Task ${id} marked done`, result);
+        return asText(`Task ${id} marked done`, store.tasks[idx]);
       },
     );
 
@@ -472,18 +480,18 @@ const handler = createMcpHandler(
         },
       },
       async ({ agent_id, text, header }, extra) => {
-        const origin = originFromExtra(extra as { request?: Request } | undefined);
-        const agents = await kvAgents();
-        const agent = agents.find((a) => a.id === agent_id);
+        const store = await kv.get<{ agents: AgentRecord[]; lastUpdated: string }>("apex:squad:v4");
+        if (!store) return { content: [{ type: "text", text: "Squad store not found" }], isError: true };
+        const agent = store.agents.find((a) => a.id === agent_id);
         if (!agent) return { content: [{ type: "text", text: `Agent not found: ${agent_id}` }], isError: true };
         const stamp = new Date().toISOString();
         const headerLine = header ? `### ${header} (${stamp})` : `### MCP append (${stamp})`;
-        const newMemory = `${agent.memory_text || ""}\n\n${headerLine}\n${text}\n`;
-
-        const result = (await apexFetch(origin, "/api/squad", {
-          method: "PATCH",
-          body: JSON.stringify({ agentId: agent_id, memory_text: newMemory }),
-        })) as AgentRecord;
+        const before = (agent.memory_text || "").length;
+        agent.memory_text = `${agent.memory_text || ""}\n\n${headerLine}\n${text}\n`;
+        agent.memory_updated_at = stamp;
+        agent.last_updated = stamp;
+        store.lastUpdated = stamp;
+        await kv.set("apex:squad:v4", store);
         await appendAuditEvent({
           tool: "apex_update_agent_memory",
           input: { agent_id, text_chars: text.length, header },
@@ -492,9 +500,9 @@ const handler = createMcpHandler(
         });
         return asText(`Memory updated for ${agent_id}`, {
           agent_id,
-          memory_chars_before: (agent.memory_text || "").length,
-          memory_chars_after: (result.memory_text || "").length,
-          memory_updated_at: result.memory_updated_at,
+          memory_chars_before: before,
+          memory_chars_after: agent.memory_text.length,
+          memory_updated_at: agent.memory_updated_at,
         });
       },
     );
@@ -515,18 +523,33 @@ const handler = createMcpHandler(
         },
       },
       async (input, extra) => {
-        const origin = originFromExtra(extra as { request?: Request } | undefined);
-        const result = (await apexFetch(origin, "/api/practices", {
-          method: "POST",
-          body: JSON.stringify({ action: "set", ...input }),
-        })) as PracticeRecord;
+        const source = input.source && VALID_PRACTICE_SOURCES.has(input.source) ? input.source : "manual";
+        const scope = input.scope && input.scope.length > 0 ? input.scope : "all_agents";
+        const tags = Array.isArray(input.tags) ? input.tags : [];
+        const now = new Date().toISOString();
+        const id = `manual-${randomUUID()}`;
+        const item: PracticeRecord = {
+          id,
+          category: input.category,
+          title: input.title,
+          content: input.content,
+          tags,
+          scope,
+          source,
+          created_at: now,
+          updated_at: now,
+        };
+        const store = (await kv.get<{ items: PracticeRecord[]; lastUpdated: string }>("apex:practices:v1")) ?? { items: [], lastUpdated: now };
+        store.items.push(item);
+        store.lastUpdated = now;
+        await kv.set("apex:practices:v1", store);
         await appendAuditEvent({
           tool: "apex_add_practice",
-          input: { title: input.title, category: input.category, tags: input.tags, scope: input.scope, source: input.source, content_chars: input.content.length },
-          resultSummary: `added practice ${result.id} (${result.title})`,
+          input: { title: input.title, category: input.category, tags, scope, source, content_chars: input.content.length },
+          resultSummary: `added practice ${id} (${input.title})`,
           callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
         });
-        return asText(`Practice ${result.id} added`, result);
+        return asText(`Practice ${id} added`, item);
       },
     );
   },
