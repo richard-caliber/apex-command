@@ -1,0 +1,50 @@
+{
+  "applied_at": "2026-05-04T09:02:09.371Z",
+  "mapping": {
+    "edgeauto": "edge-auto"
+  },
+  "changes": [
+    {
+      "from_id": "edgeauto",
+      "to_id": "edge-auto",
+      "key_affected": "apex:warroom:projects",
+      "field_path": "projects[].id",
+      "count": 1
+    },
+    {
+      "from_id": "edgeauto",
+      "to_id": "edge-auto",
+      "key_affected": "apex:projects",
+      "field_path": "projects[].id",
+      "count": 1
+    },
+    {
+      "from_id": "edgeauto",
+      "to_id": "edge-auto",
+      "key_affected": "apex:pipeline-tasks",
+      "field_path": "tasks[].project_id",
+      "count": 104
+    },
+    {
+      "from_id": "edgeauto",
+      "to_id": "edge-auto",
+      "key_affected": "apex:content-strategy",
+      "field_path": "items[].project_id",
+      "count": 1
+    },
+    {
+      "from_id": "edgeauto",
+      "to_id": "edge-auto",
+      "key_affected": "apex:content-performance",
+      "field_path": "items[].project_id",
+      "count": 1
+    },
+    {
+      "from_id": "edgeauto",
+      "to_id": "edge-auto",
+      "key_affected": "apex:project:edgeauto",
+      "field_path": "<key rename>",
+      "count": 1
+    }
+  ]
+}
