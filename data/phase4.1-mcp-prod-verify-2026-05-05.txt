@@ -1,0 +1,199 @@
+Phase 4.1 MCP prod-verify @ 2026-05-05T14:09:35.238Z
+BASE = https://apex-command-seven.vercel.app
+
+── DCR: POST /api/mcp/oauth/register ──
+status: 201, client_id: apex-mcp-F7AdVQ-jDdPecoRR
+
+── Authorize: POST with valid APEX_API_TOKEN ──
+status: 302, location: https://claude.ai/api/mcp/auth_callback?code=tH78hZzf1NRvXNJV2HU54EeUhXeKe3dc&state=d2NytBhnYu4
+
+── Token: POST /api/mcp/oauth/token ──
+access_token: apex-mcp-tok-absIfMp...
+
+── MCP: initialize ──
+status: 200, protocol: 2025-06-18
+
+── MCP: tools/list (expect 17) ──
+status: 200, count: 17
+tools: apex_list_projects, apex_get_project, apex_list_tasks, apex_get_task, apex_get_briefing, apex_list_agents, apex_get_agent, apex_search_practices, apex_get_practice, apex_get_audit, apex_set_task, apex_complete_task, apex_update_agent_memory, apex_add_practice, apex_set_project, apex_archive_project, apex_update_practice
+  ✓ apex_set_project — title="Create or update an Apex project", required=["id","name"]
+  ✓ apex_archive_project — title="Archive an Apex project (soft-delete)", required=["id"]
+  ✓ apex_update_practice — title="Update an Apex practice item", required=["id"]
+
+── apex_set_project (create new): id=phase41-test-mospg39m ──
+status: 200, isError: false
+first 400 chars:
+Project phase41-test-mospg39m created
+
+{
+  "id": "phase41-test-mospg39m",
+  "name": "Phase 4.1 Smoke Test Project",
+  "description": "Created by phase4.1-mcp-test.mjs",
+  "stage": "validation",
+  "status": "active",
+  "owner": "ginge",
+  "blocker": "Awaiting validation signal",
+  "tags": [
+    "test",
+    "phase4.1"
+  ],
+  "url": "",
+  "image_url": "",
+  "metrics": {},
+  "score": 5,
+  "featured": 
+
+── apex_set_project (update existing): id=phase41-test-mospg39m ──
+status: 200, isError: false
+first 400 chars:
+Project phase41-test-mospg39m updated
+
+{
+  "id": "phase41-test-mospg39m",
+  "name": "Phase 4.1 Smoke Test Project (updated)",
+  "description": "Created by phase4.1-mcp-test.mjs",
+  "stage": "validation",
+  "status": "blocked",
+  "owner": "ginge",
+  "blocker": "Updated blocker via apex_set_project test",
+  "tags": [
+    "test",
+    "phase4.1"
+  ],
+  "url": "",
+  "image_url": "",
+  "metrics": {},
+  
+
+── apex_set_project (invalid stage 'foo' — should error) ──
+isError: true, text: Invalid stage: foo. Valid: idea, validation, design, mvp, traffic, conversion, delivery, scale, archived
+
+── apex_archive_project: id=phase41-test-mospg39m ──
+status: 200, isError: false
+first 400 chars:
+Project phase41-test-mospg39m archived
+
+{
+  "id": "phase41-test-mospg39m",
+  "name": "Phase 4.1 Smoke Test Project (updated)",
+  "description": "Created by phase4.1-mcp-test.mjs",
+  "stage": "validation",
+  "status": "archived",
+  "owner": "ginge",
+  "blocker": "Updated blocker via apex_set_project test\nArchived 2026-05-05: Smoke test cleanup",
+  "tags": [
+    "test",
+    "phase4.1"
+  ],
+  "url":
+
+── apex_archive_project (missing id 'nonexistent-xyz' — should error) ──
+isError: true, text: Project not found: nonexistent-xyz
+
+── apex_get_project: id=phase41-test-mospg39m (verify archive is readable) ──
+first 400 chars:
+Project phase41-test-mospg39m
+
+{
+  "id": "phase41-test-mospg39m",
+  "name": "Phase 4.1 Smoke Test Project (updated)",
+  "description": "Created by phase4.1-mcp-test.mjs",
+  "stage": "validation",
+  "status": "archived",
+  "owner": "ginge",
+  "blocker": "Updated blocker via apex_set_project test\nArchived 2026-05-05: Smoke test cleanup",
+  "tags": [
+    "test",
+    "phase4.1"
+  ],
+  "url": "",
+  "i
+
+── apex_add_practice: seed updatable item titled "Phase 4.1 update target mospg4xo" ──
+seeded practice id: manual-00e743d6-802e-442d-9600-15bdaad2d44c
+
+── apex_update_practice: id=manual-00e743d6-802e-442d-9600-15bdaad2d44c ──
+status: 200, isError: false
+first 500 chars:
+Practice manual-00e743d6-802e-442d-9600-15bdaad2d44c updated
+
+{
+  "id": "manual-00e743d6-802e-442d-9600-15bdaad2d44c",
+  "category": "test",
+  "title": "Phase 4.1 update target mospg4xo (UPDATED)",
+  "content": "Updated content via apex_update_practice. Original content should be gone.",
+  "tags": [
+    "phase4.1",
+    "seed"
+  ],
+  "scope": "all_agents",
+  "source": "manual",
+  "created_at": "2026-05-05T14:09:42.635Z",
+  "updated_at": "2026-05-05T14:09:43.076Z"
+}
+
+── apex_update_practice (verify preserved fields by re-fetching) ──
+first 500 chars:
+Practice manual-00e743d6-802e-442d-9600-15bdaad2d44c
+
+{
+  "id": "manual-00e743d6-802e-442d-9600-15bdaad2d44c",
+  "category": "test",
+  "title": "Phase 4.1 update target mospg4xo (UPDATED)",
+  "content": "Updated content via apex_update_practice. Original content should be gone.",
+  "tags": [
+    "phase4.1",
+    "seed"
+  ],
+  "scope": "all_agents",
+  "source": "manual",
+  "created_at": "2026-05-05T14:09:42.635Z",
+  "updated_at": "2026-05-05T14:09:43.076Z"
+}
+
+── apex_update_practice (missing id 'nonexistent-practice' — should error) ──
+isError: true, text: Practice not found: nonexistent-practice
+
+── Regression: apex_list_projects (should still work) ──
+first 200 chars:
+Found 38 project(s)
+
+[
+  {
+    "id": "gemsnap",
+    "name": "GemSnap",
+    "stage": "traffic",
+    "status": "paused",
+    "blocker": "Ads paused (token expired), 0 conversions from 500+ clicks",
+    
+
+── Regression: apex_search_practices q=phase4.1 ──
+first 300 chars:
+0 practice(s) (of 0 matching, 176 total)
+
+[]
+
+── apex_get_audit (verify Phase 4.1 events recorded) ──
+phase 4.1 tool mentions in audit: 28
+first 600 chars:
+Audit log for 2026-05 (109 event(s))
+
+{
+  "month": "2026-05",
+  "events": [
+    {
+      "event_id": "cdd77dc8-8c0d-47cc-a625-550fe36ab821",
+      "timestamp": "2026-05-04T10:38:43.475Z",
+      "tool": "apex_set_task",
+      "input": {
+        "project_id": "edge-auto",
+        "name": "Phase 4 MCP smoke test task",
+        "stage": "adhoc",
+        "status": "not_started",
+        "owner": "ginge",
+        "priority": "medium",
+        "description": "Created by phase4-mcp-local-test.mjs to verify apex_set_task end-to-end"
+      },
+      "result_summary": "created task MCP-MOR2GWDD-y7xc (Phase
+
+── DONE — saving transcript ──

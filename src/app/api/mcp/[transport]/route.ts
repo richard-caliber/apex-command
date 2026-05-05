@@ -17,6 +17,12 @@ const VALID_PIPELINE_STAGES = new Set(["inbox", "idea", "validation", "design", 
 const VALID_PIPELINE_STATUSES = new Set(["not_started", "in_progress", "done", "blocked", "skipped"]);
 const VALID_PRACTICE_SOURCES = new Set(["newton", "atlas", "darwin", "jimmy", "ginge", "manual"]);
 
+// Project enums for MCP write tools (Phase 4.1). Permits "archived" on both
+// stage and status; canonical /api/projects route does not. Read shims are
+// tolerant; reconciling the two write paths is Phase 6 work.
+const VALID_PROJECT_STAGES = new Set(["idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale", "archived"]);
+const VALID_PROJECT_STATUSES = new Set(["active", "paused", "blocked", "completed", "archived"]);
+
 function asText(label: string, payload: unknown) {
   return { content: [{ type: "text" as const, text: `${label}\n\n${JSON.stringify(payload, null, 2)}` }] };
 }
@@ -33,7 +39,11 @@ interface ProjectRecord {
   blocker?: string;
   tags?: string[];
   url?: string;
+  image_url?: string;
   metrics?: Record<string, string>;
+  score?: number | null;
+  featured?: boolean;
+  order?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -550,6 +560,191 @@ const handler = createMcpHandler(
           callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
         });
         return asText(`Practice ${id} added`, item);
+      },
+    );
+
+    // ─────── apex_set_project ───────
+    server.registerTool(
+      "apex_set_project",
+      {
+        title: "Create or update an Apex project",
+        description: "Creates a new project record or updates an existing one in apex:warroom:projects. id is required. For new projects, defaults stage='idea', status='active', owner='ginge'. For updates, only provided fields are merged.",
+        inputSchema: {
+          id: z.string().describe("Kebab-case project id, e.g. atlas-drift, todd-saifent"),
+          name: z.string().describe("Display name"),
+          stage: z.string().optional().describe("idea | validation | design | mvp | traffic | conversion | delivery | scale | archived"),
+          status: z.string().optional().describe("active | paused | blocked | completed | archived"),
+          description: z.string().optional(),
+          blocker: z.string().nullable().optional(),
+          tags: z.array(z.string()).optional(),
+          url: z.string().optional().describe("Canonical URL for the project, if any"),
+          owner: z.string().optional().describe("Default 'ginge' for new projects"),
+          score: z.number().min(0).max(10).nullable().optional().describe("Darwin verdict 0-10"),
+          featured: z.boolean().optional(),
+          image_url: z.string().optional(),
+          metrics: z.record(z.string(), z.string()).optional(),
+          order: z.number().optional(),
+        },
+      },
+      async (input, extra) => {
+        if (input.stage !== undefined && !VALID_PROJECT_STAGES.has(input.stage)) {
+          return { content: [{ type: "text", text: `Invalid stage: ${input.stage}. Valid: ${[...VALID_PROJECT_STAGES].join(", ")}` }], isError: true };
+        }
+        if (input.status !== undefined && !VALID_PROJECT_STATUSES.has(input.status)) {
+          return { content: [{ type: "text", text: `Invalid status: ${input.status}. Valid: ${[...VALID_PROJECT_STATUSES].join(", ")}` }], isError: true };
+        }
+
+        const now = new Date().toISOString();
+        const store = (await kv.get<{ projects: ProjectRecord[]; lastUpdated: string }>("apex:warroom:projects")) ?? { projects: [], lastUpdated: now };
+        const idx = store.projects.findIndex((p) => p.id === input.id);
+        let result: ProjectRecord;
+        let mode: "created" | "updated";
+
+        if (idx >= 0) {
+          mode = "updated";
+          const existing = store.projects[idx];
+          const merged: ProjectRecord = {
+            ...existing,
+            name: input.name,
+            updated_at: now,
+          };
+          if (input.stage !== undefined) merged.stage = input.stage;
+          if (input.status !== undefined) merged.status = input.status;
+          if (input.description !== undefined) merged.description = input.description;
+          if (input.blocker !== undefined) merged.blocker = input.blocker ?? undefined;
+          if (input.tags !== undefined) merged.tags = input.tags;
+          if (input.url !== undefined) merged.url = input.url;
+          if (input.owner !== undefined) merged.owner = input.owner;
+          if (input.score !== undefined) merged.score = input.score;
+          if (input.featured !== undefined) merged.featured = input.featured;
+          if (input.image_url !== undefined) merged.image_url = input.image_url;
+          if (input.metrics !== undefined) merged.metrics = input.metrics;
+          if (input.order !== undefined) merged.order = input.order;
+          store.projects[idx] = merged;
+          result = merged;
+        } else {
+          mode = "created";
+          const created: ProjectRecord = {
+            id: input.id,
+            name: input.name,
+            description: input.description ?? "",
+            stage: input.stage ?? "idea",
+            status: input.status ?? "active",
+            owner: input.owner ?? "ginge",
+            blocker: input.blocker ?? undefined,
+            tags: input.tags ?? [],
+            url: input.url ?? "",
+            image_url: input.image_url ?? "",
+            metrics: input.metrics ?? {},
+            score: input.score ?? null,
+            featured: input.featured ?? false,
+            order: input.order,
+            created_at: now,
+            updated_at: now,
+          };
+          store.projects.push(created);
+          result = created;
+        }
+        store.lastUpdated = now;
+        await kv.set("apex:warroom:projects", store);
+        await appendAuditEvent({
+          tool: "apex_set_project",
+          input,
+          resultSummary: `${mode} project ${input.id} (${input.name})`,
+          callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
+        });
+        return asText(`Project ${input.id} ${mode}`, result);
+      },
+    );
+
+    // ─────── apex_archive_project ───────
+    server.registerTool(
+      "apex_archive_project",
+      {
+        title: "Archive an Apex project (soft-delete)",
+        description: "Sets a project's status to 'archived'. Project records remain readable but are excluded from active filters. Optionally appends a reason to the blocker field for traceability.",
+        inputSchema: {
+          id: z.string().describe("Project id to archive"),
+          reason: z.string().optional().describe("Reason for archiving; appended to blocker field"),
+        },
+      },
+      async ({ id, reason }, extra) => {
+        const store = await kv.get<{ projects: ProjectRecord[]; lastUpdated: string }>("apex:warroom:projects");
+        if (!store) return { content: [{ type: "text", text: "Project store not found" }], isError: true };
+        const idx = store.projects.findIndex((p) => p.id === id);
+        if (idx < 0) return { content: [{ type: "text", text: `Project not found: ${id}` }], isError: true };
+        const now = new Date().toISOString();
+        const dateOnly = now.slice(0, 10);
+        const existing = store.projects[idx];
+        const archived: ProjectRecord = {
+          ...existing,
+          status: "archived",
+          updated_at: now,
+        };
+        if (reason) {
+          const note = `Archived ${dateOnly}: ${reason}`;
+          archived.blocker = existing.blocker ? `${existing.blocker}\n${note}` : note;
+        }
+        store.projects[idx] = archived;
+        store.lastUpdated = now;
+        await kv.set("apex:warroom:projects", store);
+        await appendAuditEvent({
+          tool: "apex_archive_project",
+          input: { id, reason },
+          resultSummary: `archived project ${id} (${existing.name})${reason ? ` — ${reason}` : ""}`,
+          callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
+        });
+        return asText(`Project ${id} archived`, archived);
+      },
+    );
+
+    // ─────── apex_update_practice ───────
+    server.registerTool(
+      "apex_update_practice",
+      {
+        title: "Update an Apex practice item",
+        description: "Updates an existing practice in apex:practices:v1 by id. Only provided fields are merged; others preserved. 404s if the id doesn't exist.",
+        inputSchema: {
+          id: z.string().describe("Practice id, e.g. vault-research-2026-03-18-..., manual-<uuid>"),
+          title: z.string().optional(),
+          content: z.string().optional(),
+          category: z.string().optional(),
+          tags: z.array(z.string()).optional(),
+          scope: z.string().optional(),
+          source: z.enum(["newton", "atlas", "darwin", "jimmy", "ginge", "manual"]).optional(),
+        },
+      },
+      async (input, extra) => {
+        const store = await kv.get<{ items: PracticeRecord[]; lastUpdated: string }>("apex:practices:v1");
+        if (!store) return { content: [{ type: "text", text: "Practices store not found" }], isError: true };
+        const idx = store.items.findIndex((it) => it.id === input.id);
+        if (idx < 0) return { content: [{ type: "text", text: `Practice not found: ${input.id}` }], isError: true };
+        const now = new Date().toISOString();
+        const existing = store.items[idx];
+        const updated: PracticeRecord = {
+          ...existing,
+          updated_at: now,
+        };
+        if (input.title !== undefined) updated.title = input.title;
+        if (input.content !== undefined) updated.content = input.content;
+        if (input.category !== undefined) updated.category = input.category;
+        if (input.tags !== undefined) updated.tags = input.tags;
+        if (input.scope !== undefined) updated.scope = input.scope;
+        if (input.source !== undefined && VALID_PRACTICE_SOURCES.has(input.source)) updated.source = input.source;
+        store.items[idx] = updated;
+        store.lastUpdated = now;
+        await kv.set("apex:practices:v1", store);
+        await appendAuditEvent({
+          tool: "apex_update_practice",
+          input: {
+            id: input.id,
+            fields: Object.keys(input).filter((k) => k !== "id" && (input as Record<string, unknown>)[k] !== undefined),
+            content_chars: input.content?.length,
+          },
+          resultSummary: `updated practice ${input.id} (${updated.title})`,
+          callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
+        });
+        return asText(`Practice ${input.id} updated`, updated);
       },
     );
   },
