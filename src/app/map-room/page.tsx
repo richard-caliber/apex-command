@@ -139,10 +139,18 @@ export default function OverviewPage() {
     fetchData();
   }, [fetchData]);
 
-  /* ── Stage counts ── */
+  /* ── M2: single selector — chip counts and body sections must agree ── */
+  const projectsByStage: Record<number, Project[]> = STAGES.reduce(
+    (acc, s) => {
+      acc[s.id] = projects.filter((p) => p.current_stage === s.id);
+      return acc;
+    },
+    {} as Record<number, Project[]>,
+  );
+
   const stageCounts = STAGES.map((s) => ({
     ...s,
-    count: projects.filter((p) => p.current_stage === s.id).length,
+    count: projectsByStage[s.id].length,
   }));
 
   /* ── Scroll to stage section ── */
@@ -213,9 +221,8 @@ export default function OverviewPage() {
       {/* ── 2. PROJECT LIST — one section per stage ── */}
       <div className="space-y-1">
         {STAGES.map((stage) => {
-          const stageProjects = projects.filter(
-            (p) => p.current_stage === stage.id
-          );
+          // M2: same source of truth as the chip counts.
+          const stageProjects = projectsByStage[stage.id];
           const empty = stageProjects.length === 0;
 
           return (

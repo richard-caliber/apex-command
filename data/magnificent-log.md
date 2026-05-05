@@ -1,5 +1,15 @@
 # Apex Magnificent Sprint Log
 
+## M2 — Briefing display polish (2026-05-05)
+
+- **Briefing Room — dormant squad banner.** `src/app/action-room/page.tsx` now renders Ginge's row plus a single "Squad dormant — Operating Mission Control + MCP only" banner when all four `[atlas, newton, darwin, jimmy]` are present. M3 will replace the hard-code with a proper `dormant` flag.
+- **Briefing Room — race fix.** Added `loading` + `fetchError` state. Your Actions, Squad Actions, Ad Hoc Tasks, and Team Status all gate their empty states on `!loading` so the page never silently falls through to "no tasks" before the fetch resolves. A small red banner renders only when every fetch failed.
+- **Machine Room — Twitter inbox grouping.** `src/app/machine-room/automation-map/page.tsx` Manual Actions section now buckets `/-tweet/i` task names into a collapsed "Twitter inbox (N items)" row. Bucket empty in current data (0/132); pattern in place for future Newton tweet triage.
+- **Map Room — pipeline `?project=<id>` auto-select.** `src/app/map-room/pipeline/page.tsx` wraps content in `<Suspense>` and reads `useSearchParams().get("project")` as the initial dropdown value. Deep links from War Room cards now land directly on the project pipeline.
+- **Launchpad — stage chip + body counts now share a single `projectsByStage` selector.** Cannot drift apart by construction. Expected: Idea=4, Validation=1, MVP=5, Traffic=1 (sum 11 non-archived).
+- Production deploy `dpl_5HWNbXXSXVD41CAgQnLtNrV9hzVM`; all 5 affected pages 200; new loading strings and Suspense fallback present in SSR.
+- Verification: `data/magnificent-m2-verify-2026-05-05.md`.
+
 ## M1 — Read-path refactor (2026-05-05)
 
 - Created `src/lib/projects.ts` and `src/lib/tasks.ts` — single canonical readers for `apex:warroom:projects` and `apex:pipeline-tasks`. Pages and routes that previously hit legacy stores or duplicated KV access now go through one path.
