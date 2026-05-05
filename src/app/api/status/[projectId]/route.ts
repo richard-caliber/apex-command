@@ -3,10 +3,10 @@ import { kv } from "@vercel/kv";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { requireWriteAuth } from "@/lib/auth";
+import { getProject } from "@/lib/projects";
 
-// Phase 1 read-shim: reads canonical store apex:warroom:projects.
-// Writes still go to the legacy apex:projects key — full migration in Phase 6.
-const READ_KEY = "apex:warroom:projects";
+// GET reads canonical apex:warroom:projects via the projects lib.
+// PUT still targets the legacy apex:projects key (Phase 6 retires it).
 const WRITE_KEY = "apex:projects";
 interface Project {
   id: string;
@@ -16,13 +16,6 @@ interface Project {
 interface ProjectData {
   projects: Project[];
   lastUpdated: string;
-}
-
-async function getReadData(): Promise<ProjectData> {
-  const cached = await kv.get<ProjectData>(READ_KEY);
-  if (cached) return cached;
-  const raw = await readFile(join(process.cwd(), "data", "projects.json"), "utf-8");
-  return JSON.parse(raw) as ProjectData;
 }
 
 async function getWriteData(): Promise<ProjectData> {
@@ -63,13 +56,12 @@ export async function GET(
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   const { projectId } = await params;
-  const [readData, writeData] = await Promise.all([getReadData(), getWriteData()]);
-  const project = readData.projects.find((p) => p.id === projectId);
-  if (!project) {
+  const [canonical, writeData] = await Promise.all([getProject(projectId), getWriteData()]);
+  if (!canonical) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
   const legacy = writeData.projects.find((p) => p.id === projectId);
-  return NextResponse.json(toLegacyShape(project, legacy));
+  return NextResponse.json(toLegacyShape(canonical as unknown as Project, legacy));
 }
 
 export async function PUT(

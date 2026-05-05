@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { requireWriteAuth } from "@/lib/auth";
+import { getAllProjects } from "@/lib/projects";
 
-// Phase 1 read-shim: GET reads the canonical apex:warroom:projects store and
-// projects each record into the maproom shape. Writes still target the legacy
-// maproom:projects key (deprecated, full migration lands in Phase 6).
-const READ_KEY = "apex:warroom:projects";
+// GET reads canonical apex:warroom:projects via the projects lib and projects
+// each record into the maproom shape. Writes still target the legacy
+// maproom:projects key (deprecated, full retirement in Phase 6).
 const KV_KEY = "maproom:projects";
 interface Project {
   id: string;
@@ -112,15 +112,15 @@ function toMapRoomShape(p: CanonicalProject, legacy?: Project): Project {
 }
 
 export async function GET() {
-  const [canonicalStore, legacyStore] = await Promise.all([
-    kv.get<{ projects: CanonicalProject[] }>(READ_KEY),
+  const [canonicalProjects, legacyStore] = await Promise.all([
+    getAllProjects(),
     getData(),
   ]);
-  if (!canonicalStore?.projects?.length) {
+  if (!canonicalProjects.length) {
     return NextResponse.json(legacyStore);
   }
   const legacyById = new Map(legacyStore.items.map((i) => [i.id, i]));
-  const items = canonicalStore.projects.map((p) => toMapRoomShape(p, legacyById.get(p.id)));
+  const items = canonicalProjects.map((p) => toMapRoomShape(p as CanonicalProject, legacyById.get(p.id)));
   return NextResponse.json({ items, lastUpdated: legacyStore.lastUpdated });
 }
 

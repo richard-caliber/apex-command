@@ -17,6 +17,8 @@ interface PipelineTask {
   output: string;
   prompt_id: string;
   blocker: string | null;
+  priority?: string;
+  created_at?: string;
 }
 
 interface AdhocTask {
@@ -65,6 +67,9 @@ const PRIORITY_ORDER: Record<string, number> = {
   in_progress: 1,
   not_started: 2,
 };
+
+const TASK_PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+const SQUAD_OWNERS = new Set(["atlas", "newton", "darwin", "jimmy"]);
 
 const STATUS_EMOJI: Record<string, string> = {
   blocked: "\uD83D\uDD34",
@@ -188,30 +193,40 @@ export default function ActionRoom() {
   const gemSnapData = useMemo(() => parsePulse("gemsnap-posthog"), [metrics]);
   const adSpendData = useMemo(() => parsePulse("gemsnap-ads"), [metrics]);
 
-  // ── Ad-hoc actions: ID starts with "A-", not done ──
-  const adhocBase = useMemo(
+  // ── Open actions: exclude template, done, skipped, abandoned, and blocked ──
+  // Per M1 spec: blocked tasks shouldn't surface in the actionable list.
+  const openBase = useMemo(
     () =>
       tasks.filter(
         (t) =>
-          t.id.startsWith("A-") &&
+          t.project_id !== "_template" &&
           t.status !== "done" &&
           t.status !== "skipped" &&
-          t.status !== "abandoned"
+          t.status !== "abandoned" &&
+          t.status !== "blocked"
       ),
     [tasks]
   );
 
-  const sortByEmoji = (list: PipelineTask[]) =>
-    [...list].sort((a, b) => (PRIORITY_ORDER[a.status] ?? 3) - (PRIORITY_ORDER[b.status] ?? 3));
+  const sortByPriorityThenCreated = (list: PipelineTask[]) =>
+    [...list].sort((a, b) => {
+      const pa = TASK_PRIORITY_RANK[(a.priority || "").toLowerCase()] ?? 3;
+      const pb = TASK_PRIORITY_RANK[(b.priority || "").toLowerCase()] ?? 3;
+      if (pa !== pb) return pa - pb;
+      return (b.created_at || "").localeCompare(a.created_at || "");
+    });
 
   // Your Actions (owner=ginge)
-  const gingeActions = useMemo(() => sortByEmoji(adhocBase.filter((t) => t.owner === "ginge")), [adhocBase]);
+  const gingeActions = useMemo(
+    () => sortByPriorityThenCreated(openBase.filter((t) => t.owner === "ginge")),
+    [openBase]
+  );
   const totalGingeTasks = gingeActions.length;
 
-  // Squad Actions (owner !== ginge)
+  // Squad Actions: only the four squad agents (atlas/newton/darwin/jimmy)
   const squadActions = useMemo(
-    () => sortByEmoji(adhocBase.filter((t) => t.owner !== "ginge")),
-    [adhocBase]
+    () => sortByPriorityThenCreated(openBase.filter((t) => t.owner && SQUAD_OWNERS.has(t.owner))),
+    [openBase]
   );
   const totalSquadTasks = squadActions.length;
 

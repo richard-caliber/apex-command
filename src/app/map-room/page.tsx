@@ -109,8 +109,13 @@ export default function OverviewPage() {
       const d = await projRes.json();
       const items = d?.projects;
       if (items?.length) {
+        // Exclude archived — they're parked permanently and shouldn't appear in
+        // the active pipeline view (M1 spec).
+        const visible = (items as Record<string, unknown>[]).filter(
+          (p) => (p.status as string) !== "archived"
+        );
         setProjects(
-          items.map((p: Record<string, unknown>) => ({
+          visible.map((p) => ({
             id: p.id as string,
             name: p.name as string,
             image_url: (p.image_url as string) || undefined,

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { requireWriteAuth } from "@/lib/auth";
+import { getProject } from "@/lib/projects";
 
-// Phase 1 read-shim: GET reads canonical apex:warroom:projects and projects
+// GET reads canonical apex:warroom:projects via the projects lib and projects
 // the record into the maproom shape. Writes still target maproom:projects
-// (deprecated; full migration in Phase 6).
-const READ_KEY = "apex:warroom:projects";
+// (deprecated; full retirement in Phase 6).
 const KV_KEY = "maproom:projects";
 interface ProjectsData {
   items: Record<string, unknown>[];
@@ -54,16 +54,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const [canonicalStore, legacyStore] = await Promise.all([
-    kv.get<{ projects: CanonicalProject[] }>(READ_KEY),
+  const [canonicalProject, legacyStore] = await Promise.all([
+    getProject(id),
     getData(),
   ]);
-  const canonicalProject = canonicalStore?.projects?.find((p) => p.id === id);
   if (!canonicalProject) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const legacyItem = legacyStore?.items?.find((i) => i.id === id);
-  return NextResponse.json(toMapRoomShape(canonicalProject, legacyItem));
+  return NextResponse.json(toMapRoomShape(canonicalProject as CanonicalProject, legacyItem));
 }
 
 export async function PUT(

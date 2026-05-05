@@ -5,6 +5,8 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { lookupAccessToken } from "@/lib/mcp-oauth";
 import { appendAuditEvent, currentMonth, getAuditMonth } from "@/lib/mcp-audit";
+import { getAllProjects } from "@/lib/projects";
+import { getAllTasks } from "@/lib/tasks";
 
 const REQUIRED_SCOPE = "apex:full";
 
@@ -64,6 +66,8 @@ interface PipelineTaskRecord {
   blocker?: string | null;
   next_task?: string;
   order?: number;
+  priority?: string;
+  source?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -106,13 +110,11 @@ interface PracticeRecord {
 }
 
 async function kvProjects(): Promise<ProjectRecord[]> {
-  const store = await kv.get<{ projects: ProjectRecord[] }>("apex:warroom:projects");
-  return store?.projects ?? [];
+  return (await getAllProjects()) as ProjectRecord[];
 }
 
 async function kvTasks(): Promise<PipelineTaskRecord[]> {
-  const store = await kv.get<{ tasks: PipelineTaskRecord[] }>("apex:pipeline-tasks");
-  return store?.tasks ?? [];
+  return (await getAllTasks(undefined, Number.MAX_SAFE_INTEGER)) as PipelineTaskRecord[];
 }
 
 async function kvAgents(): Promise<AgentRecord[]> {
@@ -243,7 +245,7 @@ const handler = createMcpHandler(
       },
       async () => {
         const [projects, tasks, agents] = await Promise.all([kvProjects(), kvTasks(), kvAgents()]);
-        const activeProjects = projects.filter((p) => (p.status || "") !== "completed").map((p) => ({
+        const activeProjects = projects.filter((p) => (p.status || "") === "active").map((p) => ({
           id: p.id,
           name: p.name,
           stage: p.stage,
@@ -251,18 +253,33 @@ const handler = createMcpHandler(
           blocker: p.blocker,
         }));
 
-        const open = tasks.filter((t) => t.status !== "done" && t.status !== "skipped" && t.project_id !== "_template");
-        const sortByUpdated = (a: PipelineTaskRecord, b: PipelineTaskRecord) => (b.updated_at || "").localeCompare(a.updated_at || "");
-        const yourActions = open.filter((t) => t.owner === "ginge").sort(sortByUpdated).slice(0, 10);
-        const squadActions = open.filter((t) => t.owner && t.owner !== "ginge").sort(sortByUpdated).slice(0, 10);
+        const SQUAD_OWNERS = new Set(["atlas", "newton", "darwin", "jimmy"]);
+        const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        const open = tasks.filter(
+          (t) =>
+            t.project_id !== "_template" &&
+            t.status !== "done" &&
+            t.status !== "skipped" &&
+            t.status !== "blocked"
+        );
+        const sortByPriorityThenCreated = (a: PipelineTaskRecord, b: PipelineTaskRecord) => {
+          const pa = PRIORITY_RANK[(a.priority || "").toLowerCase()] ?? 3;
+          const pb = PRIORITY_RANK[(b.priority || "").toLowerCase()] ?? 3;
+          if (pa !== pb) return pa - pb;
+          return (b.created_at || "").localeCompare(a.created_at || "");
+        };
+        const yourActions = open.filter((t) => t.owner === "ginge").sort(sortByPriorityThenCreated).slice(0, 10);
+        const squadActions = open.filter((t) => t.owner && SQUAD_OWNERS.has(t.owner)).sort(sortByPriorityThenCreated).slice(0, 10);
 
         const agentStatus = agents.map((a) => ({ id: a.id, name: a.name, status: a.status, current_task: a.current_task }));
-        const blockers = projects.filter((p) => p.blocker && (p.status || "") !== "completed").map((p) => ({ project: p.id, blocker: p.blocker }));
+        const blockers = projects
+          .filter((p) => p.blocker && (p.status || "") === "active")
+          .map((p) => ({ project: p.id, blocker: p.blocker }));
 
         return asText("Apex Briefing", {
           active_projects: activeProjects,
-          your_actions: yourActions.map((t) => ({ id: t.id, name: t.name, project_id: t.project_id, status: t.status, blocker: t.blocker })),
-          squad_actions: squadActions.map((t) => ({ id: t.id, name: t.name, project_id: t.project_id, owner: t.owner, status: t.status })),
+          your_actions: yourActions.map((t) => ({ id: t.id, name: t.name, project_id: t.project_id, status: t.status, priority: t.priority, blocker: t.blocker })),
+          squad_actions: squadActions.map((t) => ({ id: t.id, name: t.name, project_id: t.project_id, owner: t.owner, status: t.status, priority: t.priority })),
           agent_status: agentStatus,
           blockers,
         });

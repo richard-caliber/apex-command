@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { requireWriteAuth } from "@/lib/auth";
+import { getAllProjects, getProject } from "@/lib/projects";
 
-// Canonical project store. Reads and writes both target apex:warroom:projects.
-// The legacy apex:projects key is being deprecated — /api/status and /api/map-room/projects
-// now read from this canonical store via Phase 1 read-shims. Phase 6 will retire
-// the legacy keys entirely.
+// Canonical project store. Reads go through src/lib/projects (single read path).
+// Writes still target apex:warroom:projects directly.
 const KV_KEY = "apex:warroom:projects";
 /* ── Schema ── */
 interface Project {
@@ -179,16 +178,21 @@ export async function POST(req: NextRequest) {
 
   // ── LIST ──
   if (action === "list") {
-    const store = await getStore();
-    return NextResponse.json(store);
+    const projects = await getAllProjects();
+    if (projects.length === 0) {
+      // Bootstrap: lib reports empty, fall through to seed once.
+      const store = await getStore();
+      return NextResponse.json(store);
+    }
+    const cached = await kv.get<ProjectStore>(KV_KEY);
+    return NextResponse.json({ projects, lastUpdated: cached?.lastUpdated ?? new Date().toISOString() });
   }
 
   // ── GET ──
   if (action === "get") {
     const { id } = body;
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    const store = await getStore();
-    const project = store.projects.find((p) => p.id === id);
+    const project = await getProject(id);
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(project);
   }

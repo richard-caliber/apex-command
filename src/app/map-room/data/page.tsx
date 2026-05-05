@@ -145,7 +145,11 @@ export default function DataPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "list", project_id: selectedProject }),
         }),
-        fetch("/api/status"),
+        fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "list" }),
+        }),
       ]);
       if (dataRes.ok) setMetrics(await dataRes.json());
       if (projRes.ok) {

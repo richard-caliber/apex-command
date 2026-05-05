@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { requireWriteAuth } from "@/lib/auth";
+import { getAllTasks, getTaskById } from "@/lib/tasks";
 
 const KV_KEY = "apex:pipeline-tasks";
 /* ── Schema ── */
@@ -131,20 +132,22 @@ export async function POST(req: NextRequest) {
 
   // ── LIST ──
   if (action === "list") {
-    const store = await getStore();
     const { project_id, stage } = body;
-    let tasks = store.tasks;
-    if (project_id) tasks = tasks.filter((t) => t.project_id === project_id);
-    if (stage) tasks = tasks.filter((t) => t.stage === stage);
-    return NextResponse.json({ tasks, lastUpdated: store.lastUpdated });
+    const tasks = await getAllTasks({ project_id, stage }, Number.MAX_SAFE_INTEGER);
+    if (tasks.length === 0) {
+      // Bootstrap: lib reports empty, fall through to seed once.
+      const store = await getStore();
+      return NextResponse.json({ tasks: store.tasks, lastUpdated: store.lastUpdated });
+    }
+    const cached = await kv.get<TaskStore>(KV_KEY);
+    return NextResponse.json({ tasks, lastUpdated: cached?.lastUpdated ?? new Date().toISOString() });
   }
 
   // ── GET ──
   if (action === "get") {
     const { id } = body;
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    const store = await getStore();
-    const task = store.tasks.find((t) => t.id === id);
+    const task = await getTaskById(id);
     if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(task);
   }
@@ -152,18 +155,13 @@ export async function POST(req: NextRequest) {
   // ── SEARCH ──
   if (action === "search") {
     const { q, project_id, stage, status, owner } = body;
-    const store = await getStore();
-    let tasks = store.tasks;
-    if (project_id) tasks = tasks.filter((t) => t.project_id === project_id);
-    if (stage) tasks = tasks.filter((t) => t.stage === stage);
-    if (status) tasks = tasks.filter((t) => t.status === status);
-    if (owner) tasks = tasks.filter((t) => t.owner === owner);
+    let tasks = await getAllTasks({ project_id, stage, status, owner }, Number.MAX_SAFE_INTEGER);
     if (q) {
       const lower = q.toLowerCase();
       tasks = tasks.filter(
         (t) =>
           t.name.toLowerCase().includes(lower) ||
-          t.description.toLowerCase().includes(lower) ||
+          (t.description ?? "").toLowerCase().includes(lower) ||
           t.id.toLowerCase().includes(lower)
       );
     }
