@@ -1,0 +1,1111 @@
+Phase 4 MCP production diagnostic @ 2026-05-04T16:44:33.970Z
+BASE = https://apex-command-seven.vercel.app
+Goal: verify whether tools surfacing in Claude.ai connector UI but not in chat is a server-side or client-side issue.
+
+── Sanity: GET /api/mcp/mcp without auth ──
+status: 401
+www-authenticate: Bearer error="invalid_token", error_description="No authorization provided", resource_metadata="https://apex-command-seven.vercel.app/.well-known/oauth-protected-resource"
+body: {"error":"invalid_token","error_description":"No authorization provided"}
+
+── well-known: oauth-protected-resource ──
+{
+  "resource": "https://apex-command-seven.vercel.app/api/mcp",
+  "authorization_servers": [
+    "https://apex-command-seven.vercel.app"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
+  "scopes_supported": [
+    "apex:full"
+  ]
+}
+
+── well-known: oauth-authorization-server ──
+{
+  "issuer": "https://apex-command-seven.vercel.app",
+  "authorization_endpoint": "https://apex-command-seven.vercel.app/api/mcp/oauth/authorize",
+  "token_endpoint": "https://apex-command-seven.vercel.app/api/mcp/oauth/token",
+  "registration_endpoint": "https://apex-command-seven.vercel.app/api/mcp/oauth/register",
+  "response_types_supported": [
+    "code"
+  ],
+  "grant_types_supported": [
+    "authorization_code"
+  ],
+  "code_challenge_methods_supported": [
+    "S256"
+  ],
+  "token_endpoint_auth_methods_supported": [
+    "none"
+  ],
+  "scopes_supported": [
+    "apex:full"
+  ]
+}
+
+── DCR: POST /api/mcp/oauth/register ──
+status: 201
+{
+  "client_id": "apex-mcp-ARDVtmsy6VL5hqBL",
+  "client_id_issued_at": 1777913072,
+  "redirect_uris": [
+    "https://claude.ai/api/mcp/auth_callback"
+  ],
+  "grant_types": [
+    "authorization_code"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "application_type": "web",
+  "client_name": "phase4-prod-diagnostic-2026-05-05"
+}
+
+── Authorize: POST with valid APEX_API_TOKEN ──
+status: 302, location: https://claude.ai/api/mcp/auth_callback?code=UulpRQSqmd-izMpJPUQjx_imrnXFMcrG&state=Ez5D0OmGzj4
+
+── Token: POST /api/mcp/oauth/token ──
+status: 200
+{
+  "access_token": "apex-mcp-tok-MdHcmyKKt-STeZ9eY13TU28fs8J5hw61e4883M8uQR0",
+  "token_type": "Bearer",
+  "scope": "apex:full"
+}
+
+── MCP: initialize ──
+status: 200, content-type: text/event-stream
+raw transport response (first 400 chars):
+event: message
+data: {"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":true}},"serverInfo":{"name":"mcp-typescript server on vercel","version":"0.1.0"}},"jsonrpc":"2.0","id":1}
+
+
+parsed body:
+{
+  "result": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {
+      "tools": {
+        "listChanged": true
+      }
+    },
+    "serverInfo": {
+      "name": "mcp-typescript server on vercel",
+      "version": "0.1.0"
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+
+── MCP: tools/list (FULL response, not just names) ──
+status: 200, content-type: text/event-stream
+tool count: 14
+tool names: apex_list_projects, apex_get_project, apex_list_tasks, apex_get_task, apex_get_briefing, apex_list_agents, apex_get_agent, apex_search_practices, apex_get_practice, apex_get_audit, apex_set_task, apex_complete_task, apex_update_agent_memory, apex_add_practice
+
+FULL tools/list result body:
+{
+  "result": {
+    "tools": [
+      {
+        "name": "apex_list_projects",
+        "title": "List Apex projects",
+        "description": "Returns all Apex projects (id, name, stage, status, blocker, tags). Optional filters by status, stage, or tag.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filter by status (e.g. active, paused, blocked)",
+              "type": "string"
+            },
+            "stage": {
+              "description": "Filter by lifecycle stage",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Only projects whose tags include this value",
+              "type": "string"
+            }
+          }
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_get_project",
+        "title": "Get Apex project",
+        "description": "Returns the full record for a single Apex project by id.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Project id, e.g. caliber, edge-auto, gemsnap"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_list_tasks",
+        "title": "List Apex pipeline tasks",
+        "description": "Returns Apex pipeline tasks. Filters: project_id, owner, status, stage. Default returns top 20 by recent updated_at.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "stage": {
+              "type": "string"
+            },
+            "limit": {
+              "description": "Max rows to return (default 20)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_get_task",
+        "title": "Get Apex task",
+        "description": "Returns the full record for a single pipeline task by id.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Task id, e.g. T-2.01, CAL-3.02"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_get_briefing",
+        "title": "Get the Briefing Room view",
+        "description": "Composite read mirroring the Briefing Room: active projects, top 10 open tasks owned by ginge, top 10 open tasks owned by other agents, current blockers across active projects.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_list_agents",
+        "title": "List Apex agents",
+        "description": "Returns the list of agents (id, name, role, status, emoji). Use apex_get_agent for full body.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_get_agent",
+        "title": "Get Apex agent",
+        "description": "Returns the full agent record (soul, identity, capabilities, responsibilities, memory, runtime_config, output_log).",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "agent_id": {
+              "type": "string",
+              "description": "Agent id, e.g. atlas, newton, darwin, jimmy, ginge"
+            }
+          },
+          "required": [
+            "agent_id"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_search_practices",
+        "title": "Search Apex practice library",
+        "description": "Search apex:practices:v1 by free text (matches title+content), tag, or category. Returns id, title, category, tags, and a snippet.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Free-text search across title and content",
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_get_practice",
+        "title": "Get Apex practice item",
+        "description": "Returns the full content of one practice item by id.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Practice id, e.g. vault-research-2026-03-15-..., ipv-wh-1"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_get_audit",
+        "title": "Get MCP audit log (current month)",
+        "description": "Returns this month's audit log of every write tool call routed through the MCP connector.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "month": {
+              "description": "Month in YYYY-MM. Defaults to current.",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$"
+            }
+          }
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_set_task",
+        "title": "Create or update an Apex pipeline task",
+        "description": "Creates a new task or updates an existing one. Required: project_id and name (and id when updating).",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Task id. Required for update. For new tasks, generated automatically if omitted.",
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "stage": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string"
+            },
+            "blocker": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "name"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_complete_task",
+        "title": "Mark an Apex task as done",
+        "description": "Sets a task's status to 'done'. Returns the updated record.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Task id to complete"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_update_agent_memory",
+        "title": "Append text to an agent's memory_text",
+        "description": "Appends a chunk of text to the agent's memory_text via PATCH /api/squad. Auto-stamps memory_updated_at.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "agent_id": {
+              "type": "string",
+              "description": "atlas | newton | darwin | jimmy | ginge"
+            },
+            "text": {
+              "type": "string",
+              "description": "Text to append. Two newlines and a header are added automatically."
+            },
+            "header": {
+              "description": "Optional H3 header for the appended block",
+              "type": "string"
+            }
+          },
+          "required": [
+            "agent_id",
+            "text"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "apex_add_practice",
+        "title": "Add a practice to the library",
+        "description": "Append a new practice item to apex:practices:v1.",
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "scope": {
+              "description": "Default 'all_agents'",
+              "type": "string"
+            },
+            "source": {
+              "description": "Default 'manual'",
+              "type": "string",
+              "enum": [
+                "newton",
+                "atlas",
+                "darwin",
+                "jimmy",
+                "ginge",
+                "manual"
+              ]
+            }
+          },
+          "required": [
+            "title",
+            "content",
+            "category"
+          ]
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      }
+    ]
+  },
+  "jsonrpc": "2.0",
+  "id": 2
+}
+
+── Format compatibility: per-tool field analysis ──
+[
+  {
+    "name": "apex_list_projects",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "status": {
+          "description": "Filter by status (e.g. active, paused, blocked)",
+          "type": "string"
+        },
+        "stage": {
+          "description": "Filter by lifecycle stage",
+          "type": "string"
+        },
+        "tag": {
+          "description": "Only projects whose tags include this value",
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "name": "apex_get_project",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Project id, e.g. caliber, edge-auto, gemsnap"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "apex_list_tasks",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "limit": {
+          "description": "Max rows to return (default 20)",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        }
+      }
+    }
+  },
+  {
+    "name": "apex_get_task",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Task id, e.g. T-2.01, CAL-3.02"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "apex_get_briefing",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "apex_list_agents",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "apex_get_agent",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Agent id, e.g. atlas, newton, darwin, jimmy, ginge"
+        }
+      },
+      "required": [
+        "agent_id"
+      ]
+    }
+  },
+  {
+    "name": "apex_search_practices",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "query": {
+          "description": "Free-text search across title and content",
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    }
+  },
+  {
+    "name": "apex_get_practice",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Practice id, e.g. vault-research-2026-03-15-..., ipv-wh-1"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "apex_get_audit",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "month": {
+          "description": "Month in YYYY-MM. Defaults to current.",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}$"
+        }
+      }
+    }
+  },
+  {
+    "name": "apex_set_task",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Task id. Required for update. For new tasks, generated automatically if omitted.",
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "blocker": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "apex_complete_task",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Task id to complete"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "apex_update_agent_memory",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "atlas | newton | darwin | jimmy | ginge"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text to append. Two newlines and a header are added automatically."
+        },
+        "header": {
+          "description": "Optional H3 header for the appended block",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id",
+        "text"
+      ]
+    }
+  },
+  {
+    "name": "apex_add_practice",
+    "checks": {
+      "has_name": true,
+      "has_description": true,
+      "has_inputSchema": true,
+      "inputSchema_is_object": true,
+      "inputSchema_has_properties": true,
+      "has_title": true,
+      "name_matches_pattern": true,
+      "name_under_64": true,
+      "description_under_1024": true
+    },
+    "schema_snapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scope": {
+          "description": "Default 'all_agents'",
+          "type": "string"
+        },
+        "source": {
+          "description": "Default 'manual'",
+          "type": "string",
+          "enum": [
+            "newton",
+            "atlas",
+            "darwin",
+            "jimmy",
+            "ginge",
+            "manual"
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "content",
+        "category"
+      ]
+    }
+  }
+]
+
+── MCP: tools/call apex_list_projects ──
+status: 200, content-type: text/event-stream
+response shape:
+{
+  "has_result": true,
+  "has_content": true,
+  "content_length": 1,
+  "first_content_type": "text",
+  "first_text_length": 8035
+}
+first_text first 400 chars:
+Found 36 project(s)
+
+[
+  {
+    "id": "gemsnap",
+    "name": "GemSnap",
+    "stage": "traffic",
+    "status": "paused",
+    "blocker": "Ads paused (token expired), 0 conversions from 500+ clicks",
+    "tags": [
+      "consumer",
+      "ai",
+      "mobile"
+    ]
+  },
+  {
+    "id": "caliber",
+    "name": "Caliber Peptides",
+    "stage": "traffic",
+    "status": "paused",
+    "blocker": "Revenue model
+
+── MCP: tools/call apex_get_briefing ──
+status: 200, content-type: text/event-stream
+first_text first 400 chars:
+Apex Briefing
+
+{
+  "active_projects": [
+    {
+      "id": "gemsnap",
+      "name": "GemSnap",
+      "stage": "traffic",
+      "status": "paused",
+      "blocker": "Ads paused (token expired), 0 conversions from 500+ clicks"
+    },
+    {
+      "id": "caliber",
+      "name": "Caliber Peptides",
+      "stage": "traffic",
+      "status": "paused",
+      "blocker": "Revenue model unclear — content paus
+
+── DONE — saving transcript ──
+
+
+══════════════════════════════════════════════════════════════════════
+ANALYSIS & RECOMMENDATION (2026-05-05)
+══════════════════════════════════════════════════════════════════════
+
+Question put to this diagnostic:
+  The connector is registered in Claude.ai and shows 14 tools in connector
+  settings, but those tools are NOT surfacing as callable in chat sessions.
+  Is the server correctly advertising its tools? Server-side bug or
+  client-side issue?
+
+Result: SERVER IS HEALTHY AND SPEC-COMPLIANT END-TO-END.
+
+1. OAuth 2.1 flow ──────────────────────────────────────────────────
+   • /.well-known/oauth-protected-resource: returns correct metadata
+     (resource, authorization_servers, bearer_methods_supported, scopes)
+   • /.well-known/oauth-authorization-server: advertises authorization,
+     token, registration endpoints with S256 PKCE
+   • DCR (POST /api/mcp/oauth/register): 201 with client_id
+   • Authorize POST with valid APEX_API_TOKEN: 302 → claude.ai callback
+     with authorization code
+   • Token exchange: 200 with access_token (apex-mcp-tok-* bearer)
+   • Unauthenticated request: 401 with proper WWW-Authenticate header
+     pointing at the protected-resource metadata URL
+   ⇒ Conforms to RFC 9728 (resource metadata) + MCP 2025-06-18 auth spec.
+
+2. MCP transport ────────────────────────────────────────────────────
+   • POST /api/mcp/mcp returns content-type text/event-stream with
+     "event: message\ndata: {...}\n\n" framing
+   • initialize: protocolVersion 2025-06-18, capabilities.tools.listChanged
+     true, serverInfo present
+   ⇒ Streamable HTTP transport, server-advertised version 2025-06-18.
+     Current MCP spec is 2025-11-25 but version negotiation is server-led;
+     2025-06-18 is the version the mcp-handler@1.1.0 library implements
+     and is fully accepted by Claude.ai (it's the same version negotiated
+     at deploy verification on 2026-05-04).
+
+3. tools/list response ──────────────────────────────────────────────
+   • count: 14 (matches connector UI)
+   • Each tool has: name (snake_case, ≤64 chars, valid pattern),
+     title, description (<1024 chars), inputSchema with type "object"
+     and properties, required array where appropriate
+   • All inputSchemas declare "$schema": draft-07 (allowed; clients
+     ignore the meta-schema URI)
+   • mcp-handler adds an `execution: { taskSupport: "forbidden" }`
+     vendor field per tool. This is non-standard but the spec allows
+     extension fields and clients MUST ignore unknown fields.
+   ⇒ Response perfectly matches the canonical example in
+     modelcontextprotocol.io/specification/2025-06-18/server/tools.
+
+4. tool invocation ──────────────────────────────────────────────────
+   • apex_list_projects: 200, content[0].type "text", 8035-char text
+     payload (formatted "Found 36 project(s)\n\n[...]"). Returned 36
+     projects from KV.
+   • apex_get_briefing: 200, returns composite Briefing Room view
+     (active_projects, your_actions, squad_actions, agent_status,
+     blockers).
+   ⇒ Response shape { result: { content: [{ type, text }] } } matches
+     spec exactly. is_error flag is omitted on success (spec-compliant).
+
+5. Diff vs deploy verify (2026-05-04) ───────────────────────────────
+   No regressions. Tool count, schema shapes, OAuth endpoints, and
+   response framing are identical to the deploy verification run 24h
+   ago. Same 14 tools, same protocol version, same content-type, same
+   JSON-RPC structure.
+
+CONCLUSION
+──────────
+The Apex MCP server is correctly implemented and Claude.ai-compatible.
+A working MCP client (this script) successfully discovers all 14 tools
+with valid schemas and invokes them through the same OAuth-protected
+endpoint Claude.ai uses. The fact that connector settings shows 14 tools
+proves Claude.ai's auth-flow + tools/list call also succeeds — otherwise
+the count would be 0 or the connector would show an error.
+
+The issue is therefore on the Claude.ai client side. Most likely causes,
+in order of probability:
+
+  (a) STATE CACHE DESYNC. The connector record in claude.ai was created
+      when the chat-runtime feature flag was off (or the chat session was
+      already open before connector registration). Fix: in claude.ai
+      Settings → Connectors → Apex, click Disconnect, then Reconnect, and
+      open a NEW chat. Tools surface on next session boot, not mid-session.
+
+  (b) PER-CHAT TOOL ENABLE. claude.ai chat UI requires the connector to be
+      explicitly toggled on per chat (the "Tools" / paperclip / + menu in
+      the composer). Verify the Apex toggle is actually flipped on inside
+      a fresh chat — tools registered in Settings ≠ tools enabled in chat.
+
+  (c) ROLLOUT LAG. The 2025-11-20 mcp-client beta header on the API side
+      and the equivalent gradual-rollout feature on claude.ai chat might
+      not yet be enabled for this specific account/workspace. No user-side
+      fix; wait or switch to the API-mode mcp_servers integration as a
+      bridge (works today with the access_token captured above).
+
+RECOMMENDED ACTION (no code changes)
+1. In claude.ai → Settings → Connectors → Apex: Disconnect, then Connect
+   again, completing the OAuth form with APEX_API_TOKEN.
+2. Open a brand-new chat (not an existing one).
+3. In the chat composer, open the tool selector and confirm "Apex" is
+   toggled on. Type a prompt like "List all my Apex projects" and watch
+   for an apex_list_projects tool call.
+4. If still not surfacing after a fresh reconnect + new chat, the issue
+   is rollout lag (c). As an interim, use the API-mode mcp_servers
+   integration documented at platform.claude.com/docs/en/agents-and-
+   tools/mcp-connector — same server, different client path, available
+   today with header anthropic-beta: mcp-client-2025-11-20.
+
+DO NOT modify the server. Nothing is broken on apex-command-seven.vercel.app.
+══════════════════════════════════════════════════════════════════════
+
