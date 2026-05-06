@@ -1,0 +1,136 @@
+{
+  "applied_at_first": "2026-05-06T06:12:06.160Z",
+  "deletions": [
+    {
+      "key": "apex:squad:v2",
+      "deleted_at": "2026-05-06T06:12:07.298Z",
+      "before_size_bytes": 0,
+      "before_value": null,
+      "del_response": {
+        "result": 0
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "apex:action-room:feed",
+      "deleted_at": "2026-05-06T06:12:08.069Z",
+      "before_size_bytes": 0,
+      "before_value": null,
+      "del_response": {
+        "result": 0
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "apex:action-room:suggestions",
+      "deleted_at": "2026-05-06T06:12:08.847Z",
+      "before_size_bytes": 0,
+      "before_value": null,
+      "del_response": {
+        "result": 0
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:outputs",
+      "deleted_at": "2026-05-06T06:12:09.615Z",
+      "before_size_bytes": 0,
+      "before_value": null,
+      "del_response": {
+        "result": 0
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:metrics",
+      "deleted_at": "2026-05-06T06:12:10.384Z",
+      "before_size_bytes": 0,
+      "before_value": null,
+      "del_response": {
+        "result": 0
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:platform-rules",
+      "deleted_at": "2026-05-06T06:12:11.163Z",
+      "before_size_bytes": 0,
+      "before_value": null,
+      "del_response": {
+        "result": 0
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:ideas",
+      "deleted_at": "2026-05-06T06:14:03.416Z",
+      "before_size_bytes": 2713,
+      "before_value": "{\"lastUpdated\":\"2026-03-30T12:00:00Z\",\"items\":[{\"id\":\"repost-ai\",\"name\":\"RepostAI\",\"summary\":\"AI tool that repurposes long-form content into platform-specific social posts automatically\",\"tags\":[\"SaaS\",\"AI\",\"content\"],\"status\":\"exploring\",\"source\":\"Internal brainstorm\",\"potential_revenue\":\"$5K MRR\",\"effort\":\"high\",\"notes\":\"Could use Claude API for content transformation. Need to validate demand first.\",\"created_at\":\"2026-03-10\",\"updated_at\":\"2026-03-28\"},{\"id\":\"parliament-tracker\",\"name\":\"Parliament Tracker\",\"summary\":\"Live dashboard tracking MP votes, contradictions, and attendance with D3 chamber visualisation\",\"tags\":[\"civic-tech\",\"data\",\"visualisation\"],\"status\":\"validated\",\"source\":\"Side project\",\"potential_revenue\":\"Sponsorship model\",\"effort\":\"medium\",\"notes\":\"Already live on Vercel with 70 MPs. Contradiction detection working. Could monetise via media partnerships.\",\"created_at\":\"2026-02-15\",\"updated_at\":\"2026-03-30\"},{\"id\":\"comic-creator\",\"name\":\"Comic Creator\",\"summary\":\"AI-powered comic strip generator from text prompts with consistent character styles\",\"tags\":[\"consumer\",\"AI\",\"creative\"],\"status\":\"raw\",\"source\":\"App Factory list\",\"potential_revenue\":\"$2K MRR\",\"effort\":\"high\",\"notes\":\"Character consistency is the hard problem. Could use LoRA fine-tuning.\",\"created_at\":\"2026-03-20\",\"updated_at\":\"2026-03-20\"},{\"id\":\"peptide-stack-builder\",\"name\":\"Peptide Stack Builder\",\"summary\":\"Interactive tool that recommends peptide stacks based on user goals (recovery, cognition, etc.)\",\"tags\":[\"health\",\"tool\",\"Caliber\"],\"status\":\"exploring\",\"source\":\"Caliber Peptides extension\",\"potential_revenue\":\"Lead gen for Caliber\",\"effort\":\"low\",\"notes\":\"Could be a free tool on the Caliber site to drive traffic and build email list.\",\"created_at\":\"2026-03-15\",\"updated_at\":\"2026-03-29\"},{\"id\":\"villa-investor\",\"name\":\"Villa Investor Platform\",\"summary\":\"Marketplace connecting villa owners with fractional investors for renovation projects\",\"tags\":[\"proptech\",\"marketplace\",\"investment\"],\"status\":\"parked\",\"source\":\"Philippines connections\",\"potential_revenue\":\"$10K+ per deal\",\"effort\":\"high\",\"notes\":\"Complex regulatory requirements. Parked until Caliber and GemSnap are generating revenue.\",\"created_at\":\"2026-02-20\",\"updated_at\":\"2026-03-15\"},{\"id\":\"market-intel\",\"name\":\"Market Intel as a Service\",\"summary\":\"Automated competitor monitoring and market intelligence reports delivered weekly via AI agents\",\"tags\":[\"SaaS\",\"AI\",\"B2B\"],\"status\":\"raw\",\"source\":\"Edge Auto spin-off\",\"potential_revenue\":\"$3K MRR\",\"effort\":\"medium\",\"notes\":\"Natural extension of Edge Auto. Could use the same agent pipeline to monitor competitors for clients.\",\"created_at\":\"2026-03-25\",\"updated_at\":\"2026-03-25\"}]}",
+      "del_response": {
+        "result": 1
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:capabilities",
+      "deleted_at": "2026-05-06T06:14:04.203Z",
+      "before_size_bytes": 2134,
+      "before_value": "{\"lastUpdated\":\"2026-03-30T12:00:00Z\",\"items\":[{\"id\":\"cap-001\",\"name\":\"AI Content Pipeline\",\"category\":\"ai\",\"description\":\"End-to-end content generation: research brief -> copy -> quality gate -> image gen -> publish\",\"tools\":[\"Claude Sonnet\",\"Claude Haiku\",\"DALL-E\",\"Meta Graph API\"],\"owner\":\"Atlas\",\"confidence\":\"proven\",\"last_used\":\"2026-03-30\",\"created_at\":\"2026-02-01\",\"updated_at\":\"2026-03-30\"},{\"id\":\"cap-002\",\"name\":\"Full-Stack Web Development\",\"category\":\"dev\",\"description\":\"Next.js apps with Vercel deployment, KV storage, API routes, responsive UI\",\"tools\":[\"Next.js\",\"Vercel\",\"Tailwind\",\"TypeScript\",\"Vercel KV\"],\"owner\":\"Claude Code\",\"confidence\":\"proven\",\"last_used\":\"2026-03-30\",\"created_at\":\"2026-01-15\",\"updated_at\":\"2026-03-30\"},{\"id\":\"cap-003\",\"name\":\"Funnel Analytics & A/B Testing\",\"category\":\"marketing\",\"description\":\"PostHog integration, funnel analysis, feature flags for A/B tests, statistical significance checks\",\"tools\":[\"PostHog\",\"Feature Flags\",\"Custom analytics\"],\"owner\":\"Darwin\",\"confidence\":\"tested\",\"last_used\":\"2026-03-30\",\"created_at\":\"2026-03-01\",\"updated_at\":\"2026-03-30\"},{\"id\":\"cap-004\",\"name\":\"Automation Consulting\",\"category\":\"sales\",\"description\":\"Personalised audit reports, ROI projections, n8n workflow builds for small businesses\",\"tools\":[\"n8n\",\"Claude Sonnet\",\"Resend\",\"Vercel\"],\"owner\":\"Atlas\",\"confidence\":\"tested\",\"last_used\":\"2026-03-29\",\"created_at\":\"2026-03-01\",\"updated_at\":\"2026-03-29\"},{\"id\":\"cap-005\",\"name\":\"Deep Research & Citation\",\"category\":\"research\",\"description\":\"Thorough research briefs with verified sources, dosing protocols, competitor analysis\",\"tools\":[\"Gemini 2.5 Pro\",\"Web search\",\"Manual verification\"],\"owner\":\"Newton\",\"confidence\":\"proven\",\"last_used\":\"2026-03-28\",\"created_at\":\"2026-02-15\",\"updated_at\":\"2026-03-28\"},{\"id\":\"cap-006\",\"name\":\"Telegram Bot Development\",\"category\":\"dev\",\"description\":\"Full e-commerce bots with product catalogs, admin panels, payment integration\",\"tools\":[\"Node.js\",\"Telegram Bot API\",\"Railway\"],\"owner\":\"Claude Code\",\"confidence\":\"proven\",\"last_used\":\"2026-03-20\",\"created_at\":\"2026-02-20\",\"updated_at\":\"2026-03-20\"}]}",
+      "del_response": {
+        "result": 1
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:ip-vault",
+      "deleted_at": "2026-05-06T06:14:04.982Z",
+      "before_size_bytes": 2199,
+      "before_value": "{\"lastUpdated\":\"2026-03-30T12:00:00Z\",\"items\":[{\"id\":\"ip-001\",\"name\":\"7-Stage Project Pipeline\",\"type\":\"framework\",\"project_id\":\"apex\",\"description\":\"The core framework for tracking projects from idea to scale. Each stage has clear entry/exit criteria.\",\"content\":\"Stage -1: Idea Inbox | Stage 0: Idea | Stage 1: Validation | Stage 2: Design | Stage 3: MVP | Stage 4: Traffic | Stage 5: Conversion | Stage 6: Scale\",\"tags\":[\"framework\",\"core\",\"reusable\"],\"reusable\":true,\"created_at\":\"2026-01-01\",\"updated_at\":\"2026-03-30\"},{\"id\":\"ip-002\",\"name\":\"Carousel Quality Gate Checklist\",\"type\":\"process\",\"project_id\":\"caliber\",\"description\":\"Mandatory checklist before any carousel can be published. Prevents brand-damaging content going live.\",\"content\":\"1. Background deep teal? 2. Logo watermark present? 3. White bold caps text? 4. Teal accent colour? 5. Peptide name on cover? 6. Hook under 6 words? 7. CTA approved format? 8. No medical claims? 9. 3-5 hashtags?\",\"tags\":[\"quality\",\"content\",\"caliber\"],\"reusable\":true,\"created_at\":\"2026-03-15\",\"updated_at\":\"2026-03-29\"},{\"id\":\"ip-003\",\"name\":\"Edge Auto Guarantee Formula\",\"type\":\"method\",\"project_id\":\"edge-auto\",\"description\":\"The guarantee structure that de-risks the offer: 12K minimum savings in Year 1 or the implementation is free.\",\"content\":\"Calculate: (hours_saved_per_week * hourly_rate * 52) + (leads_captured * avg_deal_value * close_rate). If projected > 12000, guarantee applies. If actual < 12000 after 12 months, full refund.\",\"tags\":[\"sales\",\"guarantee\",\"edge-auto\"],\"reusable\":true,\"created_at\":\"2026-03-01\",\"updated_at\":\"2026-03-28\"},{\"id\":\"ip-004\",\"name\":\"AI Agent Squad Structure\",\"type\":\"framework\",\"project_id\":\"apex\",\"description\":\"The squad model: Atlas (strategy/content), Darwin (QA/analysis), Newton (research), Jimmy (chaos agent), with Ginge as founder/builder.\",\"content\":\"Atlas: Strategy, content generation, publishing. Darwin: Quality gates, analysis, reviews. Newton: Deep research, citations, data. Jimmy: Creative disruption, unconventional ideas. Ginge: Founder decisions, human tasks, final approvals.\",\"tags\":[\"framework\",\"core\",\"agents\"],\"reusable\":true,\"created_at\":\"2026-01-15\",\"updated_at\":\"2026-03-30\"}]}",
+      "del_response": {
+        "result": 1
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:ip-vault-v2",
+      "deleted_at": "2026-05-06T06:14:39.535Z",
+      "before_size_bytes": 1558,
+      "before_value": "{\"lastUpdated\":\"2026-03-31T06:00:00Z\",\"sections\":[{\"id\":\"winning-hooks\",\"title\":\"Winning Hooks\",\"entries\":[{\"id\":\"wh-1\",\"text\":\"Your body makes this peptide. Most people don't have enough.\",\"platform\":\"Instagram\",\"post_id\":\"CAL-IG-001\",\"metric\":\"4.2% engagement rate (3x average)\"},{\"id\":\"wh-2\",\"text\":\"We scanned 10,000 gems. Here's what we found.\",\"platform\":\"Instagram\",\"post_id\":\"GEM-IG-001\",\"metric\":\"6.1% CTR to checkout\"}]},{\"id\":\"winning-creatives\",\"title\":\"Winning Creatives\",\"entries\":[]},{\"id\":\"prompt-versions\",\"title\":\"Prompt Versions\",\"entries\":[]},{\"id\":\"channel-learnings\",\"title\":\"Channel Learnings\",\"entries\":[{\"id\":\"cl-1\",\"platform\":\"Instagram\",\"learning\":\"Carousels outperform reels for education content by 3x engagement\",\"evidence\":\"Compared 12 carousel posts vs 8 reels over Feb-Mar 2026. Avg carousel engagement 3.8%, avg reel engagement 1.2%.\",\"date\":\"2026-03-25\"}]},{\"id\":\"funnel-learnings\",\"title\":\"Funnel Learnings\",\"entries\":[]},{\"id\":\"failed-experiments\",\"title\":\"Failed Experiments\",\"entries\":[{\"id\":\"fe-1\",\"experiment_name\":\"Reddit organic for Caliber\",\"hypothesis\":\"r/peptides community would engage with educational content and drive traffic\",\"result\":\"3 posts removed for self-promotion, 1 shadowban warning. 0 conversions.\",\"learning\":\"Reddit requires pure value-first approach. Need established account with karma. Not viable as primary channel for Caliber.\",\"date\":\"2026-03-10\"}]},{\"id\":\"reusable-frameworks\",\"title\":\"Reusable Frameworks\",\"entries\":[]},{\"id\":\"system-learnings\",\"title\":\"System Learnings\",\"entries\":[]}]}",
+      "del_response": {
+        "result": 1
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:prompts",
+      "deleted_at": "2026-05-06T06:14:40.289Z",
+      "before_size_bytes": 2268,
+      "before_value": "{\"lastUpdated\":\"2026-03-30T12:00:00Z\",\"items\":[{\"id\":\"prm-001\",\"name\":\"Carousel Copy Generator\",\"project_id\":\"caliber\",\"version\":\"v3\",\"text\":\"You are the #1 scientific copywriter specializing in peptide education. Write a 7-slide Instagram carousel about [PEPTIDE NAME] using this research brief. Slide 1: Hook + peptide name (6 words max, curiosity gap). Slides 2-6: Educational content using research data. Slide 7: CTA. Caption: Open with bold statement, educational tone, 3-5 hashtags including #CaliberPeptides.\",\"owner\":\"Atlas\",\"tags\":[\"content\",\"instagram\",\"caliber\"],\"created_at\":\"2026-03-10\",\"updated_at\":\"2026-03-29\"},{\"id\":\"prm-002\",\"name\":\"Funnel Analysis Prompt\",\"project_id\":\"gemsnap\",\"version\":\"v2\",\"text\":\"Using PostHog session data, analyze the GemSnap funnel: landing page views -> question answered -> checkout initiated -> payment completed. Calculate drop-off rate at each stage. Identify biggest leak. Generate 3 hypotheses for why they drop off. Recommend 1 immediate A/B test with expected impact.\",\"owner\":\"Darwin\",\"tags\":[\"analytics\",\"gemsnap\",\"conversion\"],\"created_at\":\"2026-03-15\",\"updated_at\":\"2026-03-29\"},{\"id\":\"prm-003\",\"name\":\"Audit Report Generator\",\"project_id\":\"edge-auto\",\"version\":\"v2\",\"text\":\"You are the world's best automation strategist for small businesses. Given business profile: [employees, hours/week manual work, hourly rate, revenue]. Generate a personalized automation audit with 9 sections: Executive Summary, Current State Analysis, Automation Opportunity Map (5 automations), ROI Projection, Implementation Roadmap, DIY Complexity Score, Done-For-You Offer, Guarantee, Next Steps.\",\"owner\":\"Atlas\",\"tags\":[\"sales\",\"edge-auto\",\"report\"],\"created_at\":\"2026-03-20\",\"updated_at\":\"2026-03-29\"},{\"id\":\"prm-004\",\"name\":\"SEO Article Writer\",\"project_id\":\"caliber\",\"version\":\"v1\",\"text\":\"Write a 1,500-word SEO-optimized article about [PEPTIDE NAME] for the Caliber Peptides website. Structure: H1 title with primary keyword, H2 sections for mechanism of action, benefits, dosing, FAQ. Tone: Authoritative yet accessible. No medical claims. Include internal links to product pages. Meta description under 155 chars.\",\"owner\":\"Newton\",\"tags\":[\"seo\",\"content\",\"caliber\"],\"created_at\":\"2026-03-27\",\"updated_at\":\"2026-03-27\"}]}",
+      "del_response": {
+        "result": 1
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "apex:projects",
+      "deleted_at": "2026-05-06T06:15:12.332Z",
+      "before_size_bytes": 6784,
+      "before_value": "{\"projects\":[{\"id\":\"gemsnap\",\"name\":\"GemSnap\",\"image\":\"/images/gemsnap-card.jpg\",\"stage\":\"Traffic\",\"status\":\"attention\",\"bottleneck\":\"237 clicks, 0 conversions — awaiting PostHog data\",\"keyMetric\":{\"label\":\"MRR\",\"value\":\"$0\"},\"overdueTasks\":2,\"blockedTasks\":0,\"tasks\":[{\"text\":\"Review PostHog session recordings\",\"owner\":\"🧭\",\"priority\":\"red\",\"done\":false},{\"text\":\"Verify phone on Meta ad account\",\"owner\":\"👤\",\"priority\":\"red\",\"done\":false},{\"text\":\"Hit 300 clicks, evaluate conversion rate\",\"owner\":\"🧭\",\"priority\":\"amber\",\"done\":false}]},{\"id\":\"caliber\",\"name\":\"Caliber Peptides\",\"image\":\"/images/caliber-card.jpg\",\"stage\":\"Conversion\",\"status\":\"on-track\",\"bottleneck\":\"Content live — chasing first sale\",\"keyMetric\":{\"label\":\"Orders\",\"value\":\"0\"},\"overdueTasks\":0,\"blockedTasks\":0,\"tasks\":[{\"text\":\"First sale — reach out to network\",\"owner\":\"👤\",\"priority\":\"amber\",\"done\":false},{\"text\":\"BPC-157 SEO landing page (Antigravity)\",\"owner\":\"👤\",\"priority\":\"green\",\"done\":false},{\"text\":\"Order UK hub stock before Apr 6\",\"owner\":\"👤\",\"priority\":\"amber\",\"done\":false}]},{\"id\":\"edge-auto\",\"name\":\"Edge Auto\",\"image\":\"/images/edgeauto-card.jpg\",\"stage\":\"MVP\",\"status\":\"blocked\",\"bottleneck\":\"Blocked on calendar + booking test\",\"keyMetric\":{\"label\":\"Customers\",\"value\":\"0\"},\"overdueTasks\":2,\"blockedTasks\":1,\"tasks\":[{\"text\":\"Add richard@edgeautomate.org to phone\",\"owner\":\"👤\",\"priority\":\"red\",\"done\":false},{\"text\":\"Test booking page end-to-end\",\"owner\":\"👤\",\"priority\":\"red\",\"done\":false},{\"text\":\"Close Todd + onboard Josh\",\"owner\":\"👤\",\"priority\":\"amber\",\"done\":false},{\"text\":\"Darwin adversarial review of pricing\",\"owner\":\"🔄\",\"priority\":\"green\",\"done\":false}]},{\"id\":\"storyquest\",\"name\":\"StoryQuest\",\"image\":\"/images/storyquest-card.jpg\",\"stage\":\"MVP\",\"status\":\"attention\",\"bottleneck\":\"Needs Stripe + SFX + TTS to ship\",\"keyMetric\":{\"label\":\"Users\",\"value\":\"0\"},\"overdueTasks\":1,\"blockedTasks\":0,\"tasks\":[{\"text\":\"Wire Stripe paywall (handleSubscribe)\",\"owner\":\"👤\",\"priority\":\"red\",\"done\":false},{\"text\":\"Add SFX audio files to /public/audio/sfx/\",\"owner\":\"👤\",\"priority\":\"amber\",\"done\":false},{\"text\":\"Integrate Gemini Flash Live TTS\",\"owner\":\"👤\",\"priority\":\"amber\",\"done\":false},{\"text\":\"Generate book cover images for bookshelf\",\"owner\":\"👤\",\"priority\":\"green\",\"done\":false}]},{\"id\":\"repostai\",\"name\":\"RepostAI\",\"image\":\"/images/repostai-card.jpg\",\"stage\":\"Validation\",\"status\":\"attention\",\"bottleneck\":\"Pre-launch — needs landing page + PH date\",\"keyMetric\":{\"label\":\"MRR\",\"value\":\"$0\"},\"overdueTasks\":2,\"blockedTasks\":0,\"tasks\":[{\"text\":\"Schedule Product Hunt launch date\",\"owner\":\"👤\",\"priority\":\"red\",\"done\":false},{\"text\":\"Build landing page with email capture\",\"owner\":\"🧭\",\"priority\":\"red\",\"done\":false},{\"text\":\"Meta ads campaign\",\"owner\":\"🧭\",\"priority\":\"amber\",\"done\":false}]},{\"id\":\"villas\",\"name\":\"Phuket Villas\",\"image\":\"/images/villas-card.jpg\",\"stage\":\"Conversion\",\"status\":\"attention\",\"bottleneck\":\"Buyers delayed — marketing to agents\",\"keyMetric\":{\"label\":\"Value\",\"value\":\"90M THB\"},\"overdueTasks\":0,\"blockedTasks\":0,\"tasks\":[{\"text\":\"Villa investor page (Antigravity build)\",\"owner\":\"👤\",\"priority\":\"amber\",\"done\":false},{\"text\":\"Email top 4 Phuket agencies with prospectus\",\"owner\":\"🧭\",\"priority\":\"amber\",\"done\":false}]},{\"id\":\"squad\",\"name\":\"The Squad\",\"image\":\"/images/squad-card.jpg\",\"stage\":\"Delivery\",\"status\":\"on-track\",\"bottleneck\":\"System stable — 3 bots active\",\"keyMetric\":{\"label\":\"Active Bots\",\"value\":\"3\"},\"overdueTasks\":0,\"blockedTasks\":0,\"tasks\":[{\"text\":\"Dev-browser Chrome extension setup\",\"owner\":\"👤\",\"priority\":\"amber\",\"done\":false},{\"text\":\"Explore Antigravity for landing page pipeline\",\"owner\":\"🧭\",\"priority\":\"green\",\"done\":false},{\"text\":\"Inter-bot comms reliability fix\",\"owner\":\"🧭\",\"priority\":\"green\",\"done\":false}]},{\"id\":\"parliament\",\"name\":\"Parliament Tracker\",\"image\":\"/images/parliament-card.jpg\",\"stage\":\"Validation\",\"status\":\"parked\",\"bottleneck\":\"Newton evaluating feasibility\",\"keyMetric\":{\"label\":\"Stage\",\"value\":\"Research\"},\"overdueTasks\":0,\"blockedTasks\":0,\"tasks\":[{\"text\":\"Email capture landing page (Antigravity)\",\"owner\":\"👤\",\"priority\":\"green\",\"done\":false},{\"text\":\"Newton feasibility report\",\"owner\":\"🔬\",\"priority\":\"green\",\"done\":false}]}],\"ideas\":[{\"id\":\"idea-comic\",\"title\":\"Comic Creator\",\"image\":\"/images/idea-comic.jpg\",\"summary\":\"Turn any story prompt into a full comic book with AI-generated panels and consistent characters.\",\"status\":\"raw\",\"tags\":[\"Creative\",\"AI\",\"Consumer\"]},{\"id\":\"idea-peptide-stack\",\"title\":\"Peptide Stack Builder\",\"image\":\"/images/idea-peptide-stack.jpg\",\"summary\":\"Interactive tool that recommends peptide stacks based on goals, body stats, and experience level.\",\"status\":\"queued\",\"tags\":[\"Health\",\"Tool\",\"Caliber\"]},{\"id\":\"idea-villa-investor\",\"title\":\"Villa Investor Platform\",\"image\":\"/images/idea-villa-investor.jpg\",\"summary\":\"Digital investment platform for Phuket villa buyers with ROI calculators and virtual tours.\",\"status\":\"raw\",\"tags\":[\"Property\",\"Finance\"]},{\"id\":\"idea-market-intel\",\"title\":\"Market Intel as a Service\",\"image\":\"/images/idea-market-intel.png\",\"summary\":\"On-demand market research reports generated by AI agents — competitor analysis, pricing intel, trend forecasting.\",\"status\":\"zombie\",\"tags\":[\"B2B\",\"AI\",\"Research\"]},{\"id\":\"idea-geopolitik\",\"title\":\"Geopolitik\",\"image\":\"/images/idea-geopolitik.png\",\"summary\":\"AI-powered geopolitical intelligence platform — track global events, policy shifts, and their market impact.\",\"status\":\"raw\",\"tags\":[\"GovTech\",\"AI\",\"Data\"]},{\"id\":\"idea-gunsnap\",\"title\":\"GunSnap\",\"image\":\"/images/idea-gunsnap.jpg\",\"summary\":\"AI gemstone-style identification and valuation for firearms — snap, identify, get instant specs and value.\",\"status\":\"raw\",\"tags\":[\"Consumer\",\"AI\",\"Niche\"]},{\"id\":\"idea-poolsnap\",\"title\":\"PoolSnap\",\"image\":\"/images/idea-poolsnap.jpg\",\"summary\":\"AI pool diagnostics — snap a photo, get water quality analysis, maintenance recommendations, and cost estimates.\",\"status\":\"raw\",\"tags\":[\"Consumer\",\"AI\",\"Home\"]},{\"id\":\"idea-promptcraft\",\"title\":\"PromptCraft\",\"image\":\"/images/idea-promptcraft.jpg\",\"summary\":\"Prompt engineering toolkit — build, test, version, and share AI prompts with performance tracking.\",\"status\":\"raw\",\"tags\":[\"AI\",\"Tool\",\"SaaS\"]},{\"id\":\"idea-sales-copilot\",\"title\":\"Sales Co-Pilot\",\"image\":\"/images/idea-sales-copilot.jpg\",\"summary\":\"AI sales assistant that joins calls, takes notes, suggests responses, and auto-generates follow-ups.\",\"status\":\"raw\",\"tags\":[\"B2B\",\"AI\",\"SaaS\"]},{\"id\":\"idea-splashboard\",\"title\":\"SplashBoard\",\"image\":\"/images/idea-splashboard.png\",\"summary\":\"Visual dashboard builder — drag-and-drop KPI boards with live data connections and AI-generated insights.\",\"status\":\"raw\",\"tags\":[\"SaaS\",\"Data\",\"Tool\"]}],\"lastUpdated\":\"2026-03-29T08:30:00Z\"}",
+      "del_response": {
+        "result": 1
+      },
+      "verified_absent_after": true
+    },
+    {
+      "key": "maproom:projects",
+      "deleted_at": "2026-05-06T06:15:13.113Z",
+      "before_size_bytes": 899,
+      "before_value": "{\"lastUpdated\":\"2026-03-30T12:00:00Z\",\"items\":[{\"id\":\"caliber\",\"name\":\"Caliber Peptides\",\"description\":\"Premium peptide education & e-commerce\",\"current_stage\":4,\"status\":\"active\",\"blockers\":[\"Website conversion rate unknown\"],\"owners\":[\"Atlas\",\"Newton\"],\"automation_score\":\"3/7\",\"notes\":\"\",\"created_at\":\"2026-01-15\",\"updated_at\":\"2026-03-30\"},{\"id\":\"gemsnap\",\"name\":\"GemSnap\",\"description\":\"AI gemstone identification app\",\"current_stage\":5,\"status\":\"active\",\"blockers\":[\"PostHog data pending\"],\"owners\":[\"Claude Code\",\"Ginge\"],\"automation_score\":\"2/5\",\"notes\":\"\",\"created_at\":\"2026-02-01\",\"updated_at\":\"2026-03-30\"},{\"id\":\"edge-auto\",\"name\":\"Edge Auto\",\"description\":\"Small business automation consultancy\",\"current_stage\":2,\"status\":\"active\",\"blockers\":[\"Report page not built\"],\"owners\":[\"Atlas\",\"Ginge\"],\"automation_score\":\"1/4\",\"notes\":\"\",\"created_at\":\"2026-03-01\",\"updated_at\":\"2026-03-30\"}]}",
+      "del_response": {
+        "result": 1
+      },
+      "verified_absent_after": true
+    }
+  ],
+  "last_updated": "2026-05-06T06:15:13.113Z"
+}

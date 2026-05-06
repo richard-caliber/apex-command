@@ -11,7 +11,7 @@
       "model_strategy": "Runs on coffee, curiosity, and spite",
       "department": "The Throne",
       "reports_to": "nobody",
-      "current_task": "Building the machine that builds the machine",
+      "current_task": "Magnificent sprint in progress",
       "soul_text": "Freedom-obsessed poker player turned AI entrepreneur. Thinks in EV and GTO. Will not be managed.",
       "identity_text": "# IDENTITY.md\n\n- **Name:** Ginge (Richard Sheils)\n- **Emoji:** 👑\n",
       "memory_text": "",
@@ -23,7 +23,20 @@
         "y": 10,
         "connects_to": []
       },
-      "last_synced": "2026-04-08T07:36:00Z"
+      "last_synced": "2026-04-08T07:36:00Z",
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.7,
+        "max_tokens": 8000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-06T05:52:44.917Z",
+      "dormant": false
     },
     {
       "id": "newton",
@@ -83,7 +96,21 @@
           "updated_at": "2026-04-01T11:35:50Z"
         }
       ],
-      "last_synced": "2026-04-08T07:36:00Z"
+      "last_synced": "2026-04-08T07:36:00Z",
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-opus-4-7",
+        "temperature": 0.5,
+        "max_tokens": 16000,
+        "thinking_mode": {
+          "enabled": true,
+          "budget_tokens": 5000
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:12.906Z",
+      "dormant": true
     },
     {
       "id": "atlas",
@@ -168,7 +195,19 @@
       ],
       "last_synced": "2026-04-08T07:36:00Z",
       "last_action": "phase0 prod token rotation verified",
-      "last_updated": "2026-05-02T17:12:48.951Z"
+      "last_updated": "2026-05-04T10:02:11.211Z",
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.7,
+        "max_tokens": 8000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "dormant": true
     },
     {
       "id": "darwin",
@@ -252,7 +291,20 @@
           "updated_at": "2026-04-01T07:57:32Z"
         }
       ],
-      "last_synced": "2026-04-08T07:36:00Z"
+      "last_synced": "2026-04-08T07:36:00Z",
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.6,
+        "max_tokens": 8000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:14.907Z",
+      "dormant": true
     },
     {
       "id": "jimmy",
@@ -312,8 +364,21 @@
           "updated_at": "2026-04-03T15:59:06Z"
         }
       ],
-      "last_synced": "2026-04-08T07:36:00Z"
+      "last_synced": "2026-04-08T07:36:00Z",
+      "runtime_config": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.9,
+        "max_tokens": 6000,
+        "thinking_mode": {
+          "enabled": false
+        },
+        "tool_definitions": [],
+        "system_prompt_template": "You are {{agent_name}}.\n\n## Identity\n{{identity_text}}\n\n## Soul\n{{soul_text}}\n\n## Capabilities\n{{capabilities_text}}\n\n## Responsibilities\n{{responsibilities_text}}\n\n## Memory (last updated {{memory_updated_at}})\n{{memory_text}}\n\n## Relevant Practices\n{{practices}}\n\n## Current Task\n{{task}}\n"
+      },
+      "last_updated": "2026-05-04T10:02:15.973Z",
+      "dormant": true
     }
   ],
-  "lastUpdated": "2026-05-02T17:12:48.951Z"
+  "lastUpdated": "2026-05-06T05:52:44.919Z"
 }

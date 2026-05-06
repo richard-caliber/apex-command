@@ -1,53 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
-import { readFile } from "fs/promises";
-import { join } from "path";
-import { requireWriteAuth } from "@/lib/auth";
 import { getProject } from "@/lib/projects";
 
-// GET reads canonical apex:warroom:projects via the projects lib.
-// PUT still targets the legacy apex:projects key (Phase 6 retires it).
-const WRITE_KEY = "apex:projects";
-interface Project {
+// GET reads canonical apex:warroom:projects via the projects lib and
+// reshapes into the legacy "war room" shape this endpoint historically
+// returned (image, statusLine, keyMetric).
+//
+// The PUT handler that wrote to the legacy apex:projects store was
+// retired in M4 — that store is deleted. Project edits go through MCP
+// (apex_set_project) or /api/projects POST { action: "set" }, both of
+// which target the canonical apex:warroom:projects store.
+//
+// The legacy side-load that pulled `tasks/overdueTasks/blockedTasks`
+// from apex:projects was also retired — that data lived in the deleted
+// store and the project detail page sources its task array from
+// /api/project/[id] (the apex:project:{id} enrichment store, kept).
+
+interface CanonicalProject {
   id: string;
-  [key: string]: unknown;
+  name: string;
+  stage: string;
+  status: string;
+  image_url?: string;
+  blocker?: string | null;
+  metrics?: Record<string, string>;
 }
 
-interface ProjectData {
-  projects: Project[];
-  lastUpdated: string;
-}
-
-async function getWriteData(): Promise<ProjectData> {
-  const cached = await kv.get<ProjectData>(WRITE_KEY);
-  if (cached) return cached;
-  const raw = await readFile(join(process.cwd(), "data", "projects.json"), "utf-8");
-  const seed = JSON.parse(raw) as ProjectData;
-  await kv.set(WRITE_KEY, seed);
-  return seed;
-}
-
-// Map a project record from the canonical warroom shape to the legacy
-// shape this endpoint has historically returned (image, statusLine, keyMetric).
-// Tasks live only in the legacy store, so we side-load them from apex:projects.
-function toLegacyShape(canonical: Project, legacy: Project | undefined) {
-  const metrics = (canonical.metrics ?? {}) as Record<string, string>;
+function toLegacyShape(p: CanonicalProject) {
+  const metrics = p.metrics ?? {};
   const firstMetricKey = Object.keys(metrics)[0];
   const keyMetric = firstMetricKey
     ? { label: firstMetricKey.replace(/_/g, " "), value: metrics[firstMetricKey] }
-    : (legacy?.keyMetric ?? { label: "", value: "" });
+    : { label: "", value: "" };
   return {
-    id: canonical.id,
-    name: canonical.name,
-    image: (canonical.image_url as string) || (legacy?.image as string) || "",
-    stage: canonical.stage,
-    status: canonical.status,
-    statusLine: (canonical.blocker as string) || (legacy?.statusLine as string) || "",
-    bottleneck: (canonical.blocker as string) || (legacy?.bottleneck as string) || "",
+    id: p.id,
+    name: p.name,
+    image: p.image_url || "",
+    stage: p.stage,
+    status: p.status,
+    statusLine: p.blocker || "",
+    bottleneck: p.blocker || "",
     keyMetric,
-    overdueTasks: (legacy?.overdueTasks as number) ?? 0,
-    blockedTasks: (legacy?.blockedTasks as number) ?? 0,
-    tasks: (legacy?.tasks as unknown[]) ?? [],
+    overdueTasks: 0,
+    blockedTasks: 0,
+    tasks: [],
   };
 }
 
@@ -56,33 +51,9 @@ export async function GET(
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   const { projectId } = await params;
-  const [canonical, writeData] = await Promise.all([getProject(projectId), getWriteData()]);
+  const canonical = await getProject(projectId);
   if (!canonical) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
-  const legacy = writeData.projects.find((p) => p.id === projectId);
-  return NextResponse.json(toLegacyShape(canonical as unknown as Project, legacy));
-}
-
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
-) {
-  const unauthorized = requireWriteAuth(req);
-
-  if (unauthorized) return unauthorized;
-
-  const { projectId } = await params;
-  const updates = await req.json();
-  const data = await getWriteData();
-  const idx = data.projects.findIndex((p) => p.id === projectId);
-  if (idx === -1) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  }
-
-  data.projects[idx] = { ...data.projects[idx], ...updates, id: projectId };
-  data.lastUpdated = new Date().toISOString();
-  await kv.set(WRITE_KEY, data);
-
-  return NextResponse.json(data.projects[idx]);
+  return NextResponse.json(toLegacyShape(canonical as unknown as CanonicalProject));
 }

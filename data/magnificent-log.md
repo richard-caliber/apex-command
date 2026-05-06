@@ -1,5 +1,16 @@
 # Apex Magnificent Sprint Log
 
+## M4 — Parallel store deletion (2026-05-06)
+
+- **13 KV keys deleted across 4 safe batches.** Total deleted: **20,555 bytes**. Order: 6 already-empty → 3 non-v2 stale → 2 replaced/orphaned → 2 legacy project stores. Verified between batches via MCP `apex_get_briefing`, `apex_list_projects`, page sweep.
+- **`vault:ip-entries` KEPT** (kill criterion #1 fired). `src/app/schematics/ip-vault/page.tsx` still reads it via `/api/vault` ip-* actions. Phase 2's "replaced by apex:practices:v1" was DATA migration, not API consolidation. Retiring this requires API rewrite or page retirement — deferred to M5 / Phase 7. Documented as known divergence.
+- **`apex:project:{id}` enrichment store KEPT** (Option A per spec). 5 records (caliber/edge-auto/gemsnap/squad/storyquest) hold per-project timeline/waitingOn/notes the canonical record doesn't. Migration into canonical deferred to Phase 7/8.
+- **Read-shim code stripped** in 5 files: `/api/status/route.ts` (POST removed), `/api/status/[projectId]/route.ts` (PUT removed, legacy side-load removed), `/api/status/[projectId]/tasks/route.ts` (POST replaced with 410 Gone), `/api/map-room/projects/route.ts` (POST removed), `/api/map-room/projects/[id]/route.ts` (PUT removed). All five GET handlers route through `src/lib/projects.ts` — single canonical read path enforced by code structure, not by happy accident.
+- **`data/squad.json` seed refreshed** from live `apex:squad:v4` (5 agents incl. dormant flags).
+- Production deploy `apex-command-77iafensd`. 30-page UI sweep all 200 (two pre-existing 307 redirects unchanged). Mission Control MCP tools still working.
+- Helper scripts: `scripts/m4-audit-keys.mjs` (size + caller audit), `scripts/m4-delete-batch.mjs` (delete + log), `scripts/m4-refresh-squad-seed.mjs`. Deletion log: `data/magnificent-m4-deletions-2026-05-06.json` (rollback-ready).
+- Research: `data/magnificent-m4-research.md`. Verification: `data/magnificent-m4-verify-2026-05-06.md`.
+
 ## M3.5 — Briefing dormancy + archived task cleanup (2026-05-06)
 
 Patch phase between M3 and M4 — three tail-end fixes from M3:
