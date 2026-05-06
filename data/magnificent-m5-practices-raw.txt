@@ -1,0 +1,841 @@
+apex:practices:v1: 187 entries
+
+--- Counts by category ---
+agent-memory: 2
+best-practices: 2
+channel-learnings: 1
+experiment-vault: 1
+failed-experiments: 1
+migration-backlog: 5
+phase-7-backlog: 5
+phase-8-backlog: 1
+principles: 1
+research: 155
+strategies: 1
+test: 2
+tool-discovery: 1
+winning-hooks: 2
+workflow: 7
+
+--- Tag frequency (top 30) ---
+darwin: 47
+tool-discovery: 36
+infrastructure/agents: 36
+best-practice: 29
+peptides: 25
+strategy: 15
+market-signal: 15
+caliber: 15
+pricing: 14
+automation: 13
+infrastructure: 10
+instagram: 9
+tools: 8
+gemsnap: 8
+atlas: 8
+knowledge-base: 8
+ai: 7
+reels: 7
+content-pipeline: 7
+sop/agent-operations: 7
+workflow: 7
+conversion: 6
+business-model: 6
+ghk-cu: 6
+agents: 6
+multi-agent: 6
+claude-code: 6
+karpathy: 6
+content-strategy: 6
+infrastructure/openclaw: 6
+
+--- Single-use tags (201) ---
+suppliers, sourcing, ops, methodology, skills, api, technical, channels, ig, journey, lead-magnets, dm, formats, coaching, concept, copilot, discovery, leadership, biography, paid, video, comparison, spy-tools, commissions, lead-gen, multi-platform, structure, copy, veblen, tiered, landing-page, twitter, scraping, risk, reelfarm, social, posting, app, games, gut-health, competition, content-analysis, ios, affiliates, deep-dive, competitor, benchmarking, pt-141, use-cases, browser, development, newsletter, real-estate, outreach, emails, market, organic, glp-1, ai-company, ai-model, on-device, agentic, google, gemma, multimodal, tiktok-ads, app-monetisation, marketing-automation, vertical-saas, build-vs-position, slideshows, nano-banana, darwin-gate, newton-recommendation, visual-style, competitor-research, agent-orchestration, project-structure, ai-agent, goose, block, jack-dorsey, email-marketing, peptide-sciences-shutdown, dosing-protocols, darwin-approved, format, hashtags, scroll-stop, copywriting, crystal, authenticity, security, vibe-coding, apex, caliber-site, rag, prompt-pack, info-product, ai-content, claude, alternatives, glm, minimax, codex, hermes, personality, layer1, layer2, layer3, writing-voice, emotional-intelligence, skill-graphs, arscontexta, agent-architecture, wikilinks, progressive-disclosure, dosing, protocols, content-creation, trust, positioning, inspiration, pt141, carousel, recovery, gut, tts, visual, decision-quality, guarantee, roi, lead-response, hyros, attribution, synthetic-audiences, ai-video, character-consistency, runway, kling, metrics/conversion, gemma4, research-lead, snap-family, resilience, research-methodology, hook-writing, opportunity-score, future-use, pricing-psychology, digital-products, reddit-research, gbrain, integrations, principles, quality, standards, soul, content-product, digital-product, gumroad, content-engine, launch, knowledge-management, curiosity-management, migration, backlog, v2, post-revenue, briefing-logic, bug, v3, post-openclaw, experiment-vault, tools-to-try, wednesday-slot, housekeeping, checklist, ui-data-sync, high-priority, ui-enhancement, personal-admin, life-admin, claude-project-design, research-locker, post-newton, creative-track, non-pipeline, operationalise, briefing-redesign, project-housekeeping, newton-darwin, task-chaining, pipeline-mechanics, graduation, multi-template, creative-pipelines, phase-8-backlog, knowledge-graph, wiki, post-phase-7
+
+--- All entries ---
+vault-research-2026-03-15-ai-first-business-ops | cat=research src=newton scope=all_agents tags=[ai,operations,strategy] len=3533
+  title: AI-First Business Operations
+  created=2026-04-02T18:39:21.077Z updated=2026-04-02T18:39:21.077Z
+
+vault-research-2026-03-15-alternative-suppliers-partial | cat=research src=newton scope=all_agents tags=[suppliers,sourcing,peptides] len=3247
+  title: Alternative Peptide Suppliers
+  created=2026-04-02T18:39:21.228Z updated=2026-04-02T18:39:21.228Z
+
+vault-research-2026-03-15-automation-tools-for-tau | cat=research src=newton scope=all_agents tags=[automation,tools,ops] len=3159
+  title: Automation Tools Research
+  created=2026-04-02T18:39:21.409Z updated=2026-04-02T18:39:21.409Z
+
+vault-research-2026-03-15-karpathy-autoresearch | cat=research src=newton scope=all_agents tags=[ai,research,methodology] len=2543
+  title: Karpathy Auto-Research Pattern
+  created=2026-04-02T18:39:21.917Z updated=2026-04-02T18:39:21.917Z
+
+vault-research-2026-03-15-telegram-sales-best-practices | cat=research src=newton scope=all_agents tags=[telegram,sales,funnel] len=3853
+  title: Telegram Sales Best Practices
+  created=2026-04-02T18:39:22.088Z updated=2026-04-02T18:39:22.088Z
+
+vault-research-2026-03-15-uk-peptide-competitors-partial | cat=research src=newton scope=all_agents tags=[competitors,uk-market,peptides] len=3187
+  title: UK Peptide Competitors (Partial)
+  created=2026-04-02T18:39:22.234Z updated=2026-04-02T18:39:22.234Z
+
+vault-research-2026-03-16-skills-graph-concept | cat=research src=newton scope=all_agents tags=[ai,skills,architecture] len=2620
+  title: Skills Graph Concept
+  created=2026-04-02T18:39:22.363Z updated=2026-04-02T18:39:22.363Z
+
+vault-research-2026-03-17-graph-api-setup | cat=research src=newton scope=all_agents tags=[instagram,api,setup,technical] len=5983
+  title: IG Graph API Setup Guide
+  created=2026-04-02T18:39:22.492Z updated=2026-04-02T18:39:22.492Z
+
+vault-research-2026-03-18-channel-strategy-validation | cat=research src=newton scope=all_agents tags=[channels,ig,tiktok,strategy] len=16607
+  title: Channel Strategy Validation
+  created=2026-04-02T18:39:22.692Z updated=2026-04-02T18:39:22.692Z
+
+vault-research-2026-03-18-customer-journey-proposal | cat=research src=newton scope=all_agents tags=[funnel,journey,conversion] len=17001
+  title: Customer Journey Map
+  created=2026-04-02T18:39:22.887Z updated=2026-04-02T18:39:22.887Z
+
+vault-research-2026-03-18-lead-magnets-peptide-dm-funnel | cat=research src=newton scope=all_agents tags=[lead-magnets,dm,funnel,peptides] len=12188
+  title: Lead Magnets & DM Funnel Strategy
+  created=2026-04-02T18:39:23.026Z updated=2026-04-02T18:39:23.026Z
+
+vault-research-2026-03-19-ig-content-formats | cat=research src=newton scope=all_agents tags=[instagram,content,formats,reels,carousels] len=19992
+  title: IG Content Formats Deep Dive
+  created=2026-04-02T18:39:23.225Z updated=2026-04-02T18:39:23.225Z
+
+vault-research-2026-03-19-live-sales-ai-coach | cat=research src=newton scope=all_agents tags=[sales,ai,coaching,concept] len=9871
+  title: Live Sales AI Coach Concept
+  created=2026-04-02T18:39:23.420Z updated=2026-04-02T18:39:23.420Z
+
+vault-research-2026-03-23-sales-discovery-copilot | cat=research src=newton scope=all_agents tags=[sales,copilot,discovery,ai] len=20776
+  title: Sales Discovery Co-Pilot Research
+  created=2026-04-02T18:39:23.615Z updated=2026-04-02T18:39:23.615Z
+
+vault-research-2026-03-24-caliber-price-list-full | cat=research src=newton scope=all_agents tags=[pricing,products,peptides] len=9623
+  title: Caliber Full Price List
+  created=2026-04-02T18:39:23.821Z updated=2026-04-02T18:39:23.821Z
+  stale-term hits: openclaw
+
+vault-research-2026-03-24-caliber-price-list | cat=research src=newton scope=all_agents tags=[pricing,products,peptides] len=8037
+  title: Caliber Price List (Initial)
+  created=2026-04-02T18:39:23.985Z updated=2026-04-02T18:39:23.985Z
+
+vault-research-2026-03-24-elon-musk-deep-dive | cat=research src=newton scope=all_agents tags=[leadership,strategy,biography] len=12052
+  title: Elon Musk Leadership Deep Dive
+  created=2026-04-02T18:39:24.189Z updated=2026-04-02T18:39:24.189Z
+
+vault-research-2026-03-24-meta-ads-go-to-market | cat=research src=newton scope=all_agents tags=[meta,ads,gtm,paid] len=18302
+  title: Meta Ads Go-To-Market Plan
+  created=2026-04-02T18:39:24.329Z updated=2026-04-02T18:39:24.329Z
+
+vault-research-2026-03-25-ai-ugc-video-tools-comparison | cat=research src=newton scope=all_agents tags=[ugc,video,tools,comparison] len=9125
+  title: AI UGC Video Tools Comparison
+  created=2026-04-02T18:39:24.529Z updated=2026-04-02T18:39:24.529Z
+
+vault-research-2026-03-25-edge-auto-audit-deep-data | cat=research src=newton scope=all_agents tags=[audit,automation,framework] len=48608
+  title: Edge Auto Audit Framework (Deep Data)
+  created=2026-04-02T18:39:24.832Z updated=2026-04-02T18:39:24.832Z
+
+vault-research-2026-03-25-edge-auto-business-model-deep-dive | cat=research src=newton scope=all_agents tags=[business-model,pricing,agency] len=13652
+  title: Edge Auto Business Model Deep Dive
+  created=2026-04-02T18:39:25.065Z updated=2026-04-02T18:39:25.065Z
+
+vault-research-2026-03-25-meta-ads-playbook-gemsnap-edge | cat=research src=newton scope=all_agents tags=[meta,ads,playbook,gemsnap] len=13524
+  title: Meta Ads Playbook (GemSnap + Edge)
+  created=2026-04-02T18:39:25.271Z updated=2026-04-02T18:39:25.271Z
+
+vault-research-2026-03-26-alex-fedotoff-ad-spy-tools | cat=research src=newton scope=all_agents tags=[ads,spy-tools,competitive] len=10661
+  title: Alex Fedotoff Ad Spy Tools Research
+  created=2026-04-02T18:39:25.520Z updated=2026-04-02T18:39:25.520Z
+
+vault-research-2026-03-26-edge-auto-delivery-sales-ops | cat=research src=newton scope=all_agents tags=[delivery,sales,operations] len=20232
+  title: Edge Auto Delivery & Sales Ops
+  created=2026-04-02T18:39:25.745Z updated=2026-04-02T18:39:25.745Z
+
+vault-research-2026-03-26-edge-auto-funnel-analysis | cat=research src=newton scope=all_agents tags=[funnel,conversion,analysis] len=6331
+  title: Edge Auto Funnel Analysis
+  created=2026-04-02T18:39:25.898Z updated=2026-04-02T18:39:25.898Z
+
+vault-research-2026-03-26-edge-auto-pricing-commissions | cat=research src=newton scope=all_agents tags=[pricing,commissions,agency] len=15597
+  title: Edge Auto Pricing & Commissions
+  created=2026-04-02T18:39:26.105Z updated=2026-04-02T18:39:26.105Z
+
+vault-research-2026-03-26-goliath-lead-gen-playbook | cat=research src=newton scope=all_agents tags=[lead-gen,outbound,strategy] len=14977
+  title: Goliath Lead Gen Playbook
+  created=2026-04-02T18:39:26.313Z updated=2026-04-02T18:39:26.313Z
+  stale-term hits: openclaw
+
+vault-research-2026-03-29-competitor-teardowns | cat=research src=newton scope=all_agents tags=[competitors,teardown,peptides,uk-market] len=13919
+  title: Caliber Competitor Teardowns
+  created=2026-04-02T18:39:26.531Z updated=2026-04-02T18:39:26.531Z
+
+vault-research-2026-03-29-cross-platform-distribution | cat=research src=newton scope=all_agents tags=[distribution,multi-platform,content] len=6146
+  title: Cross-Platform Content Distribution
+  created=2026-04-02T18:39:26.682Z updated=2026-04-02T18:39:26.682Z
+
+vault-research-2026-03-29-edge-auto-audit-structure | cat=research src=newton scope=all_agents tags=[audit,structure,framework] len=7587
+  title: Edge Auto Audit Structure
+  created=2026-04-02T18:39:26.844Z updated=2026-04-02T18:39:26.844Z
+
+vault-research-2026-03-29-edge-auto-direct-response-analysis | cat=research src=newton scope=all_agents tags=[direct-response,copy,analysis] len=8535
+  title: Edge Auto Direct Response Analysis
+  created=2026-04-02T18:39:27.008Z updated=2026-04-02T18:39:27.008Z
+
+vault-research-2026-03-29-edge-auto-premium-first-pricing | cat=research src=newton scope=all_agents tags=[pricing,premium,veblen,hormozi] len=18200
+  title: Edge Auto Premium-First Pricing Validation
+  created=2026-04-02T18:39:27.220Z updated=2026-04-02T18:39:27.220Z
+
+vault-research-2026-03-29-edge-auto-pricing-strategy | cat=research src=newton scope=all_agents tags=[pricing,strategy,tiered] len=6290
+  title: Edge Auto Pricing Strategy
+  created=2026-04-02T18:39:27.377Z updated=2026-04-02T18:39:27.377Z
+
+vault-research-2026-03-29-edge-auto-report-page-conversion-research | cat=research src=newton scope=all_agents tags=[conversion,landing-page,cro] len=15327
+  title: Edge Auto Report Page Conversion Research
+  created=2026-04-02T18:39:27.616Z updated=2026-04-02T18:39:27.616Z
+
+vault-research-2026-03-29-x-youtube-content-pulling | cat=research src=newton scope=all_agents tags=[tools,youtube,twitter,scraping] len=11163
+  title: X/YouTube Content Pulling Research
+  created=2026-04-02T18:39:27.787Z updated=2026-04-02T18:39:27.787Z
+
+vault-research-2026-03-30-edge-delivery-risk | cat=research src=newton scope=all_agents tags=[delivery,risk,operations] len=3212
+  title: Edge Auto Delivery Risk Assessment
+  created=2026-04-02T18:39:27.954Z updated=2026-04-02T18:39:27.954Z
+
+vault-research-2026-03-30-ghk-cu-deep-dive | cat=research src=newton scope=all_agents tags=[ghk-cu,peptides,skin,copper] len=13245
+  title: GHK-Cu Deep Dive Research
+  created=2026-04-02T18:39:28.188Z updated=2026-04-02T18:39:28.188Z
+
+vault-research-2026-03-30-hermes-agent-self-improvement | cat=research src=newton scope=all_agents tags=[ai,agents,self-improvement] len=3004
+  title: Hermes Agent Self-Improvement Pattern
+  created=2026-04-02T18:39:28.349Z updated=2026-04-02T18:39:28.349Z
+  stale-term hits: openclaw
+
+vault-research-2026-03-30-multi-agent-advisor-system | cat=research src=newton scope=all_agents tags=[ai,multi-agent,architecture] len=3595
+  title: Multi-Agent Advisor System Research
+  created=2026-04-02T18:39:28.507Z updated=2026-04-02T18:39:28.507Z
+
+vault-research-2026-03-30-reelfarm-tiktok-automation | cat=research src=newton scope=all_agents tags=[tiktok,automation,reelfarm,tools] len=2229
+  title: ReelFarm TikTok Automation Research
+  created=2026-04-02T18:39:28.664Z updated=2026-04-02T18:39:28.664Z
+
+vault-research-2026-03-30-social-automation-strategy | cat=research src=newton scope=all_agents tags=[automation,social,posting] len=3859
+  title: Social Automation Strategy
+  created=2026-04-02T18:39:28.821Z updated=2026-04-02T18:39:28.821Z
+
+vault-research-2026-03-31-thymosin-alpha-1-deep-dive | cat=research src=newton scope=all_agents tags=[thymosin,immune,peptides] len=17674
+  title: Thymosin Alpha-1 Deep Dive
+  created=2026-04-02T18:39:28.978Z updated=2026-04-02T18:39:28.978Z
+
+vault-research-2026-04-01-backgammon-snap-feasibility | cat=research src=newton scope=all_agents tags=[app,feasibility,games] len=7939
+  title: Backgammon Snap Feasibility
+  created=2026-04-02T18:39:29.204Z updated=2026-04-02T18:39:29.204Z
+
+vault-research-2026-04-01-distribution-framework-applied | cat=research src=newton scope=all_agents tags=[distribution,framework,strategy] len=5285
+  title: Distribution Framework Applied
+  created=2026-04-02T18:39:29.358Z updated=2026-04-02T18:39:29.358Z
+
+vault-research-2026-04-01-kpv-gut-health-deep-dive | cat=research src=newton scope=all_agents tags=[kpv,gut-health,inflammation,peptides] len=12331
+  title: KPV Gut Health Deep Dive
+  created=2026-04-02T18:39:29.572Z updated=2026-04-02T18:39:29.572Z
+
+vault-research-2026-04-01-peptide-reel-competitive-analysis | cat=research src=newton scope=all_agents tags=[reels,competition,content-analysis] len=8649
+  title: Peptide Reel Competitive Analysis
+  created=2026-04-02T18:39:29.752Z updated=2026-04-02T18:39:29.752Z
+
+vault-research-2026-04-02-ghk-cu-deep-dive | cat=research src=newton scope=all_agents tags=[ghk-cu,peptides,skin,copper] len=8564
+  title: GHK-Cu Deep Dive (Updated)
+  created=2026-04-02T18:39:29.971Z updated=2026-04-02T18:39:29.971Z
+
+vault-research-2026-03-26-parliament-tracker-ios-app-feasibility | cat=research src=newton scope=all_agents tags=[parliament,ios,feasibility] len=12148
+  title: Parliament Tracker iOS App Feasibility
+  created=2026-04-02T18:40:06.205Z updated=2026-04-02T18:40:06.205Z
+
+vault-research-2026-03-26-peptide-affiliates-runads-ugc | cat=research src=newton scope=all_agents tags=[affiliates,ads,ugc,peptides] len=20083
+  title: Peptide Affiliates, RunAds & UGC Strategy
+  created=2026-04-02T18:40:06.449Z updated=2026-04-02T18:40:06.449Z
+
+vault-research-2026-03-26-polsia-deep-dive | cat=research src=newton scope=all_agents tags=[research,deep-dive] len=11213
+  title: Polsia Deep Dive
+  created=2026-04-02T18:40:06.648Z updated=2026-04-02T18:40:06.648Z
+
+vault-research-2026-03-26-polsia-full-teardown | cat=research src=newton scope=all_agents tags=[teardown,competitor] len=17049
+  title: Polsia Full Teardown
+  created=2026-04-02T18:40:06.932Z updated=2026-04-02T18:40:06.932Z
+  stale-term hits: openclaw
+
+vault-research-2026-03-26-product-benchmarking-audit | cat=research src=newton scope=all_agents tags=[benchmarking,products,audit,peptides] len=14620
+  title: Product Benchmarking Audit
+  created=2026-04-02T18:40:07.170Z updated=2026-04-02T18:40:07.170Z
+
+vault-research-2026-03-26-pt141-deep-dive | cat=research src=newton scope=all_agents tags=[pt-141,peptides,sexual-health] len=10915
+  title: PT-141 Deep Dive Research
+  created=2026-04-02T18:40:07.347Z updated=2026-04-02T18:40:07.347Z
+
+vault-research-2026-03-27-antigravity-claude-code-use-cases | cat=research src=newton scope=all_agents tags=[claude-code,tools,use-cases] len=9360
+  title: Antigravity / Claude Code Use Cases
+  created=2026-04-02T18:40:07.550Z updated=2026-04-02T18:40:07.550Z
+
+vault-research-2026-03-27-dev-browser-research | cat=research src=newton scope=all_agents tags=[browser,tools,development] len=6108
+  title: Dev Browser Research
+  created=2026-04-02T18:40:07.727Z updated=2026-04-02T18:40:07.727Z
+  stale-term hits: openclaw
+
+vault-research-2026-03-27-parliament-tracker-strategic-analysis | cat=research src=newton scope=all_agents tags=[parliament,strategy,newsletter] len=18876
+  title: Parliament Tracker Strategic Analysis
+  created=2026-04-02T18:40:07.988Z updated=2026-04-02T18:40:07.988Z
+
+vault-research-2026-03-27-phuket-luxury-real-estate-agencies | cat=research src=newton scope=all_agents tags=[phuket,villas,agents,real-estate] len=6442
+  title: Phuket Luxury Real Estate Agencies
+  created=2026-04-02T18:40:08.163Z updated=2026-04-02T18:40:08.163Z
+
+vault-research-2026-03-27-phuket-villa-outreach-emails | cat=research src=newton scope=all_agents tags=[phuket,villas,outreach,emails] len=7638
+  title: Phuket Villa Outreach Emails
+  created=2026-04-02T18:40:08.416Z updated=2026-04-02T18:40:08.416Z
+
+vault-research-2026-03-28-thymosin-alpha1-deep-dive | cat=research src=newton scope=all_agents tags=[thymosin,immune,peptides] len=1430
+  title: Thymosin Alpha-1 Deep Dive (v1)
+  created=2026-04-02T18:40:08.589Z updated=2026-04-02T18:40:08.589Z
+  stale-term hits: openclaw
+
+vault-research-2026-03-29-caliber-direct-response-market-analysis | cat=research src=newton scope=all_agents tags=[direct-response,market,analysis,peptides] len=7989
+  title: Caliber Direct Response Market Analysis
+  created=2026-04-02T18:40:08.775Z updated=2026-04-02T18:40:08.775Z
+
+vault-research-2026-03-29-caliber-pricing-matrix-v2 | cat=research src=newton scope=all_agents tags=[pricing,matrix,products,peptides] len=5225
+  title: Caliber Pricing Matrix v2
+  created=2026-04-02T18:40:08.941Z updated=2026-04-02T18:40:08.941Z
+
+vault-research-2026-03-29-caliber-pricing-matrix | cat=research src=newton scope=all_agents tags=[pricing,matrix,products,peptides] len=7550
+  title: Caliber Pricing Matrix v1
+  created=2026-04-02T18:40:09.245Z updated=2026-04-02T18:40:09.245Z
+
+vault-research-2026-03-29-caliber-reddit-strategy | cat=research src=newton scope=all_agents tags=[reddit,strategy,organic,peptides] len=6446
+  title: Caliber Reddit Strategy
+  created=2026-04-02T18:40:09.470Z updated=2026-04-02T18:40:09.470Z
+
+vault-medvi-glp1-case-study-2026 | cat=research src=newton scope=all_agents tags=[market-signal,glp-1,peptides,ai-company,validation,competitor-intel] len=443
+  title: Medvi - $1.8B GLP-1 telemedicine company built by 2 people with AI
+  created=2026-04-02T21:28:45.084Z updated=2026-04-02T21:28:45.084Z
+
+vault-gemma4-release-2026-04-02 | cat=research src=newton scope=all_agents tags=[tool-discovery,ai-model,open-source,on-device,agentic,google,gemma,multimodal] len=607
+  title: Gemma 4 — Google DeepMind open model family (Apache 2.0, released 2 Apr 2026)
+  created=2026-04-02T21:34:32.831Z updated=2026-04-02T21:34:32.831Z
+
+vault-newton-memory-md | cat=agent-memory src=newton scope=all_agents tags=[memory,newton,backup,agent-config] len=4266
+  title: Newton MEMORY.md — Long-Term Memory Backup
+  created=2026-04-03T11:48:02.248Z updated=2026-04-03T11:48:02.248Z
+
+vault-darwin-memory-md | cat=agent-memory src=darwin scope=all_agents tags=[memory,darwin,backup,agent-config] len=3223
+  title: Darwin MEMORY.md — Long-Term Memory Backup
+  created=2026-04-03T11:53:27.363Z updated=2026-04-03T11:53:27.363Z
+  stale-term hits: openclaw
+
+vault-lazymaxxing-app-playbook-2026 | cat=research src=newton scope=all_agents tags=[content-idea,market-signal,business-idea,tiktok-ads,app-monetisation,gemsnap,caliber,playbook] len=1056
+  title: $0-$10K MRR in 1 Month — Lazy App Scaling Playbook (@athcanft)
+  created=2026-04-03T13:15:06.257Z updated=2026-04-03T13:15:06.257Z
+
+vault-ai-marketing-skills-repo-2026 | cat=research src=newton scope=all_agents tags=[tool-discovery,claude-code,marketing-automation,content-ops,seo,outbound,open-source,atlas,darwin] len=797
+  title: ericosiu/ai-marketing-skills — Open-source Claude Code marketing automation workflows
+  created=2026-04-03T14:24:17.577Z updated=2026-04-03T14:24:17.577Z
+
+vault-karpathy-llm-knowledge-base-2026 | cat=research src=newton scope=all_agents tags=[karpathy,llm-wiki,knowledge-base,product-opportunity,market-signal,ip-vault,vertical-saas,build-vs-position] len=1235
+  title: Karpathy LLM Wiki — Build vs Position Analysis (Apr 2026)
+  created=2026-04-03T14:40:40.317Z updated=2026-04-03T14:40:40.317Z
+
+vault-keeton-distribution-playbook-2026 | cat=research src=newton scope=all_agents tags=[content-idea,market-signal,business-idea,distribution,tiktok,slideshows,affiliate,nano-banana,caliber,playbook,automation] len=1245
+  title: Keeton — Distribution is the only skill that prints money in 2026 (30-day playbook)
+  created=2026-04-03T14:41:44.866Z updated=2026-04-03T14:41:44.866Z
+
+vault-newton-recommendation-content-ops-panel | cat=best-practices src=atlas scope=all_agents tags=[darwin-gate,automation,content-ops,newton-recommendation] len=260
+  title: (no title)
+  created=2026-04-03T15:03:26.922Z updated=2026-04-03T15:03:26.922Z
+
+vault-caliber-cta-library | cat=best-practices src=atlas scope=all_agents tags=[] len=177
+  title: Caliber CTA Library
+  created=2026-04-03T15:57:18.593Z updated=2026-05-06T05:33:54.621Z
+
+vault-caliber-ig-visual-style-research-2026-04-03 | cat=research src=newton scope=all_agents tags=[visual-style,instagram,competitor-research,carousels,caliber,content-strategy] len=10702
+  title: Caliber IG Visual Style Research — Peptide/Biohacking Accounts Apr 2026
+  created=2026-04-03T16:54:23.376Z updated=2026-04-03T16:54:23.376Z
+
+vault-paperclip-ai-agent-orchestration-2026 | cat=research src=newton scope=all_agents tags=[tool-discovery,agent-orchestration,open-source,multi-agent,infrastructure,darwin,atlas,squad] len=948
+  title: Paperclip — Open-source orchestration for zero-human companies (38K GitHub stars, Mar 2026)
+  created=2026-04-03T18:49:44.456Z updated=2026-04-03T18:49:44.456Z
+  stale-term hits: openclaw
+
+vault-mcp-servers-claude-code-2026 | cat=research src=newton scope=all_agents tags=[tool-discovery,mcp,claude-code,darwin,atlas,newton,infrastructure] len=826
+  title: Top 10 MCP Servers for Claude Code 2026 (@heynavtoor)
+  created=2026-04-03T18:50:38.031Z updated=2026-04-03T18:50:38.031Z
+
+vault-claude-code-project-structure-2026 | cat=research src=newton scope=all_agents tags=[tool-discovery,claude-code,darwin,infrastructure,project-structure,hooks,mcp] len=761
+  title: Claude Code Power Structure — Full Project Layout for Engineering Partner Setup
+  created=2026-04-03T18:51:40.660Z updated=2026-04-03T18:51:40.660Z
+  stale-term hits: openclaw
+
+vault-goose-agent-block-jack-2026 | cat=research src=newton scope=all_agents tags=[tool-discovery,ai-agent,open-source,darwin,claude-code,goose,block,jack-dorsey] len=854
+  title: Goose — Open-source AI agent by Block (Jack Dorsey endorsement, Apr 2026)
+  created=2026-04-03T18:56:34.193Z updated=2026-04-03T18:56:34.193Z
+
+vault-caliber-gtm-strategy-research-2026-04-04 | cat=strategies src=newton scope=all_agents tags=[gtm,strategy,caliber,seo,telegram,affiliate,reddit,instagram,email-marketing,peptide-sciences-shutdown] len=1392
+  title: Caliber Peptides — Full GTM Strategy Research (All Channels Ranked)
+  created=2026-04-04T09:58:20.246Z updated=2026-04-04T09:58:20.246Z
+
+vault-caliber-dosing-protocols-tirzepatide-retatrutide-ghkcu-epithalon-2026-04-04 | cat=research src=newton scope=all_agents tags=[dosing-protocols,tirzepatide,retatrutide,ghk-cu,epithalon,caliber,content-pipeline,darwin-approved] len=1367
+  title: Caliber Dosing Protocols — Tirzepatide, Retatrutide, GHK-Cu Injectable, Epithalon (Apr 2026)
+  created=2026-04-04T13:28:23.511Z updated=2026-04-04T13:28:23.511Z
+
+vault-caliber-reel-strategy-research-2026-04-04 | cat=research src=newton scope=all_agents tags=[reels,instagram,content-strategy,caliber,hooks,ugc,format,hashtags] len=1197
+  title: Caliber Reels Strategy Research — Formats, Hooks, Length, Hashtags (Apr 2026)
+  created=2026-04-04T14:36:27.189Z updated=2026-04-04T14:36:27.189Z
+
+vault-caliber-reel-hooks-30-2026-04-04 | cat=research src=newton scope=all_agents tags=[hooks,reels,caliber,content-pipeline,instagram,scroll-stop,copywriting] len=1151
+  title: Caliber — 30 Counterintuitive Reel Hooks (3 per product, all cited)
+  created=2026-04-04T14:42:07.365Z updated=2026-04-04T14:42:07.365Z
+
+vault-gemsnap-cro-research-2026-04-04 | cat=research src=newton scope=all_agents tags=[cro,conversion,gemsnap,crystal,physical-barrier,demo,authenticity,pricing] len=1275
+  title: GemSnap CRO Research v2 — Crystal ID App Conversion Analysis (Apr 2026)
+  created=2026-04-04T15:43:58.168Z updated=2026-04-04T15:43:58.168Z
+
+vault-vibe-coded-app-security-checklist-2026 | cat=research src=newton scope=all_agents tags=[security,darwin,vibe-coding,claude-code,gemsnap,apex,caliber-site,infrastructure] len=1179
+  title: 20 Security Vulnerabilities in Vibe-Coded Apps — Darwin Security Audit Checklist
+  created=2026-04-04T17:59:33.047Z updated=2026-04-04T17:59:33.047Z
+
+vault-karpathy-llm-wiki-pattern-2026 | cat=research src=newton scope=all_agents tags=[karpathy,llm-wiki,knowledge-base,rag,architecture,tool-discovery,market-signal,ip-vault,product-opportunity] len=1460
+  title: Karpathy — LLM Wiki Pattern: Persistent Compounding Knowledge Base (Apr 2026)
+  created=2026-04-04T18:36:22.794Z updated=2026-04-04T18:36:22.794Z
+
+vault-history-prompts-market-signal-2026-04-05 | cat=research src=newton scope=all_agents tags=[market-signal,business-idea,prompt-pack,info-product,ai-content,caliber,low-ops] len=1121
+  title: Market Signal — History Prompts Facebook Ad (Prompt Pack Model, Apr 2026)
+  created=2026-04-05T07:19:29.250Z updated=2026-04-05T07:19:29.250Z
+
+vault-claude-alternatives-openclaw-2026-04-05 | cat=research src=newton scope=all_agents tags=[openclaw,claude,alternatives,infrastructure,tool-discovery,market-signal,glm,minimax,codex,unverified] len=1011
+  title: Claude Alternatives for OpenClaw — @meta_alchemist Post (Apr 2026)
+  created=2026-04-05T09:01:47.444Z updated=2026-04-05T09:01:47.444Z
+  stale-term hits: openclaw
+
+vault-openclaw-harness-architecture-2026-04-05 | cat=research src=newton scope=all_agents tags=[openclaw,hermes,architecture,soul-md,humanization,darwin,infrastructure,tool-discovery] len=1519
+  title: OpenClaw Harness Architecture + Humanization Science — @meta_alchemist (Apr 2026)
+  created=2026-04-05T09:04:05.180Z updated=2026-04-05T09:04:05.180Z
+  stale-term hits: openclaw
+
+vault-three-layer-humanization-skills-2026-04-05 | cat=research src=newton scope=all_agents tags=[soul-md,humanization,personality,darwin,openclaw,layer1,layer2,layer3,writing-voice,emotional-intelligence] len=2212
+  title: Three-Layer Agent Humanization Skills — Complete System (@meta_alchemist, Apr 2026)
+  created=2026-04-05T09:05:56.236Z updated=2026-04-05T09:05:56.236Z
+  stale-term hits: openclaw
+
+vault-skill-graphs-arscontexta-2026-04-05 | cat=research src=newton scope=all_agents tags=[skill-graphs,arscontexta,knowledge-base,darwin,ip-vault,karpathy,agent-architecture,tool-discovery,wikilinks,progressive-disclosure] len=1581
+  title: Skill Graphs > SKILL.md — arscontexta Pattern (@arscontexta, Feb 2026, 3.6M views)
+  created=2026-04-05T11:49:49.061Z updated=2026-04-05T11:49:49.061Z
+
+vault-rb-gemsnap-20260404-001 | cat=research src=newton scope=all_agents tags=[cro,conversion,gemsnap,physical-barrier,demo] len=475
+  title: GemSnap CRO — Demo-to-Scan Conversion Analysis
+  created=2026-04-05T12:58:34.917Z updated=2026-04-05T12:58:34.917Z
+
+vault-rb-caliber-20260404-001 | cat=research src=newton scope=all_agents tags=[peptides,dosing,tirzepatide,retatrutide,ghk-cu,epithalon,protocols] len=512
+  title: Caliber Dosing Protocols — Tirzepatide, Retatrutide, GHK-Cu, Epithalon
+  created=2026-04-05T12:58:35.498Z updated=2026-04-05T12:58:35.498Z
+
+vault-rb-caliber-20260404-002 | cat=research src=newton scope=all_agents tags=[reels,instagram,content-strategy,caliber,ugc,hooks] len=492
+  title: Caliber Reels Strategy 2026 — Format, Length, Hooks, Hashtags
+  created=2026-04-05T12:58:35.953Z updated=2026-04-05T12:58:35.953Z
+
+vault-rb-caliber-20260404-003 | cat=research src=newton scope=all_agents tags=[reels,hooks,caliber,peptides,content-creation] len=504
+  title: Caliber 30 Reel Hooks — 3 per product, all cited
+  created=2026-04-05T12:58:36.473Z updated=2026-04-05T12:58:36.473Z
+
+vault-rb-caliber-20260329-001 | cat=research src=newton scope=all_agents tags=[competitors,caliber,pricing,trust,positioning] len=522
+  title: Caliber Competitor Teardowns — Tide Labs, Swiss Chems, AG1, Hims
+  created=2026-04-05T12:58:36.924Z updated=2026-04-05T12:58:36.924Z
+
+vault-rb-caliber-20260329-002 | cat=research src=newton scope=all_agents tags=[pricing,caliber,revenue,competitors] len=478
+  title: Caliber Pricing Matrix v2 — 10-Vial Box Validation
+  created=2026-04-05T12:58:37.457Z updated=2026-04-05T12:58:37.457Z
+
+vault-rb-general-20260404-001 | cat=research src=newton scope=all_agents tags=[karpathy,llm-wiki,knowledge-base,product-opportunity,ip-vault] len=551
+  title: Karpathy LLM Wiki Pattern — Build vs Position Analysis
+  created=2026-04-05T12:58:59.687Z updated=2026-04-05T12:58:59.687Z
+
+vault-rb-general-20260326-001 | cat=research src=newton scope=all_agents tags=[agents,inspiration,automation] len=422
+  title: Polsia — AI That Runs Companies Autonomously
+  created=2026-04-05T13:08:24.262Z updated=2026-04-05T13:08:24.262Z
+
+vault-rb-caliber-20260326-003 | cat=research src=newton scope=all_agents tags=[peptides,sexual-health,content,pt141] len=429
+  title: PT-141 Bremelanotide — Science Deep Dive
+  created=2026-04-05T13:08:24.559Z updated=2026-04-05T13:08:24.559Z
+
+vault-rb-caliber-20260330-001 | cat=research src=newton scope=all_agents tags=[peptides,anti-ageing,ghk-cu,skin,hair] len=429
+  title: GHK-Cu Copper Peptide Deep Dive v1
+  created=2026-04-05T13:08:24.895Z updated=2026-04-05T13:08:24.895Z
+
+vault-rb-caliber-20260402-001 | cat=research src=newton scope=all_agents tags=[peptides,anti-ageing,ghk-cu,carousel,hair] len=364
+  title: GHK-Cu Deep Dive v2 — Updated Data + Carousel Brief
+  created=2026-04-05T13:08:25.214Z updated=2026-04-05T13:08:25.214Z
+
+vault-rb-caliber-20260401-001 | cat=research src=newton scope=all_agents tags=[peptides,recovery,gut,inflammation,kpv] len=505
+  title: KPV — Gut Health and Inflammation Deep Dive
+  created=2026-04-05T13:08:58.198Z updated=2026-04-05T13:08:58.198Z
+
+vault-rb-caliber-20260401-002 | cat=research src=newton scope=all_agents tags=[reels,instagram,content-strategy,competitive,tts,visual] len=485
+  title: Peptide Reels Competitive Analysis — Winning Formula
+  created=2026-04-05T13:08:58.490Z updated=2026-04-05T13:08:58.490Z
+
+vault-rb-general-20260330-001 | cat=research src=newton scope=all_agents tags=[agents,infrastructure,self-improvement,darwin] len=470
+  title: Hermes Agent Spontaneous Self-Improvement Case Study
+  created=2026-04-05T13:08:58.773Z updated=2026-04-05T13:08:58.773Z
+  stale-term hits: openclaw
+
+vault-rb-general-20260330-002 | cat=research src=newton scope=all_agents tags=[agents,infrastructure,decision-quality,atlas] len=506
+  title: Multi-Agent Anonymous Peer Review Pattern
+  created=2026-04-05T13:08:59.041Z updated=2026-04-05T13:08:59.041Z
+
+vault-rb-caliber-20260329-003 | cat=research src=newton scope=all_agents tags=[automation,distribution,tiktok,youtube,instagram,n8n] len=410
+  title: Cross-Platform Distribution — Blotato + n8n Workflow
+  created=2026-04-05T13:09:32.605Z updated=2026-04-05T13:09:32.605Z
+
+vault-rb-edge-auto-20260325-001 | cat=research src=newton scope=all_agents tags=[edge-auto,pricing,automation,agency,revenue] len=402
+  title: Edge Auto — AI Agency Pricing and Business Model
+  created=2026-04-05T13:09:32.896Z updated=2026-04-05T13:09:32.896Z
+
+vault-rb-edge-auto-20260329-001 | cat=research src=newton scope=all_agents tags=[edge-auto,pricing,premium,hormozi,guarantee] len=475
+  title: Edge Auto Premium-First Pricing £4,000 Validation
+  created=2026-04-05T13:09:33.216Z updated=2026-04-05T13:09:33.216Z
+
+vault-rb-edge-auto-20260325-002 | cat=research src=newton scope=all_agents tags=[edge-auto,automation,roi,audit,lead-response] len=488
+  title: Edge Auto Audit — 8 Automation Combinations With ROI Data
+  created=2026-04-05T13:09:33.490Z updated=2026-04-05T13:09:33.490Z
+
+vault-rb-caliber-20260329-005 | cat=research src=newton scope=all_agents tags=[caliber,competitors,uk-market,pricing,seo] len=519
+  title: Caliber Peptides UK Direct Response Market Analysis
+  created=2026-04-05T13:09:33.807Z updated=2026-04-05T13:09:33.807Z
+
+vault-noorsekai-n8n-workflow-pack-2026-04-05 | cat=research src=newton scope=all_agents tags=[market-signal,business-idea,n8n,automation,edge-auto,low-ops,tool-discovery] len=723
+  title: Noorsekai Shop — 15,000+ Pre-Built n8n Workflows Product (Apr 2026)
+  created=2026-04-05T16:24:04.787Z updated=2026-04-05T16:24:04.787Z
+
+vault-everything-claude-code-repo-2026-04-06 | cat=research src=newton scope=all_agents tags=[tool-discovery,darwin,infrastructure/agents,infrastructure/openclaw,sop/agent-operations] len=833
+  title: Everything Claude Code — 27 agents, 64 skills, 33 commands (MIT, open source)
+  created=2026-04-06T00:35:40.002Z updated=2026-04-06T00:35:40.002Z
+  stale-term hits: openclaw
+
+vault-rb-general-20260406-001 | cat=research src=newton scope=all_agents tags=[ads,hyros,attribution,synthetic-audiences,meta,ai-video,character-consistency,runway,kling] len=921
+  title: Ad Intelligence, Hyros, Synthetic Audiences, AI Consistent-Character Video
+  created=2026-04-06T10:15:24.800Z updated=2026-04-06T10:15:24.800Z
+
+vault-awesome-free-llm-apis-2026-04-07 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,infrastructure/openclaw,darwin] len=745
+  title: Awesome Free LLM APIs — Permanent Free Tiers for Text Inference
+  created=2026-04-07T16:41:25.588Z updated=2026-04-07T16:41:25.588Z
+  stale-term hits: openclaw
+
+vault-rb-general-20260407-001 | cat=research src=newton scope=all_agents tags=[models,infrastructure,darwin,squad,benchmarks] len=851
+  title: Model Selection Framework — Squad Task Matching and Quality Grades (Apr 2026)
+  created=2026-04-07T16:47:17.404Z updated=2026-04-07T16:47:17.404Z
+
+vault-clicky-ai-screen-companion-2026-04-07 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,market-signal] len=809
+  title: Clicky.so — Always-On AI Screen Companion (Claude + ElevenLabs, Mac)
+  created=2026-04-07T16:48:13.222Z updated=2026-04-07T16:48:13.222Z
+
+vault-perplexity-computer-seo-7-prompts-2026-04-07 | cat=research src=newton scope=all_agents tags=[tool-discovery,seo,gemsnap,caliber,content/strategy,metrics/conversion] len=801
+  title: Perplexity Computer — 7 Prompts Replace $2,000/mo SEO Agency for $20
+  created=2026-04-07T16:49:33.075Z updated=2026-04-07T16:49:33.075Z
+
+vault-gemma4-openclaw-local-2026-04-07 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/openclaw,infrastructure/agents,darwin,gemma4] len=827
+  title: Gemma 4 + OpenClaw Local Setup — Zero Cost Agent Runtime
+  created=2026-04-07T16:51:00.729Z updated=2026-04-07T16:51:00.729Z
+  stale-term hits: openclaw
+
+vault-coral-multi-agent-discovery-2026-04-07 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,sop/agent-operations,darwin,market-signal,research-lead] len=1177
+  title: CORAL — Autonomous Multi-Agent Discovery System (Han Zheng, Apr 2026)
+  created=2026-04-07T16:51:43.965Z updated=2026-04-07T16:51:43.965Z
+
+vault-claude-code-resource-bible-2026-04-07 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,infrastructure/openclaw,darwin] len=1177
+  title: Claude Code Resource Bible — 54 Tools, Repos, and Extensions
+  created=2026-04-07T16:54:56.957Z updated=2026-04-07T16:54:56.957Z
+  stale-term hits: openclaw
+
+vault-claude-code-project-structure-reference-2026-04-07 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,infrastructure/openclaw,darwin,sop/agent-operations] len=1098
+  title: Claude Code Project Structure Reference — Complete Workspace Setup (Brij Kishore Pandey)
+  created=2026-04-07T16:57:50.984Z updated=2026-04-07T16:57:50.984Z
+  stale-term hits: openclaw
+
+vault-gkisokay-llm-model-stack-2026-04-07 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,infrastructure/openclaw,darwin,models,benchmarks] len=1747
+  title: Gkisokay LLM Model Stack — 4-Tier Multi-Model Routing Guide (Apr 2026)
+  created=2026-04-07T17:05:00.696Z updated=2026-04-07T17:05:00.696Z
+  stale-term hits: openclaw
+
+vault-anthropic-4-levels-ai-marketing-2026-04-08 | cat=research src=newton scope=all_agents tags=[market-signal,sop/agent-operations,content/strategy,infrastructure/agents] len=1076
+  title: Anthropic Growth Marketer — 4 Levels of AI Marketing Use (@shannholmberg)
+  created=2026-04-08T03:33:55.088Z updated=2026-04-08T03:33:55.088Z
+
+vault-snap-family-t00-ip-review-2026-04-08 | cat=research src=newton scope=all_agents tags=[gemsnap,snap-family,conversion,sop/agent-operations,best-practice,market-signal] len=1489
+  title: Snap Family T-0.0 — IP Vault Learnings Applied to 10-App Scoring
+  created=2026-04-08T14:26:57.311Z updated=2026-04-08T14:26:57.311Z
+
+vault-garrytan-durable-agent-framework-2026-04-09 | cat=research src=newton scope=all_agents tags=[sop/agent-operations,infrastructure/agents,darwin,best-practice] len=1154
+  title: Garry Tan — Framework for Durable AI Agents (Manual First, Then Automate)
+  created=2026-04-09T09:14:34.149Z updated=2026-04-09T09:14:34.149Z
+
+vault-steinberger-claude-tips-2026-04-09 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,darwin,sop/agent-operations,best-practice,tool-discovery] len=1033
+  title: Peter Steinberger — Claude Code Tips for AI-First Operators
+  created=2026-04-09T16:50:42.706Z updated=2026-04-09T16:50:42.706Z
+
+vault-anthropic-advisor-strategy-2026-04-09 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,darwin,tool-discovery,best-practice,market-signal] len=1298
+  title: Anthropic Advisor Strategy — Opus as advisor, Sonnet/Haiku as executor (Apr 9 2026)
+  created=2026-04-10T07:15:15.794Z updated=2026-04-10T07:15:15.794Z
+
+vault-karpathy-llm-knowledge-base-2026-04-11 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,darwin,tool-discovery,best-practice,market-signal,gemsnap] len=1636
+  title: Karpathy LLM Knowledge Base System — Full Build Guide + Squad Application
+  created=2026-04-11T04:41:30.514Z updated=2026-04-11T04:41:30.514Z
+
+vault-agent-browser-vercel-labs-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice] len=1086
+  title: agent-browser (Vercel Labs) — Free CLI for AI Browser Control, 26K stars
+  created=2026-04-11T04:44:17.193Z updated=2026-04-11T04:44:17.193Z
+  stale-term hits: openclaw
+
+vault-claude-skills-ruben-hassid-guide-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice,content-pipeline] len=1651
+  title: Claude Skills (Claude Code slash commands) — Full Guide, Hacks, makemyskill.com
+  created=2026-04-11T04:47:39.900Z updated=2026-04-11T04:47:39.900Z
+  stale-term hits: openclaw
+
+vault-claude-skills-ruben-hassid-hacks-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice] len=1436
+  title: Claude Skills Hacks Part 2 — Negative triggers, token savings, portability, laziness fix
+  created=2026-04-11T04:49:02.155Z updated=2026-04-11T04:49:02.155Z
+  stale-term hits: openclaw
+
+vault-ai-agents-zero-to-production-khairallah-2026-04-11 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,darwin,best-practice,multi-agent] len=2011
+  title: AI Agents Zero to Production — Complete Architecture Guide (eng_khairallah1)
+  created=2026-04-11T04:52:42.354Z updated=2026-04-11T04:52:42.354Z
+
+vault-henry-intelligent-machines-competitor-2026-04-11 | cat=research src=newton scope=all_agents tags=[competitor-intel,market-signal,business-model,multi-agent] len=1559
+  title: Henry Intelligent Machines (HIM) — Pre-seed funded AI agent swarm for autonomous value creation
+  created=2026-04-11T06:26:22.674Z updated=2026-04-11T06:26:22.674Z
+
+vault-claude-code-hidden-features-defileo-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice,multi-agent] len=1905
+  title: Claude Code Hidden Features — Channels, /batch, Agent Teams, Hooks (defileo thread)
+  created=2026-04-11T06:27:54.935Z updated=2026-04-11T06:27:54.935Z
+  stale-term hits: openclaw
+
+vault-claude-code-hooks-defileo-part2-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice] len=1594
+  title: Claude Code Hidden Features Part 2 — Hooks, /loop scheduling, subagent memory, HTML comments
+  created=2026-04-11T06:42:06.536Z updated=2026-04-11T06:42:06.536Z
+
+vault-second-brain-nickspisak-part2-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice,karpathy] len=1668
+  title: Second Brain Part 2 — Domain-specific vaults, npx skills install, 4 operations (NickSpisak)
+  created=2026-04-11T06:42:21.826Z updated=2026-04-11T06:42:21.826Z
+
+vault-ai-employee-blueprint-khairallah-2026-04-11 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,darwin,best-practice,multi-agent,business-model] len=1566
+  title: AI Employee Blueprint — Role, Workspace, Workflow, Deploy, Scale (eng_khairallah1)
+  created=2026-04-11T06:47:03.012Z updated=2026-04-11T06:47:03.012Z
+
+vault-my-brain-is-full-crew-obsidian-agents-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice,karpathy] len=962
+  title: My Brain Is Full Crew — Open-source 8-agent Obsidian vault manager (Mario Nawfal)
+  created=2026-04-11T07:33:54.022Z updated=2026-04-11T07:33:54.022Z
+
+vault-claude-code-token-savings-plugins-ghumare-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,infrastructure/agents,darwin,best-practice,cost-reduction] len=689
+  title: Claude Code token savings — disabling heavy plugins saves 15-20K tokens/turn
+  created=2026-04-11T07:34:20.848Z updated=2026-04-11T07:34:20.848Z
+  stale-term hits: openclaw
+
+vault-awesome-free-llm-apis-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,darwin,cost-reduction,infrastructure/agents] len=699
+  title: Awesome Free LLM APIs — curated list of free-tier text inference APIs
+  created=2026-04-11T07:34:21.228Z updated=2026-04-11T07:34:21.228Z
+
+vault-growth-ai-four-dimensions-austinlau-anthropic-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,content-pipeline,infrastructure/agents,strategy,atlas] len=1836
+  title: 4 Dimensions of AI for Growth — Anthropic employee framework (Austin Lau)
+  created=2026-04-11T07:35:57.696Z updated=2026-04-11T07:35:57.696Z
+
+vault-claude-token-savings-caveman-warmup-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,darwin,cost-reduction,infrastructure/agents,best-practice] len=1684
+  title: Claude token savings — caveman skill (75% reduction) + window warmup hack
+  created=2026-04-11T07:44:58.374Z updated=2026-04-11T07:44:58.374Z
+  stale-term hits: openclaw
+
+vault-llm-model-tiers-openclaw-agents-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,darwin,cost-reduction,infrastructure/agents,best-practice] len=1759
+  title: LLM model tier list for OpenClaw/Hermes agents — 4 tiers, 12+ models
+  created=2026-04-11T07:51:37.617Z updated=2026-04-11T07:51:37.617Z
+  stale-term hits: openclaw
+
+vault-resilient-agent-stack-under30-gkisokay-2026-04-11 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,darwin,cost-reduction,best-practice,resilience] len=1791
+  title: Resilient multi-model agent stack under $30/mo — routing logic, failure modes, cost math (@gkisokay)
+  created=2026-04-11T07:53:13.312Z updated=2026-04-11T07:53:13.312Z
+
+vault-claude-code-custom-tools-dtc-agency-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,strategy,business-model,validation,content-pipeline] len=1694
+  title: Claude Code case study — DTC agency built casting platform + inventory + shipping tracker in days, zero dev cost
+  created=2026-04-11T07:58:43.258Z updated=2026-04-11T07:58:43.258Z
+
+vault-mirix-multi-agent-memory-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,darwin,infrastructure/agents,memory,best-practice] len=1410
+  title: MIRIX — multi-agent personal assistant with 6-component memory system (Mirix-AI/MIRIX)
+  created=2026-04-11T08:02:42.718Z updated=2026-04-11T08:02:42.718Z
+  stale-term hits: openclaw
+
+vault-rocket-1-business-intelligence-virani-2026-04-11 | cat=research src=newton scope=all_agents tags=[tool-discovery,darwin,newton,infrastructure/agents,competitor-intel] len=919
+  title: Rocket 1.0 — business intelligence platform connecting thinking + building, competitive surveillance (Vishal Virani)
+  created=2026-04-11T08:04:15.348Z updated=2026-04-11T08:04:15.348Z
+
+vault-20-agent-script-pipeline-mitchell-2026-04-11 | cat=research src=newton scope=all_agents tags=[content-pipeline,atlas,best-practice,research-methodology,hook-writing] len=2141
+  title: 20-agent script pipeline — $10M revenue, 50M views, weapons check system (@MitcheIl)
+  created=2026-04-11T08:05:25.602Z updated=2026-04-11T08:05:25.602Z
+
+vault-llm-knowledge-base-business-model-2026-04-11 | cat=research src=newton scope=all_agents tags=[business-model,strategy,opportunity-score,newton] len=1630
+  title: LLM knowledge base as productised service — £1.5K build + £500/yr maintenance, cash-rich time-poor clients
+  created=2026-04-11T08:07:45.832Z updated=2026-04-11T08:07:45.832Z
+
+vault-karpathy-kb-implementation-guide-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,infrastructure/agents,darwin,knowledge-base,tool-discovery] len=2330
+  title: Karpathy LLM Knowledge Base — full implementation guide (Obsidian + Claude Code, 5 automation levels)
+  created=2026-04-11T08:09:48.864Z updated=2026-04-11T08:09:48.864Z
+
+vault-karpathy-kb-implementation-guide-addendum-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,infrastructure/agents,darwin,knowledge-base] len=2037
+  title: Karpathy KB guide addendum — Level 4 GitHub Actions, Level 5 agent skill, community tools, synthetic data
+  created=2026-04-11T08:11:48.004Z updated=2026-04-11T08:11:48.004Z
+
+vault-claude-12-power-techniques-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,content-pipeline,atlas,strategy,prompt-library] len=2247
+  title: 12 Claude power techniques — steelman, interview, red-team, decision framework, voice matching
+  created=2026-04-11T08:13:52.438Z updated=2026-04-11T08:13:52.438Z
+
+vault-karpathy-kb-gist-url-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,infrastructure/agents,darwin,knowledge-base] len=599
+  title: Karpathy LLM Knowledge Base — original system prompt gist URL
+  created=2026-04-11T08:15:08.379Z updated=2026-04-11T08:15:08.379Z
+
+vault-b2b-outbound-5step-coldiq-2026-04-11 | cat=research src=newton scope=all_agents tags=[strategy,business-model,sales,future-use,content-strategy] len=1066
+  title: 5-Step B2B outbound system — COMPLETE + HYBRID DATA (ColdIQ, $7M ARR, 320+ companies)
+  created=2026-04-11T08:17:23.975Z updated=2026-04-11T08:17:23.975Z
+
+vault-claude-code-automation-discovery-prompt-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,infrastructure/agents,darwin,prompt-library,automation] len=1342
+  title: Claude Code automation guide — COMPLETE including cron, pipeline chaining, prompt formula
+  created=2026-04-11T08:22:59.841Z updated=2026-04-11T08:22:59.841Z
+
+vault-anthropic-managed-agents-beta-2026-04-11 | cat=research src=newton scope=all_agents tags=[infrastructure/agents,darwin,best-practice,tools] len=2506
+  title: Anthropic Managed Agents — public beta, 4 concepts, deployment guide, pricing ($0.08/session-hour)
+  created=2026-04-11T08:28:47.822Z updated=2026-04-11T08:28:47.822Z
+  stale-term hits: openclaw
+
+vault-30-battle-tested-prompts-2026-04-11 | cat=research src=newton scope=all_agents tags=[best-practice,prompt-library,atlas,darwin,strategy,content-strategy] len=2357
+  title: 30 battle-tested Claude prompts — daily ops, content, research, coding, strategy, meta-prompts
+  created=2026-04-11T08:31:04.698Z updated=2026-04-11T08:31:04.698Z
+
+vault-shipper-now-computer-use-agent-2026-04-11 | cat=research src=newton scope=all_agents tags=[tools,infrastructure/agents,darwin,unverified] len=1365
+  title: Shipper.now — one-prompt computer-use agent: builds, publishes, monetizes apps autonomously (claims unverified)
+  created=2026-04-11T09:20:38.754Z updated=2026-04-11T09:20:38.754Z
+
+vault-just-happened-state-digital-products-2026-04-11 | cat=research src=newton scope=all_agents tags=[pricing-psychology,digital-products,distribution,reddit-research,caliber] len=1787
+  title: The Just-Happened State — Urgency-Priced Digital Products
+  created=2026-04-11T09:36:34.373Z updated=2026-04-11T09:36:34.373Z
+
+vault-gbrain-garrytan-openclaw-integration-2026-04-11 | cat=tool-discovery src=newton scope=all_agents tags=[gbrain,knowledge-base,openclaw,integrations,memory,infrastructure,garry-tan] len=1777
+  title: GBrain — Garry Tan Personal Knowledge Base for OpenClaw Agents
+  created=2026-04-11T17:45:42.562Z updated=2026-04-11T17:45:42.562Z
+  stale-term hits: openclaw
+
+vault-garrytan-boil-the-ocean-2026-04-13 | cat=principles src=newton scope=all_agents tags=[principles,garry-tan,quality,standards,soul] len=663
+  title: Garry Tan — Boil the Ocean Standard (AI Era)
+  created=2026-04-13T16:21:25.496Z updated=2026-04-13T16:21:25.496Z
+
+vault-rb-newproduct-20260426-001 | cat=research src=newton scope=all_agents tags=[content-product,digital-product,gumroad,tiktok,content-engine,launch] len=360
+  title: AI Content Product Research — Full Brief (Apr 2026)
+  created=2026-04-26T18:25:37.852Z updated=2026-04-26T18:25:37.852Z
+
+ipv-wh-1 | cat=winning-hooks src=manual scope=all_agents tags=[] len=167
+  title: Your body makes this peptide. Most people don't have enough.
+  created=2026-05-04T10:05:41.487Z updated=2026-05-04T10:05:41.487Z
+
+ipv-wh-2 | cat=winning-hooks src=manual scope=all_agents tags=[] len=139
+  title: We scanned 10,000 gems. Here's what we found.
+  created=2026-05-04T10:05:41.487Z updated=2026-05-04T10:05:41.487Z
+
+ipv-cl-1 | cat=channel-learnings src=manual scope=all_agents tags=[] len=254
+  title: Carousels outperform reels for education content by 3x engagement
+  created=2026-05-04T10:05:41.487Z updated=2026-05-04T10:05:41.487Z
+
+ipv-fe-1 | cat=failed-experiments src=manual scope=all_agents tags=[] len=386
+  title: Reddit organic for Caliber
+  created=2026-05-04T10:05:41.487Z updated=2026-05-04T10:05:41.487Z
+
+manual-c86a1044-9d23-4748-a603-ff5bd710cb32 | cat=workflow src=ginge scope=ginge tags=[workflow,knowledge-management,claude-orchestration,curiosity-management] len=2394
+  title: Tweet triage workflow (Ginge bedtime scrolling)
+  created=2026-05-04T17:22:32.939Z updated=2026-05-04T17:22:32.939Z
+
+manual-c7850cc7-334e-4106-936e-0cae7ede32f4 | cat=migration-backlog src=ginge scope=all_agents tags=[migration,phase6,mcp,backlog] len=1763
+  title: Phase 6 backlog: add apex_set_project MCP tool + promote placeholder projects
+  created=2026-05-04T17:29:12.490Z updated=2026-05-04T17:29:12.490Z
+
+manual-31f791ee-3cfa-45a1-8e26-f668daa8e2d7 | cat=workflow src=ginge scope=all_agents tags=[workflow,mission-control,session-pattern,claude-orchestration] len=4531
+  title: Mission Control session pattern (Ginge + Claude working agreement)
+  created=2026-05-04T17:31:29.008Z updated=2026-05-04T17:31:29.008Z
+  stale-term hits: openclaw
+
+manual-6151c4b2-aa50-4a69-8608-654c62be1f77 | cat=workflow src=ginge scope=all_agents tags=[workflow,mission-control,session-pattern,claude-orchestration,v2] len=6035
+  title: Mission Control session pattern v2 (Ginge + Claude working agreement)
+  created=2026-05-04T17:47:31.231Z updated=2026-05-04T17:47:31.231Z
+  stale-term hits: openclaw, deprecated
+
+manual-c67954b3-52b4-4a9c-90e4-003238bdfcb7 | cat=migration-backlog src=ginge scope=all_agents tags=[migration-backlog,apex-magnificent,deferred,post-revenue] len=4018
+  title: "Apex Magnificent" sprint — full review of projects/tasks/prompts/practices/UI (deferred to post-revenue)
+  created=2026-05-04T17:59:27.423Z updated=2026-05-04T17:59:27.423Z
+  stale-term hits: openclaw, apex:projects, vault:ip-entries, maproom:
+
+manual-3918ace8-6db3-49f1-b6fc-5e59624080fc | cat=migration-backlog src=ginge scope=all_agents tags=[migration-backlog,phase6,briefing-logic,bug] len=1073
+  title: Phase 6 backlog: briefing display bugs (agent dormancy, blockers filter)
+  created=2026-05-04T18:08:06.699Z updated=2026-05-04T18:08:06.699Z
+  stale-term hits: openclaw
+
+manual-8595cf1e-cbee-41dc-9b9b-d8de854ec4f6 | cat=workflow src=ginge scope=all_agents tags=[workflow,mission-control,session-pattern,claude-orchestration,v3] len=5502
+  title: Mission Control session pattern v3 (Ginge + Claude working agreement)
+  created=2026-05-05T14:01:17.742Z updated=2026-05-05T14:01:17.742Z
+  stale-term hits: openclaw, deprecated
+
+manual-8355c348-318a-49bf-8dc7-48bb84a37fea | cat=workflow src=ginge scope=all_agents tags=[workflow,architecture,agents,newton,darwin,mission-control,post-openclaw] len=6927
+  title: Three-Project agent architecture: Mission Control + Newton + Darwin (post-OpenClaw, on-demand)
+  created=2026-05-05T14:07:09.091Z updated=2026-05-06T06:02:28.269Z
+  stale-term hits: openclaw
+
+manual-ca91ad90-3db9-487e-82b5-f89431eee1d3 | cat=test src=manual scope=all_agents tags=[phase4.1,seed] len=74
+  title: Phase 4.1 update target mospdpvx (UPDATED)
+  created=2026-05-05T14:07:49.849Z updated=2026-05-05T14:07:56.328Z
+
+manual-00e743d6-802e-442d-9600-15bdaad2d44c | cat=test src=manual scope=all_agents tags=[phase4.1,seed] len=74
+  title: Phase 4.1 update target mospg4xo (UPDATED)
+  created=2026-05-05T14:09:42.635Z updated=2026-05-05T14:09:43.076Z
+
+manual-ea666c32-0bf8-4dca-b3e9-1ca812d06826 | cat=experiment-vault src=ginge scope=ginge tags=[experiment-vault,tools-to-try,wednesday-slot] len=2035
+  title: Experiment vault — tools and approaches to evaluate (not active work)
+  created=2026-05-05T14:09:50.856Z updated=2026-05-05T14:09:50.856Z
+
+manual-9eecd660-1c37-4ed3-91c3-5c3274989606 | cat=workflow src=ginge scope=all_agents tags=[workflow,housekeeping,claude-projects,setup,checklist] len=6263
+  title: Project housekeeping checklist (bringing Claude Projects into the post-migration loop)
+  created=2026-05-05T14:14:36.469Z updated=2026-05-05T14:14:36.469Z
+  stale-term hits: openclaw
+
+manual-cff3df35-99e5-4144-bd41-054012aed4ac | cat=migration-backlog src=ginge scope=all_agents tags=[migration-backlog,phase6,apex-magnificent,ui-data-sync,high-priority] len=2660
+  title: Apex web UI out of sync with MCP writes — application-layer refactor needed (HIGH PRIORITY in Magnificent)
+  created=2026-05-05T14:45:17.278Z updated=2026-05-05T14:45:17.278Z
+  stale-term hits: apex:projects, maproom:
+
+manual-a26f790a-f53d-458c-bd1a-87d53e75688f | cat=migration-backlog src=ginge scope=all_agents tags=[phase-7-backlog,ui-enhancement,workflow,post-magnificent,deferred] len=2777
+  title: Phase 7 backlog: "Open in [tool]" deep-link buttons on Apex project cards
+  created=2026-05-05T14:56:41.890Z updated=2026-05-05T14:56:41.890Z
+
+manual-a656c73b-019a-446f-93bb-93cde10363e1 | cat=phase-7-backlog src=ginge scope=ginge tags=[phase-7-backlog,personal-admin,life-admin,post-magnificent,deferred,claude-project-design] len=2870
+  title: Phase 7 backlog: Personal Admin Claude Project — life-admin (subscriptions, email triage, calendar) separate from Mission Control
+  created=2026-05-05T15:07:05.631Z updated=2026-05-05T15:07:05.631Z
+
+manual-cbb69ea8-21b1-489f-9041-6f9efeea4b5b | cat=phase-7-backlog src=ginge scope=all_agents tags=[phase-7-backlog,schema-evolution,research-locker,post-newton,deferred] len=2059
+  title: Phase 7: per-project research locker — prompts + findings + rating attached to project record
+  created=2026-05-05T15:23:33.686Z updated=2026-05-05T15:23:33.686Z
+
+manual-4b708ccf-8887-4ed9-bb65-8d6d7d0d0923 | cat=workflow src=ginge scope=ginge tags=[creative-track,claude-projects,non-pipeline,memory] len=3389
+  title: Creative threads — current creative-track pursuits (not Apex pipeline projects)
+  created=2026-05-06T05:31:10.421Z updated=2026-05-06T05:31:10.421Z
+
+manual-d654d088-0a17-49fe-9098-4b96aa41aaaa | cat=phase-7-backlog src=ginge scope=all_agents tags=[phase-7-backlog,operationalise,next-sprint,briefing-redesign,project-housekeeping,newton-darwin,post-magnificent] len=4209
+  title: Phase 7 sprint scope: Operationalise (briefing redesign + project housekeeping + Newton/Darwin builds)
+  created=2026-05-06T05:50:20.037Z updated=2026-05-06T05:50:20.037Z
+
+manual-fc240832-bc6b-41cf-869e-52fb1f5744e0 | cat=phase-7-backlog src=ginge scope=all_agents tags=[phase-7-backlog,task-chaining,pipeline-mechanics,automation,graduation] len=4795
+  title: Phase 7: task-chaining is the pipeline engine — apex_complete_task auto-spawns next_task with output review
+  created=2026-05-06T05:59:30.930Z updated=2026-05-06T06:05:14.611Z
+  stale-term hits: openclaw
+
+manual-7fed8718-b23a-4973-bb74-b0e6613796bc | cat=phase-7-backlog src=ginge scope=all_agents tags=[phase-7-backlog,multi-template,creative-pipelines,schema-evolution,next-sprint] len=2816
+  title: Phase 7: multi-template Apex — venture vs creative-series vs creative-script vs creative-app vs internal-tool pipelines
+  created=2026-05-06T06:00:13.441Z updated=2026-05-06T06:00:13.441Z
+
+manual-f3ea8b90-e399-4e9e-986b-796e305c9c62 | cat=phase-8-backlog src=ginge scope=all_agents tags=[phase-8-backlog,knowledge-graph,wiki,schema-evolution,post-phase-7] len=3629
+  title: Phase 8 backlog: typed knowledge wiki — replace flat practice tagging with 5-node-type graph (concepts/decisions/evidence/procedures/entities)
+  created=2026-05-06T06:05:57.127Z updated=2026-05-06T06:05:57.127Z
+  stale-term hits: openclaw
