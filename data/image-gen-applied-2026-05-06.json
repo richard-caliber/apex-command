@@ -1,0 +1,112 @@
+{
+  "date": "2026-05-06",
+  "tool": "nano-banana-pro (Gemini 3 Pro Image Preview)",
+  "style_reference": "data/image-gen-style-notes.md",
+  "common_style_prompt_prefix": "Cinematic illustrative painterly art on deep black background, single centered subject with soft inner glow and rim lighting, no text, 1:1 square composition, fantasy book illustration style.",
+  "projects": [
+    {
+      "id": "atlas-drift",
+      "image_filename": "atlas-drift-card.jpg",
+      "image_url": "/images/atlas-drift-card.jpg",
+      "subject_prompt": "a glowing teal compass rose floating over a stylized silhouette of Southeast Asia archipelago islands with palm trees and a tropical horizon line, soft sea-blue and teal accent colour, atmospheric haze, mysterious mood. Inspired by relocation/travel/exploration.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/atlas-drift-card.jpg" },
+      "preserved": ["status:active", "stage:mvp", "blocker present", "5 tags", "owner:ginge"]
+    },
+    {
+      "id": "poker-os",
+      "image_filename": "poker-os-card.jpg",
+      "image_url": "/images/poker-os-card.jpg",
+      "subject_prompt": "floating playing cards (ace of spades, king, queen) drifting in space with glowing green felt particles and golden light streaks weaving between them like content scripts, deep poker green and warm gold accent colours.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/poker-os-card.jpg" },
+      "preserved": ["status:active", "stage:mvp", "blocker present", "5 tags"]
+    },
+    {
+      "id": "todd-saifent",
+      "image_filename": "todd-saifent-card.jpg",
+      "image_url": "/images/todd-saifent-card.jpg",
+      "subject_prompt": "a stylized fire-safety shield emblem with a glowing flame at its center, surrounded by faint architectural blueprint lines and smoke detector silhouettes, orange-red and amber accent colour palette.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/todd-saifent-card.jpg" },
+      "preserved": ["status:active", "stage:validation", "blocker present", "5 tags"]
+    },
+    {
+      "id": "sheils-poker",
+      "image_filename": "sheils-poker-card.jpg",
+      "image_url": "/images/sheils-poker-card.jpg",
+      "subject_prompt": "tight constellation cluster of luxurious poker chips stacked and floating, deep crimson red with white edge stripes, with delicate gold filigree connecting them like a family crest.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/sheils-poker-card.jpg" },
+      "preserved": ["status:active", "stage:idea", "no blocker (correct)", "5 tags"]
+    },
+    {
+      "id": "bracelet-quest",
+      "image_filename": "bracelet-quest-card.jpg",
+      "image_url": "/images/bracelet-quest-card.jpg",
+      "subject_prompt": "an enchanted glowing braided friendship bracelet floating in space, with delicate animated charms hanging from it depicting tiny adventurous icons (a sword, a key, a star), magical purple-magenta accent colour with hints of pink.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/bracelet-quest-card.jpg" },
+      "preserved": ["status:archived", "stage:mvp", "two-line blocker present", "5 tags"]
+    },
+    {
+      "id": "pokemon-fusion",
+      "image_filename": "pokemon-fusion-card.jpg",
+      "image_url": "/images/pokemon-fusion-card.jpg",
+      "subject_prompt": "two stylized creature silhouettes merging into a single glowing form with energy halos and electric arcs between them, fusion energy bursting outward, electric yellow and bright blue accent colours.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/pokemon-fusion-card.jpg" },
+      "preserved": ["status:archived", "stage:idea", "blocker present", "4 tags"]
+    },
+    {
+      "id": "personal-tv-script",
+      "image_filename": "personal-tv-script-card.jpg",
+      "image_url": "/images/personal-tv-script-card.jpg",
+      "subject_prompt": "a vintage typewriter glowing with paper pages spiralling upward into a cinematic film reel that unspools into the dark, warm amber-gold accent colour with a hint of sepia.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/personal-tv-script-card.jpg" },
+      "preserved": ["status:archived", "stage:idea", "two-line blocker present", "4 tags"]
+    },
+    {
+      "id": "personal-rms",
+      "image_filename": "personal-rms-card.jpg",
+      "image_url": "/images/personal-rms-card.jpg",
+      "subject_prompt": "a constellation of glowing data nodes connected by delicate luminous threads forming a personal life-graph network in space, soft cyan and pale blue accent colour.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/personal-rms-card.jpg" },
+      "preserved": ["status:archived", "stage:idea", "two-line blocker present", "3 tags"]
+    },
+    {
+      "id": "snap-apps",
+      "image_filename": "snap-apps-card.jpg",
+      "image_url": "/images/snap-apps-card.jpg",
+      "subject_prompt": "a cluster of crystalline iridescent gem facets and camera-lens shapes floating together as a shimmering family of objects, iridescent purple-cyan accent colour with rainbow highlights.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/snap-apps-card.jpg" },
+      "preserved": ["status:active", "stage:mvp", "no blocker (correct)", "5 tags"]
+    },
+    {
+      "id": "ideas-vault",
+      "image_filename": "ideas-vault-card.jpg",
+      "image_url": "/images/ideas-vault-card.jpg",
+      "subject_prompt": "an ornate vault door slightly ajar with deep golden light pouring outward, glowing manuscripts and scroll papers floating in the spilling light suggesting ideas escaping, deep gold and amber accent colour.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/ideas-vault-card.jpg" },
+      "preserved": ["status:archived", "stage:archived", "blocker present", "3 tags"]
+    },
+    {
+      "id": "personal",
+      "image_filename": "personal-card.jpg",
+      "image_url": "/images/personal-card.jpg",
+      "subject_prompt": "an ornate antique pocket compass with a star-map dial floating in space, surrounded by faint constellations of personal symbols (a feather, a key, a heart) connected by silver light, soft silver and pale blue accent colour.",
+      "before": { "image_url": "" },
+      "after": { "image_url": "/images/personal-card.jpg" },
+      "preserved": ["status:archived", "stage:idea", "blocker present", "2 tags"]
+    }
+  ],
+  "summary": {
+    "images_generated": 11,
+    "image_url_updates_applied": 11,
+    "field_corruption_check": "PASS — all status, stage, blocker, tags fields preserved across all 11 records (verified from set_project response payloads)"
+  }
+}
