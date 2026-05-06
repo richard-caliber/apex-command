@@ -39,40 +39,10 @@ function mask(value: string): string {
   return "\u2022".repeat(6) + value.slice(-4);
 }
 
-/* ── IP Vault ── */
-const IP_KV_KEY = "vault:ip-entries";
-
-interface IpEntry {
-  id: string;
-  project_id: string;
-  category: string;
-  title: string;
-  content: string;
-  source_task: string;
-  source_prompt: string;
-  created_by: string;
-  created_at: string;
-  tags: string[];
-  project_name: string;
-  performance_data: Record<string, unknown> | null;
-}
-
-interface IpStore { items: IpEntry[]; lastUpdated: string }
-
-async function getIpStore(): Promise<IpStore> {
-  const cached = await kv.get<IpStore>(IP_KV_KEY);
-  if (cached) return cached;
-  const seed: IpStore = { items: [], lastUpdated: new Date().toISOString() };
-  await kv.set(IP_KV_KEY, seed);
-  return seed;
-}
-
-async function saveIpStore(store: IpStore) {
-  store.lastUpdated = new Date().toISOString();
-  await kv.set(IP_KV_KEY, store);
-}
-
-/* ── API Keys ── */
+/* ── API Keys ──
+ * The IP vault sub-actions (ip-list/get/set/delete/search) and the
+ * vault:ip-entries KV key were retired in M5/M6. The IP Vault page now
+ * reads from apex:practices:v1 via /api/practices. */
 interface StoredKey {
   id: string;
   name: string;
@@ -160,73 +130,6 @@ export async function POST(req: NextRequest) {
         const verify = crypto.scryptSync(password, salt, 64).toString("hex");
         const valid = verify === hash;
         return NextResponse.json({ valid });
-      }
-
-      /* ── IP Vault actions ── */
-      case "ip-list": {
-        const store = await getIpStore();
-        let items = store.items;
-        if (body.project_id) items = items.filter((i) => i.project_id === body.project_id);
-        if (body.category) items = items.filter((i) => i.category === body.category);
-        return NextResponse.json({ items, lastUpdated: store.lastUpdated });
-      }
-
-      case "ip-get": {
-        if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
-        const store = await getIpStore();
-        const item = store.items.find((i) => i.id === body.id);
-        if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        return NextResponse.json(item);
-      }
-
-      case "ip-set": {
-        const { id: ipId, ...ipFields } = body;
-        if (!ipId) return NextResponse.json({ error: "id required" }, { status: 400 });
-        const store = await getIpStore();
-        const now = new Date().toISOString();
-        const idx = store.items.findIndex((i) => i.id === ipId);
-        if (idx >= 0) {
-          const { action: _a, ...clean } = ipFields;
-          store.items[idx] = { ...store.items[idx], ...clean, id: ipId };
-        } else {
-          store.items.push({
-            id: ipId,
-            project_id: ipFields.project_id || "",
-            category: ipFields.category || "research",
-            title: ipFields.title || "",
-            content: ipFields.content || "",
-            source_task: ipFields.source_task || "",
-            source_prompt: ipFields.source_prompt || "",
-            created_by: ipFields.created_by || "atlas",
-            created_at: now,
-            tags: ipFields.tags || [],
-            project_name: ipFields.project_name || "",
-            performance_data: ipFields.performance_data || null,
-          });
-        }
-        await saveIpStore(store);
-        return NextResponse.json(store.items.find((i) => i.id === ipId));
-      }
-
-      case "ip-delete": {
-        if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
-        const store = await getIpStore();
-        store.items = store.items.filter((i) => i.id !== body.id);
-        await saveIpStore(store);
-        return NextResponse.json({ ok: true });
-      }
-
-      case "ip-search": {
-        const { query: q } = body;
-        if (!q) return NextResponse.json({ items: [] });
-        const store = await getIpStore();
-        const lower = q.toLowerCase();
-        const results = store.items.filter((i) =>
-          i.title.toLowerCase().includes(lower) ||
-          i.content.toLowerCase().includes(lower) ||
-          i.tags.some((t: string) => t.toLowerCase().includes(lower))
-        );
-        return NextResponse.json({ items: results });
       }
 
       default:

@@ -1,5 +1,17 @@
 # Apex Magnificent Sprint Log
 
+## M6 — Dead code + README + release tag (2026-05-06)
+
+- **10 route files deleted** (zero src callers verified): `src/app/api/action-room/route.ts`, `src/app/api/squad/files/route.ts`, `src/app/api/map-room/{ip-vault, prompts, outputs}/route.ts` + their `[id]/route.ts` siblings, `src/app/api/map-room/{metrics, platform-rules}/route.ts`. Build dropped from 81 → 74 prerendered pages.
+- **`/api/vault/route.ts` ip-* sub-actions stripped** (~70 lines): `ip-list`/`ip-get`/`ip-set`/`ip-delete`/`ip-search` actions + `IpEntry`/`IpStore`/`getIpStore()`/`saveIpStore()` + `IP_KV_KEY` constant. Route now serves only the encrypted api-keys store. M5 already migrated the IP Vault page off these.
+- **2 orphan src/ files deleted**: `src/types.ts` (pre-Apex dashboard types — `App`, `Idea`, etc., zero imports) and `src/lib/agent-runs.ts` (apex:agent-runs:{agent}:{month} pattern with no MCP tool, no API route, no UI consumer).
+- **OpenClaw VM**: gcloud unavailable in M6 environment. Per kill criterion #5 surfaced to Ginge — manual decommission steps documented in `data/openclaw-decommission-2026-05-06.md` (snapshot then delete instance + disk).
+- **README.md created from scratch** (file did not previously exist). Documents: architecture diagram, canonical KV stores table with lib readers + write paths, KV stores deleted across Magnificent (14 keys, ~898KB), local dev env vars, MCP tools list + how-to, Mission Control session pattern v3 reference, Phase 7 + Phase 8 backlog with practice IDs, sprint summary, honest known divergences (defensive-keep routes, enrichment store, OpenClaw VM, agent-runs KV residue), repo layout.
+- **Routes considered but kept** (defensive — no internal caller, possible external HTTP consumers): `/api/status` GET, `/api/map-room/projects/{,/[id]}` GET. M4 explicit defer.
+- Production deploy `dpl_DvDHU27uc2dT7L2PwJqSqCpZYKrD`. Endpoint sweep clean (8 pages 200 except /squad 307 pre-existing redirect). All 7 deleted route paths now return 404. MCP `apex_get_briefing` shows preserved canonical state — 6 active projects, 4 venture commitments lead `your_actions`, 4 dormant agents + Ginge active.
+- **Tag `apex-magnificent-v1.0.0`** created and pushed.
+- Files: `data/magnificent-m6-notes.md`, `data/magnificent-m6-route-deletions.md`, `data/openclaw-decommission-2026-05-06.md`, `data/magnificent-m6-verify-2026-05-06.md`, new `README.md`.
+
 ## M5 — Tasks/prompts/practices review + IP Vault refactor (2026-05-06)
 
 - **Tasks (ginge-owned, ~204 total)**: 35 archived-snap task records → `status=blocked` with M5 cleanup note (M3.5 handled squad-owned only; these were ginge-owned residuals). 8 promotion tasks under edge-auto → blocker cleared (regression: `apex_set_task` defaults status to not_started when omitted; fixed). 1 strategic-note task → done. 1 duplicate `_template` adhoc-stripe-webhook → done. **45 changes applied**, 8 categories of ambiguous items surfaced for Ginge in `data/magnificent-m5-task-review.md` (biggest: ~38-task tweet review backlog under paused caliber).
