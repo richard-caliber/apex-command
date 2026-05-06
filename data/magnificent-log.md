@@ -1,5 +1,21 @@
 # Apex Magnificent Sprint Log
 
+## M7 — Sprint close + handoff (2026-05-06) — SPRINT CLOSED
+
+**Apex Magnificent v1.0.0 shipped.** Branch `apex-magnificent` merged to `master` (`--no-ff` merge commit `85d092b` preserves sprint commit history as discrete bubble for archaeology). Master deployed to production (`dpl_HJKqoiE3Ak4wUSPafuhuderSaYzD`). Tag `apex-magnificent-v1.0.0` on `caf746a` (M6 commit).
+
+- **10 success criteria verified.** 9/10 PASS, 1/10 PENDING (criterion 7 — OpenClaw VM gcloud decommission, the explicitly-allowed exception). Evidence in `data/magnificent-m7-success-criteria.md`. KV state verified clean via `scripts/m7-kv-keys-list.mjs`: 5 canonical stores intact, 14 deleted-by-design parallel stores all confirmed gone, 7 kept-by-design enrichment stores untouched. **Leak count: 0.**
+- **Sprint close-out practice** filed: `manual-c16c4158-0221-4607-ae8d-c59a1ca7f0c3` ("Apex Magnificent v1.0.0 — sprint close (2026-05-06)"). Captures what shipped, key wins, manual actions remaining, next session sequence.
+- **Apex meta-project created** (`id=apex`, stage=mvp, status=active, owner=ginge) — first project record for the Apex command system itself, distinct from the ventures Apex helps manage. `scripts/m7-refresh-ginge-current-task.mjs` updated `ginge.current_task` from "Magnificent sprint in progress" → "Apex Magnificent v1.0.0 shipped — Phase 7 planning next" via direct KV write to `apex:squad:v4`.
+- **Phase 7 planning task filed** as `MCP-MOTZ5VNT-ipli` on `apex` project, priority=high, owner=ginge. Now appears at TOP of `your_actions` (verified via `apex_get_briefing`). Description references practices `manual-d654d088` (Phase 7 sprint scope) + `manual-8355c348` (Three-Project agent architecture) + `manual-9eecd660` (housekeeping checklist) so next session has full context cold. Per Ginge's stated post-sprint sequence: plan Phase 7 → use system with real ventures (Atlas Drift first) → then formal venture prioritisation.
+- **Production sweep clean** post-merge: `/api/practices` returns 188, all key pages 200 (only known pre-existing 307s — `/squad`, `/machine-room`, `/schematics`, `/ideas`, `/tasks`, `/vault`, `/prompts`, `/map-room/heartbeat`), all 7 deleted route paths still 404. Master deploy matches `apex-magnificent` deploy exactly.
+- **Manual action remaining for Ginge** (only): OpenClaw VM gcloud decommission per `data/openclaw-decommission-2026-05-06.md`.
+- Files: `data/magnificent-m7-notes.md`, `data/magnificent-m7-success-criteria.md`, `scripts/m7-kv-keys-list.mjs`, `scripts/m7-refresh-ginge-current-task.mjs`. Sprint close-out: practice `manual-c16c4158`.
+
+**Sprint runtime: 8 phases (M0, M1, M2, M3, M3.5, M4, M5, M6, M7) over 2 calendar days (2026-05-05 → 2026-05-06).**
+
+---
+
 ## M6 — Dead code + README + release tag (2026-05-06)
 
 - **10 route files deleted** (zero src callers verified): `src/app/api/action-room/route.ts`, `src/app/api/squad/files/route.ts`, `src/app/api/map-room/{ip-vault, prompts, outputs}/route.ts` + their `[id]/route.ts` siblings, `src/app/api/map-room/{metrics, platform-rules}/route.ts`. Build dropped from 81 → 74 prerendered pages.
