@@ -1,38 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
-import { readFile } from "fs/promises";
-import { join } from "path";
-import { requireWriteAuth } from "@/lib/auth";
+import { NextResponse } from "next/server";
+import { getAllProjects, getProjectStoreLastUpdated } from "@/lib/projects";
 
-const KV_KEY = "apex:projects";
-interface ProjectData {
-  projects: Record<string, unknown>[];
-  lastUpdated: string;
-}
-
-async function getData(): Promise<ProjectData> {
-  const cached = await kv.get<ProjectData>(KV_KEY);
-  if (cached) return cached;
-
-  // Seed from JSON file on first load
-  const raw = await readFile(join(process.cwd(), "data", "projects.json"), "utf-8");
-  const seed = JSON.parse(raw) as ProjectData;
-  await kv.set(KV_KEY, seed);
-  return seed;
-}
+// GET reads canonical apex:warroom:projects via the projects lib.
+// Legacy apex:projects POST handler retired in M4 — that store is now
+// deleted. Writes go to apex:warroom:projects via /api/projects (which
+// is what the MCP write tools and Mission Control already use).
 
 export async function GET() {
-  const data = await getData();
-  return NextResponse.json(data);
-}
-
-export async function POST(req: NextRequest) {
-  const unauthorized = requireWriteAuth(req);
-
-  if (unauthorized) return unauthorized;
-
-  const body = (await req.json()) as ProjectData;
-  body.lastUpdated = new Date().toISOString();
-  await kv.set(KV_KEY, body);
-  return NextResponse.json({ ok: true });
+  const projects = await getAllProjects();
+  const lastUpdated = await getProjectStoreLastUpdated();
+  return NextResponse.json({ projects, lastUpdated });
 }

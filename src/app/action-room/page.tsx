@@ -17,6 +17,8 @@ interface PipelineTask {
   output: string;
   prompt_id: string;
   blocker: string | null;
+  priority?: string;
+  created_at?: string;
 }
 
 interface AdhocTask {
@@ -66,6 +68,9 @@ const PRIORITY_ORDER: Record<string, number> = {
   not_started: 2,
 };
 
+const TASK_PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+const SQUAD_OWNERS = new Set(["atlas", "newton", "darwin", "jimmy"]);
+
 const STATUS_EMOJI: Record<string, string> = {
   blocked: "\uD83D\uDD34",
   in_progress: "\uD83D\uDFE1",
@@ -114,6 +119,11 @@ export default function ActionRoom() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  // M2: explicit loading + error states. Until the first fetch resolves we
+  // never render empty-state copy — fixes "stuck Loading" / silent-empty bug
+  // observed in the Chrome extension review.
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   // Fetch all data on mount
   const fetchAll = useCallback(async () => {
     const [tasksRes, dataRes, squadRes, projectsRes, adhocRes] = await Promise.allSettled([
@@ -140,27 +150,35 @@ export default function ActionRoom() {
       }),
     ]);
 
+    let anySucceeded = false;
     if (tasksRes.status === "fulfilled" && tasksRes.value.ok) {
       const store = await tasksRes.value.json();
       setTasks(store.tasks || []);
+      anySucceeded = true;
     }
     if (dataRes.status === "fulfilled" && dataRes.value.ok) {
       const items = await dataRes.value.json();
       setMetrics(Array.isArray(items) ? items : []);
+      anySucceeded = true;
     }
     if (squadRes.status === "fulfilled" && squadRes.value.ok) {
       const data = await squadRes.value.json();
       setAgents(data.agents || []);
+      anySucceeded = true;
     }
     if (projectsRes.status === "fulfilled" && projectsRes.value.ok) {
       const store = await projectsRes.value.json();
       setProjects(store.projects || []);
+      anySucceeded = true;
     }
     if (adhocRes.status === "fulfilled" && adhocRes.value.ok) {
       const store = await adhocRes.value.json();
       const all = (store.tasks || []) as AdhocTask[];
       setAdhocTasks(all.filter((t: AdhocTask) => t.status !== "done"));
+      anySucceeded = true;
     }
+    setFetchError(anySucceeded ? null : "Briefing data unavailable — retrying.");
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -188,30 +206,40 @@ export default function ActionRoom() {
   const gemSnapData = useMemo(() => parsePulse("gemsnap-posthog"), [metrics]);
   const adSpendData = useMemo(() => parsePulse("gemsnap-ads"), [metrics]);
 
-  // ── Ad-hoc actions: ID starts with "A-", not done ──
-  const adhocBase = useMemo(
+  // ── Open actions: exclude template, done, skipped, abandoned, and blocked ──
+  // Per M1 spec: blocked tasks shouldn't surface in the actionable list.
+  const openBase = useMemo(
     () =>
       tasks.filter(
         (t) =>
-          t.id.startsWith("A-") &&
+          t.project_id !== "_template" &&
           t.status !== "done" &&
           t.status !== "skipped" &&
-          t.status !== "abandoned"
+          t.status !== "abandoned" &&
+          t.status !== "blocked"
       ),
     [tasks]
   );
 
-  const sortByEmoji = (list: PipelineTask[]) =>
-    [...list].sort((a, b) => (PRIORITY_ORDER[a.status] ?? 3) - (PRIORITY_ORDER[b.status] ?? 3));
+  const sortByPriorityThenCreated = (list: PipelineTask[]) =>
+    [...list].sort((a, b) => {
+      const pa = TASK_PRIORITY_RANK[(a.priority || "").toLowerCase()] ?? 3;
+      const pb = TASK_PRIORITY_RANK[(b.priority || "").toLowerCase()] ?? 3;
+      if (pa !== pb) return pa - pb;
+      return (b.created_at || "").localeCompare(a.created_at || "");
+    });
 
   // Your Actions (owner=ginge)
-  const gingeActions = useMemo(() => sortByEmoji(adhocBase.filter((t) => t.owner === "ginge")), [adhocBase]);
+  const gingeActions = useMemo(
+    () => sortByPriorityThenCreated(openBase.filter((t) => t.owner === "ginge")),
+    [openBase]
+  );
   const totalGingeTasks = gingeActions.length;
 
-  // Squad Actions (owner !== ginge)
+  // Squad Actions: only the four squad agents (atlas/newton/darwin/jimmy)
   const squadActions = useMemo(
-    () => sortByEmoji(adhocBase.filter((t) => t.owner !== "ginge")),
-    [adhocBase]
+    () => sortByPriorityThenCreated(openBase.filter((t) => t.owner && SQUAD_OWNERS.has(t.owner))),
+    [openBase]
   );
   const totalSquadTasks = squadActions.length;
 
@@ -238,11 +266,23 @@ export default function ActionRoom() {
     });
   };
 
-  // ── Team Status: AI agents only ──
-  const teamAgents = useMemo(
-    () => agents.filter((a) => ["atlas", "newton", "darwin", "jimmy"].includes(a.id)),
+  // ── Team Status — dormant banner ──
+  // The four squad agents (atlas/newton/darwin/jimmy) are dormant — Mission
+  // Control + MCP only until their projects are built post-Magnificent.
+  // M3 added a `dormant` boolean on each agent record (apex:squad:v4). The
+  // count-based fallback below stays as defence in depth: if every squad
+  // record is flagged dormant OR all four are simply present, render the
+  // banner. M2 fix takes precedence per sprint plan.
+  const SQUAD_AGENT_IDS = ["atlas", "newton", "darwin", "jimmy"];
+  const squadAgents = useMemo(
+    () => agents.filter((a) => SQUAD_AGENT_IDS.includes(a.id)),
     [agents]
   );
+  const gingeAgent = useMemo(() => agents.find((a) => a.id === "ginge") ?? null, [agents]);
+  const squadDormant =
+    (squadAgents.length === SQUAD_AGENT_IDS.length &&
+      squadAgents.every((a) => (a as Agent & { dormant?: boolean }).dormant === true)) ||
+    squadAgents.length === SQUAD_AGENT_IDS.length;
 
   return (
     <div className="min-h-dvh" style={{ background: "#0a0a0f" }}>
@@ -277,6 +317,13 @@ export default function ActionRoom() {
             </p>
           </div>
         </div>
+
+        {/* M2 fetch-error banner — only shown if every fetch failed (race fix). */}
+        {!loading && fetchError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {fetchError}
+          </div>
+        )}
 
         {/* ══════════════════════════════════════════════
             TOP SECTION — Daily Pulse
@@ -353,7 +400,11 @@ export default function ActionRoom() {
               </span>
             </div>
 
-            {gingeActions.length === 0 ? (
+            {loading ? (
+              <div className="rounded-2xl border border-[#1e293b] p-8 text-center" style={{ background: "#111827" }}>
+                <p className="text-sm text-[#475569]">Loading your actions...</p>
+              </div>
+            ) : gingeActions.length === 0 ? (
               <div className="rounded-2xl border border-[#1e293b] p-8 text-center" style={{ background: "#111827" }}>
                 <p className="text-sm text-[#475569]">No active tasks assigned to you. All clear.</p>
               </div>
@@ -389,7 +440,11 @@ export default function ActionRoom() {
               </span>
             </div>
 
-            {squadActions.length === 0 ? (
+            {loading ? (
+              <div className="rounded-2xl border border-[#1e293b] p-8 text-center" style={{ background: "#111827" }}>
+                <p className="text-sm text-[#475569]">Loading squad actions...</p>
+              </div>
+            ) : squadActions.length === 0 ? (
               <div className="rounded-2xl border border-[#1e293b] p-8 text-center" style={{ background: "#111827" }}>
                 <p className="text-sm text-[#475569]">No squad tasks in the queue.</p>
               </div>
@@ -429,7 +484,11 @@ export default function ActionRoom() {
             </span>
           </div>
 
-          {sortedAdhoc.length === 0 ? (
+          {loading ? (
+            <div className="rounded-2xl border border-[#1e293b] p-8 text-center" style={{ background: "#111827" }}>
+              <p className="text-sm text-[#475569]">Loading ad hoc tasks...</p>
+            </div>
+          ) : sortedAdhoc.length === 0 ? (
             <div className="rounded-2xl border border-[#1e293b] p-8 text-center" style={{ background: "#111827" }}>
               <p className="text-sm text-[#475569]">No ad hoc tasks. All clear.</p>
             </div>
@@ -491,45 +550,78 @@ export default function ActionRoom() {
         <section>
           <h3 className="text-xs font-bold tracking-widest uppercase text-[#64748b] mb-3">Team Status</h3>
           <div className="rounded-2xl border border-[#1e293b] overflow-hidden" style={{ background: "#111827" }}>
-            {teamAgents.length === 0 ? (
+            {loading ? (
               <div className="p-8 text-center">
                 <p className="text-sm text-[#475569]">Loading squad data...</p>
               </div>
             ) : (
               <div className="divide-y divide-[#1e293b]/60">
-                {teamAgents.map((agent) => {
-                  const statusStyle = AGENT_STATUS_STYLE[agent.status] || AGENT_STATUS_STYLE.idle;
+                {/* Ginge row — always shown when present */}
+                {gingeAgent && (() => {
+                  const statusStyle = AGENT_STATUS_STYLE[gingeAgent.status] || AGENT_STATUS_STYLE.idle;
                   return (
-                    <div key={agent.id} className="flex items-center gap-4 px-5 py-3.5">
-                      {/* Agent identity */}
-                      <span className="text-xl flex-shrink-0">{agent.emoji}</span>
+                    <div className="flex items-center gap-4 px-5 py-3.5">
+                      <span className="text-xl flex-shrink-0">{gingeAgent.emoji}</span>
                       <div className="w-24 flex-shrink-0">
-                        <div className="text-xs font-bold text-white">{agent.name}</div>
-                        <div className="text-[10px] text-[#475569]">{agent.role.split(" ")[0]}</div>
+                        <div className="text-xs font-bold text-white">{gingeAgent.name}</div>
+                        <div className="text-[10px] text-[#475569]">{gingeAgent.role.split(" ")[0]}</div>
                       </div>
-
-                      {/* Status dot + label */}
                       <div className="flex items-center gap-1.5 w-20 flex-shrink-0">
                         <span className={`w-2 h-2 rounded-full ${statusStyle.dot}`} />
                         <span className="text-[10px] text-[#94a3b8]">{statusStyle.label}</span>
                       </div>
-
-                      {/* Current task */}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[#c8d0dc] truncate">
-                          {agent.current_task || "No active task"}
+                          {gingeAgent.current_task || "No active task"}
                         </p>
                       </div>
-
-                      {/* Last activity */}
                       <div className="flex-shrink-0 text-right">
                         <span className="text-[10px] text-[#475569] font-mono">
-                          {formatTime(agent.last_updated)}
+                          {formatTime(gingeAgent.last_updated)}
                         </span>
                       </div>
                     </div>
                   );
-                })}
+                })()}
+
+                {/* Squad block — banner if dormant, individual rows otherwise */}
+                {squadDormant ? (
+                  <div className="px-5 py-4">
+                    <div className="rounded-lg border border-[#334155] bg-[#0f172a] px-4 py-3">
+                      <p className="text-xs text-[#94a3b8] leading-relaxed">
+                        <span className="text-[#64748b] font-semibold mr-2">SQUAD DORMANT</span>
+                        Operating Mission Control + MCP only. Newton and Darwin Projects to be built post-Magnificent.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  squadAgents.map((agent) => {
+                    const statusStyle = AGENT_STATUS_STYLE[agent.status] || AGENT_STATUS_STYLE.idle;
+                    return (
+                      <div key={agent.id} className="flex items-center gap-4 px-5 py-3.5">
+                        <span className="text-xl flex-shrink-0">{agent.emoji}</span>
+                        <div className="w-24 flex-shrink-0">
+                          <div className="text-xs font-bold text-white">{agent.name}</div>
+                          <div className="text-[10px] text-[#475569]">{agent.role.split(" ")[0]}</div>
+                        </div>
+                        <div className="flex items-center gap-1.5 w-20 flex-shrink-0">
+                          <span className={`w-2 h-2 rounded-full ${statusStyle.dot}`} />
+                          <span className="text-[10px] text-[#94a3b8]">{statusStyle.label}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-[#c8d0dc] truncate">
+                            {agent.current_task || "No active task"}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          <span className="text-[10px] text-[#475569] font-mono">
+                            {formatTime(agent.last_updated)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
           </div>

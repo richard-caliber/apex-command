@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
 /* ─────────────────────────── TYPES ─────────────────────────── */
 
@@ -121,11 +122,24 @@ function findGateTask(tasks: PipelineTask[]): PipelineTask | undefined {
 /* ─────────────────────────── COMPONENT ─────────────────────────── */
 
 export default function PipelinePage() {
+  // useSearchParams must be inside a Suspense boundary in Next.js app router.
+  return (
+    <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300, color: TOKENS.muted }}>Loading pipeline...</div>}>
+      <PipelinePageContent />
+    </Suspense>
+  );
+}
+
+function PipelinePageContent() {
+  const searchParams = useSearchParams();
+  // M2: read ?project=<id> on mount so deep-links from War Room cards land
+  // directly on that project's pipeline.
+  const initialProject = searchParams.get("project") ?? "";
   const [stages, setStages] = useState<PipelineStage[]>(FALLBACK_STAGES);
   const [projectTasks, setProjectTasks] = useState<PipelineTask[]>([]);
   const [templateTasks, setTemplateTasks] = useState<PipelineTask[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedProject, setSelectedProject] = useState<string>(initialProject);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const stageRefs = useRef<Record<string, HTMLDivElement | null>>({});

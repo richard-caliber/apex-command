@@ -239,14 +239,7 @@ export default function WarRoom() {
           }));
         }
       } catch {
-        // Fallback to old endpoint
-        try {
-          const oldRes = await fetch("/api/status");
-          if (oldRes.ok) {
-            const old = await oldRes.json();
-            ideas = old.ideas || [];
-          }
-        } catch { /* ignore */ }
+        // ideas endpoint unavailable — render empty list
       }
       setData({
         projects: apiProjects,
@@ -269,9 +262,9 @@ export default function WarRoom() {
   }, [fetchData]);
 
   const sortedProjects = data
-    ? [...data.projects].sort(
-        (a, b) => (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99)
-      )
+    ? [...data.projects]
+        .filter((p) => p.status !== "archived")
+        .sort((a, b) => (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99))
     : [];
 
   const ideas = data?.ideas ?? [];

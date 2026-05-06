@@ -2,21 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 import { requireWriteAuth } from "@/lib/auth";
 import { randomUUID } from "crypto";
+import { getAllPractices, getPractice, getPracticesLastUpdated, type Practice } from "@/lib/practices";
 
 const KV_KEY = "apex:practices:v1";
-
-interface Practice {
-  id: string;
-  category: string;
-  title: string;
-  content: string;
-  tags: string[];
-  scope: string;
-  source: string;
-  origin_store?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface PracticesStore {
   items: Practice[];
@@ -40,24 +28,26 @@ export async function POST(req: NextRequest) {
   const action = body.action as string;
 
   if (action === "list") {
-    return NextResponse.json(await getStore());
+    const items = await getAllPractices();
+    const lastUpdated = await getPracticesLastUpdated();
+    return NextResponse.json({ items, lastUpdated });
   }
 
   if (action === "get") {
     const { id } = body;
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    const store = await getStore();
-    const item = store.items.find((x) => x.id === id);
+    const item = await getPractice(id);
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(item);
   }
 
   if (action === "search") {
     const { query, tag, category } = body as { query?: string; tag?: string; category?: string };
-    const store = await getStore();
+    const all = await getAllPractices();
     const q = (query || "").toLowerCase().trim();
-    const matches = store.items.filter((it) => {
-      if (tag && !it.tags.includes(tag)) return false;
+    const matches = all.filter((it) => {
+      const tags = it.tags ?? [];
+      if (tag && !tags.includes(tag)) return false;
       if (category && it.category !== category) return false;
       if (q) {
         const hay = `${it.title} ${it.content}`.toLowerCase();

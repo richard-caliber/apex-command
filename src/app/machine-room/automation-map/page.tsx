@@ -69,11 +69,17 @@ interface ManualAction {
   stage: string;
 }
 
+// M2: regex used to bucket tweet-triage tasks into the Twitter inbox row.
+// Match pattern: anywhere in the name, the word "tweet" preceded by a hyphen
+// (e.g. "Review @username-tweet", "@handle-tweet review"). Case-insensitive.
+const TWEET_TASK_RE = /-tweet/i;
+
 export default function AutomationMapPage() {
   const [entries, setEntries] = useState<AutoEntry[]>([]);
   const [manualActions, setManualActions] = useState<ManualAction[]>([]);
   const [collapsed, setCollapsed] = useState<Set<Category>>(new Set());
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const [tweetInboxExpanded, setTweetInboxExpanded] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -182,38 +188,83 @@ export default function AutomationMapPage() {
       </div>
 
       {/* ── Manual Actions Required ── */}
-      {manualActions.length > 0 && (
-        <div style={{
-          background: "rgba(245,158,11,0.04)", border: `1px solid rgba(245,158,11,0.25)`,
-          borderRadius: 12, padding: "16px 20px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <span style={{ fontSize: 14 }}>{"\uD83D\uDC51"}</span>
-            <h3 style={{ color: T.warn, fontSize: 14, fontWeight: 700, margin: 0 }}>Manual Actions Required</h3>
-            <span style={{ color: T.muted, fontSize: 12, marginLeft: "auto" }}>{manualActions.length} task{manualActions.length !== 1 ? "s" : ""}</span>
+      {manualActions.length > 0 && (() => {
+        // M2: bucket /-tweet/i name patterns into a single "Twitter inbox" row.
+        const tweetTasks = manualActions.filter((t) => TWEET_TASK_RE.test(t.name));
+        const nonTweetTasks = manualActions.filter((t) => !TWEET_TASK_RE.test(t.name));
+        const totalLabel = manualActions.length;
+
+        const renderActionRow = (t: ManualAction) => (
+          <div key={t.id} style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+            borderRadius: 8, background: "rgba(245,158,11,0.04)",
+            border: "1px solid rgba(245,158,11,0.1)", fontSize: 13,
+          }}>
+            <span style={{ color: T.warn, fontSize: 10, fontWeight: 700, fontFamily: "monospace", minWidth: 60 }}>{t.id}</span>
+            <span style={{ color: T.heading, fontWeight: 600, flex: 1 }}>{t.name}</span>
+            <span style={{ background: "rgba(0,212,212,0.08)", color: T.accent, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 99 }}>
+              {t.project_id}
+            </span>
+            {t.output && (
+              <span style={{ color: T.muted, fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {t.output}
+              </span>
+            )}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {manualActions.map((t) => (
-              <div key={t.id} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
-                borderRadius: 8, background: "rgba(245,158,11,0.04)",
-                border: "1px solid rgba(245,158,11,0.1)", fontSize: 13,
-              }}>
-                <span style={{ color: T.warn, fontSize: 10, fontWeight: 700, fontFamily: "monospace", minWidth: 60 }}>{t.id}</span>
-                <span style={{ color: T.heading, fontWeight: 600, flex: 1 }}>{t.name}</span>
-                <span style={{ background: "rgba(0,212,212,0.08)", color: T.accent, fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 99 }}>
-                  {t.project_id}
-                </span>
-                {t.output && (
-                  <span style={{ color: T.muted, fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {t.output}
-                  </span>
-                )}
-              </div>
-            ))}
+        );
+
+        return (
+          <div style={{
+            background: "rgba(245,158,11,0.04)", border: `1px solid rgba(245,158,11,0.25)`,
+            borderRadius: 12, padding: "16px 20px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 14 }}>{"\uD83D\uDC51"}</span>
+              <h3 style={{ color: T.warn, fontSize: 14, fontWeight: 700, margin: 0 }}>Manual Actions Required</h3>
+              <span style={{ color: T.muted, fontSize: 12, marginLeft: "auto" }}>{totalLabel} task{totalLabel !== 1 ? "s" : ""}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {nonTweetTasks.map(renderActionRow)}
+              {tweetTasks.length > 0 && (
+                <div>
+                  <div
+                    onClick={() => setTweetInboxExpanded((p) => !p)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                      borderRadius: 8, background: "rgba(96,165,250,0.06)",
+                      border: "1px solid rgba(96,165,250,0.18)", fontSize: 13,
+                      cursor: "pointer", userSelect: "none",
+                    }}
+                  >
+                    <span style={{
+                      color: T.blue, fontSize: 10,
+                      transform: tweetInboxExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                      transition: "transform 0.15s", display: "inline-block",
+                    }}>
+                      {"\u25B6"}
+                    </span>
+                    <span style={{ fontSize: 14 }}>{"\uD83D\uDC26"}</span>
+                    <span style={{ color: T.heading, fontWeight: 600, flex: 1 }}>
+                      Twitter inbox
+                    </span>
+                    <span style={{
+                      background: "rgba(96,165,250,0.15)", color: T.blue,
+                      fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                    }}>
+                      {tweetTasks.length} item{tweetTasks.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  {tweetInboxExpanded && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6, paddingLeft: 18 }}>
+                      {tweetTasks.map(renderActionRow)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Sections ── */}
       {SECTIONS.map((sec) => {

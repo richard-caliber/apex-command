@@ -1,0 +1,1062 @@
+--- M5 prompts inventory ---
+maproom:prompts: DELETED ✓
+apex:prompts:v2: 119 prompt records (lastUpdated 2026-04-04T13:17:22.894Z)
+
+- id=P--1.1
+  name="Capture Idea"
+  category=intake owner=ginge model=claude-sonnet-4-6 version=2
+  stage=inbox taskId=-
+  tags=[]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=ginge
+  created=2026-04-02T15:57:35.668Z updated=2026-04-02T16:53:18.774Z
+
+- id=P--1.2
+  name="Auto-Structure Idea"
+  category=intake owner=ginge model=claude-sonnet-4-6 version=2
+  stage=inbox taskId=-
+  tags=[]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=ginge
+  created=2026-04-02T15:57:35.945Z updated=2026-04-02T16:53:18.925Z
+  stale-term hits: newton, darwin, atlas
+
+- id=P--1.3
+  name="Generate Idea Image"
+  category=creative owner=ginge model=claude-sonnet-4-6 version=2
+  stage=inbox taskId=-
+  tags=[]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=ginge
+  created=2026-04-02T15:57:36.254Z updated=2026-04-02T16:53:19.063Z
+
+- id=P-0.1
+  name="Expand Idea Concept"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:56.081Z updated=2026-04-03T12:36:03.623Z
+  stale-term hits: darwin
+
+- id=P-0.2
+  name="Generate Use Cases"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:56.368Z updated=2026-04-03T12:36:03.845Z
+  stale-term hits: darwin
+
+- id=P-0.3
+  name="Identify Target Audience"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:56.629Z updated=2026-04-03T12:36:04.058Z
+  stale-term hits: darwin
+
+- id=P-0.4
+  name="Identify Core Problem"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:56.889Z updated=2026-04-03T12:36:04.273Z
+  stale-term hits: darwin
+
+- id=P-0.5
+  name="Identify Existing Alternatives"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:57.207Z updated=2026-04-03T12:36:04.528Z
+  stale-term hits: darwin
+
+- id=P-0.6
+  name="Generate Differentiation Angles"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:57.474Z updated=2026-04-03T12:36:04.736Z
+  stale-term hits: darwin
+
+- id=P-0.7
+  name="Basic Feasibility Scan"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:57.755Z updated=2026-04-03T12:36:04.944Z
+  stale-term hits: darwin
+
+- id=P-0.8
+  name="Darwin Score & Critique"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:58.051Z updated=2026-04-03T12:36:05.158Z
+  stale-term hits: darwin
+
+- id=P-0.9
+  name="Newton Iteration"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=idea taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T15:58:58.330Z updated=2026-04-03T12:36:05.369Z
+  stale-term hits: newton, darwin
+
+- id=P-1.1
+  name="Extract Pain Signals"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:23.982Z updated=2026-04-03T12:50:32.568Z
+  stale-term hits: darwin
+
+- id=P-1.2
+  name="Build Pain Language Bank"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:24.262Z updated=2026-04-03T12:50:32.842Z
+  stale-term hits: darwin
+
+- id=P-1.3
+  name="Identify High-Intensity Problems"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:24.567Z updated=2026-04-03T12:50:33.068Z
+  stale-term hits: darwin
+
+- id=P-1.4
+  name="Generate Hooks from Pain Signals"
+  category=creative owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:24.834Z updated=2026-04-03T12:50:33.277Z
+  stale-term hits: darwin
+
+- id=P-1.5
+  name="Generate Positioning Angles"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:25.102Z updated=2026-04-03T12:50:33.501Z
+  stale-term hits: darwin
+
+- id=P-1.6
+  name="Map Competitor Messaging"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:25.391Z updated=2026-04-03T12:50:33.727Z
+  stale-term hits: darwin
+
+- id=P-1.7
+  name="Identify Market Gaps"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:25.665Z updated=2026-04-03T12:50:33.941Z
+  stale-term hits: darwin
+
+- id=P-1.8
+  name="Run Demand Signal Analysis"
+  category=research owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:25.937Z updated=2026-04-03T12:50:34.160Z
+  stale-term hits: darwin
+
+- id=P-1.9
+  name="Score Demand Strength (Darwin Gate)"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=validation taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:01:26.199Z updated=2026-04-03T12:50:34.380Z
+  stale-term hits: darwin
+
+- id=P-2.1
+  name="Define Core Offer (Hormozi Style)"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:10.544Z updated=2026-04-03T13:02:34.898Z
+  stale-term hits: darwin
+
+- id=P-2.2
+  name="Define Target Customer Persona"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:10.907Z updated=2026-04-03T13:02:35.168Z
+  stale-term hits: darwin
+
+- id=P-2.3
+  name="Define Value Proposition"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:11.210Z updated=2026-04-03T13:02:35.408Z
+  stale-term hits: darwin
+
+- id=P-2.4
+  name="Define Unique Mechanism / USP"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:11.517Z updated=2026-04-03T13:02:35.627Z
+  stale-term hits: darwin
+
+- id=P-2.5
+  name="Define Pricing Strategy"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:11.831Z updated=2026-04-03T13:02:35.856Z
+  stale-term hits: darwin
+
+- id=P-2.6
+  name="Define Monetization Model"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:12.131Z updated=2026-04-03T13:02:36.083Z
+  stale-term hits: darwin
+
+- id=P-2.7
+  name="Define Delivery Mechanism"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:12.440Z updated=2026-04-03T13:02:36.305Z
+  stale-term hits: darwin
+
+- id=P-2.8
+  name="Define Success Outcome"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:12.855Z updated=2026-04-03T13:02:36.526Z
+  stale-term hits: darwin
+
+- id=P-2.9
+  name="Map Full Funnel"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:13.139Z updated=2026-04-03T13:02:36.757Z
+  stale-term hits: darwin
+
+- id=P-2.10
+  name="Identify Key Assets Required"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:13.501Z updated=2026-04-03T13:02:36.976Z
+  stale-term hits: newton, darwin, atlas
+
+- id=P-2.11
+  name="Define Success Metrics"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:13.806Z updated=2026-04-03T13:02:37.191Z
+  stale-term hits: darwin
+
+- id=P-2.12
+  name="Define Go-To-Market Strategy"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:14.101Z updated=2026-04-03T13:02:37.414Z
+  stale-term hits: darwin
+
+- id=P-2.13
+  name="Define Test Plan (Kill Criteria)"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:14.412Z updated=2026-04-03T13:02:37.647Z
+  stale-term hits: darwin
+
+- id=P-2.14
+  name="Darwin Strategy Review"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=design taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:04:14.724Z updated=2026-04-03T13:02:37.875Z
+  stale-term hits: darwin
+
+- id=P-3.1
+  name="Generate MVP Build Prompt"
+  category=build owner=atlas model=claude-sonnet-4-6 version=3
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:05:58.811Z updated=2026-04-03T13:09:27.345Z
+  stale-term hits: atlas
+
+- id=P-3.2
+  name="Review MVP Build Plan"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=mvp taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:05:59.137Z updated=2026-04-03T13:09:27.574Z
+  stale-term hits: darwin, atlas
+
+- id=P-3.3
+  name="Build Landing Page"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=2
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-02T16:05:59.422Z updated=2026-04-03T13:09:27.790Z
+
+- id=P-3.4
+  name="Build Core Product"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=2
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-02T16:05:59.694Z updated=2026-04-03T13:09:28.031Z
+
+- id=P-3.5
+  name="Create Initial Content Assets"
+  category=content owner=atlas model=claude-sonnet-4-6 version=3
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:06:00.006Z updated=2026-04-03T13:09:28.249Z
+  stale-term hits: darwin, atlas
+
+- id=P-3.6
+  name="Review Content Assets"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=mvp taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:06:00.293Z updated=2026-04-03T13:09:28.525Z
+  stale-term hits: darwin
+
+- id=P-3.7
+  name="Test Product Functionality"
+  category=qa owner=darwin model=claude-sonnet-4-6 version=2
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:06:00.592Z updated=2026-04-03T13:09:28.739Z
+  stale-term hits: darwin, atlas
+
+- id=P-3.8
+  name="Set Up Payments"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=2
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-02T16:06:00.855Z updated=2026-04-03T13:09:28.956Z
+
+- id=P-3.9
+  name="Set Up Analytics"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=2
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-02T16:06:01.125Z updated=2026-04-03T13:09:29.165Z
+  stale-term hits: newton
+
+- id=P-3.10
+  name="Set Up Tracking Events"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=2
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-02T16:06:01.415Z updated=2026-04-03T13:09:29.378Z
+
+- id=P-3.15
+  name="Assign Monitoring Tasks"
+  category=ops owner=darwin model=claude-sonnet-4-6 version=3
+  stage=mvp taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:06:01.725Z updated=2026-04-03T13:09:29.589Z
+  stale-term hits: darwin, atlas
+
+- id=P-3.17
+  name="Prepare for External Traffic"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=mvp taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:06:01.990Z updated=2026-04-03T13:09:29.802Z
+  stale-term hits: darwin
+
+- id=P-4.1
+  name="Define Active Channels"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:07:52.073Z updated=2026-04-03T13:34:15.479Z
+  stale-term hits: darwin
+
+- id=P-4.2
+  name="Content Market Research"
+  category=research owner=newton model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:07:52.389Z updated=2026-04-03T13:34:16.223Z
+  stale-term hits: newton
+
+- id=P-4.3
+  name="Extract Winning Content Patterns"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:07:52.656Z updated=2026-04-03T13:34:16.443Z
+  stale-term hits: darwin, atlas
+
+- id=P-4.4
+  name="Generate Topic Briefs"
+  category=research owner=newton model=claude-sonnet-4-6 version=5
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:07:52.927Z updated=2026-04-04T01:55:26.786Z
+  stale-term hits: newton, darwin, jimmy
+
+- id=P-4.5
+  name="Generate Content Scripts"
+  category=content owner=atlas model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:07:53.190Z updated=2026-04-03T13:34:16.882Z
+  stale-term hits: atlas
+
+- id=P-4.6
+  name="Produce Full Batch"
+  category=content owner=jimmy model=gemini-2.5-pro version=6
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=jimmy
+  created=2026-04-02T16:07:53.451Z updated=2026-04-04T13:17:22.894Z
+  stale-term hits: darwin, atlas, jimmy
+
+- id=P-4.7
+  name="Apply Content Standards"
+  category=qa owner=atlas model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:07:53.740Z updated=2026-04-03T13:34:17.372Z
+  stale-term hits: darwin, atlas
+
+- id=P-4.8
+  name="Darwin Quality Gate"
+  category=review owner=darwin model=claude-sonnet-4-6 version=6
+  stage=traffic taskId=-
+  tags=[darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:07:54.002Z updated=2026-04-04T01:55:27.554Z
+  stale-term hits: darwin, jimmy
+
+- id=P-4.12
+  name="Pull Content Metrics"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:07:54.310Z updated=2026-04-03T13:34:17.816Z
+  stale-term hits: newton, darwin
+
+- id=P-4.13
+  name="Identify Winners / Flops"
+  category=analytics owner=darwin model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:07:54.627Z updated=2026-04-03T13:34:18.057Z
+  stale-term hits: darwin
+
+- id=P-4.14
+  name="Generate Content Variations"
+  category=content owner=atlas model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:07:54.903Z updated=2026-04-03T13:34:18.279Z
+  stale-term hits: atlas
+
+- id=P-4.15
+  name="Channel Decision"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:07:55.164Z updated=2026-04-03T13:34:18.497Z
+  stale-term hits: darwin
+
+- id=P-4.16
+  name="Track Channel Performance"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:07:55.433Z updated=2026-04-03T13:34:18.714Z
+  stale-term hits: newton
+
+- id=P-4.17
+  name="New Channel Opportunities"
+  category=strategy owner=newton model=claude-sonnet-4-6 version=3
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:07:55.694Z updated=2026-04-03T13:34:18.933Z
+  stale-term hits: newton
+
+- id=P-5.1
+  name="Measure Conversion Rate"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:09:26.151Z updated=2026-04-03T14:13:17.584Z
+  stale-term hits: newton
+
+- id=P-5.2
+  name="Identify Funnel Drop-Offs"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:09:26.510Z updated=2026-04-03T14:13:17.884Z
+  stale-term hits: newton
+
+- id=P-5.3
+  name="CRO Analysis"
+  category=analytics owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:26.862Z updated=2026-04-03T14:13:18.149Z
+  stale-term hits: darwin
+
+- id=P-5.4
+  name="Generate CRO Improvements"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:27.190Z updated=2026-04-03T14:13:18.467Z
+  stale-term hits: darwin
+
+- id=P-5.6
+  name="Run A/B Tests"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=2
+  stage=conversion taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-02T16:09:27.496Z updated=2026-04-03T14:13:18.990Z
+
+- id=P-5.8
+  name="Analyze Test Results"
+  category=analytics owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:27.810Z updated=2026-04-03T14:13:19.290Z
+  stale-term hits: darwin
+
+- id=P-5.9
+  name="Extract Winning Variants"
+  category=ops owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:28.112Z updated=2026-04-03T14:13:19.547Z
+  stale-term hits: darwin, atlas
+
+- id=P-5.10
+  name="Improve Offer Based on Feedback"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:28.408Z updated=2026-04-03T14:13:19.774Z
+  stale-term hits: darwin
+
+- id=P-5.11
+  name="Optimize CTA Strategy"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:28.706Z updated=2026-04-03T14:13:20.011Z
+  stale-term hits: darwin
+
+- id=P-5.12
+  name="Improve Copy"
+  category=content owner=atlas model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:09:29.010Z updated=2026-04-03T14:13:20.234Z
+  stale-term hits: atlas
+
+- id=P-5.13
+  name="Improve Trust Signals"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:29.338Z updated=2026-04-03T14:13:20.557Z
+  stale-term hits: darwin
+
+- id=P-5.14
+  name="Iterate Pricing"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=conversion taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:09:29.629Z updated=2026-04-03T14:13:20.777Z
+  stale-term hits: darwin
+
+- id=P-6.1
+  name="Design Onboarding Flow"
+  category=strategy owner=atlas model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:11:20.232Z updated=2026-04-03T14:31:07.059Z
+  stale-term hits: atlas
+
+- id=P-6.4
+  name="Collect User Feedback"
+  category=ops owner=atlas model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:11:20.553Z updated=2026-04-03T14:31:07.341Z
+  stale-term hits: newton, atlas
+
+- id=P-6.5
+  name="Monitor Support Issues"
+  category=ops owner=atlas model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T16:11:20.834Z updated=2026-04-03T14:31:07.596Z
+  stale-term hits: atlas
+
+- id=P-6.6
+  name="Identify Friction Points"
+  category=analytics owner=darwin model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:21.112Z updated=2026-04-03T14:31:07.831Z
+  stale-term hits: darwin
+
+- id=P-6.9
+  name="Track User Satisfaction"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:11:21.417Z updated=2026-04-03T14:31:08.073Z
+  stale-term hits: newton, darwin, atlas
+
+- id=P-6.10
+  name="Track Retention Signals"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-02T16:11:21.710Z updated=2026-04-03T14:31:08.337Z
+  stale-term hits: newton
+
+- id=P-6.11
+  name="Identify Churn Causes"
+  category=analytics owner=darwin model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:21.979Z updated=2026-04-03T14:31:08.567Z
+  stale-term hits: darwin, atlas
+
+- id=P-6.13
+  name="Loop Delivery Improvements"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=delivery taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:22.256Z updated=2026-04-03T14:31:08.849Z
+  stale-term hits: darwin, atlas
+
+- id=P-7.1
+  name="Identify Scaling Opportunities"
+  category=strategy owner=darwin model=claude-opus-4-6 version=3
+  stage=scale taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:22.547Z updated=2026-04-03T14:39:13.227Z
+  stale-term hits: darwin, atlas
+
+- id=P-7.5
+  name="Optimize Automation"
+  category=ops owner=darwin model=claude-sonnet-4-6 version=3
+  stage=scale taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:22.809Z updated=2026-04-03T14:39:13.467Z
+  stale-term hits: darwin
+
+- id=P-7.6
+  name="Improve Margins"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=scale taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:23.070Z updated=2026-04-03T14:39:13.709Z
+  stale-term hits: darwin
+
+- id=P-7.8
+  name="Increase LTV"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=3
+  stage=scale taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:23.343Z updated=2026-04-03T14:39:13.933Z
+  stale-term hits: darwin
+
+- id=P-7.10
+  name="Build Repeatable Growth Loops"
+  category=strategy owner=darwin model=claude-opus-4-6 version=3
+  stage=scale taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:23.608Z updated=2026-04-03T14:39:14.151Z
+  stale-term hits: darwin
+
+- id=P-7.12
+  name="Reinforce Winning Strategies"
+  category=review owner=darwin model=claude-sonnet-4-6 version=3
+  stage=scale taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T16:11:23.883Z updated=2026-04-03T14:39:14.453Z
+  stale-term hits: newton, darwin, atlas
+
+- id=P-4.1b
+  name="Content Strategy Research"
+  category=strategy owner=atlas model=claude-opus-4-6 version=2
+  stage=traffic taskId=-
+  tags=[reviewed]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-02T17:29:39.561Z updated=2026-04-03T13:34:15.764Z
+  stale-term hits: atlas
+
+- id=P-4.1c
+  name="Content Strategy Gate"
+  category=review owner=darwin model=claude-sonnet-4-6 version=2
+  stage=traffic taskId=-
+  tags=[reviewed,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-02T17:29:40.085Z updated=2026-04-03T13:34:15.990Z
+  stale-term hits: darwin
+
+- id=P-0.3b
+  name="Revenue Model Scan"
+  category=economics owner=ginge model=claude-sonnet-4-6 version=1
+  stage=idea taskId=-
+  tags=[]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=ginge
+  created=2026-04-03T12:40:29.391Z updated=2026-04-03T12:40:29.391Z
+
+- id=P-0.6b
+  name="Go-to-Market Hypothesis"
+  category=distribution owner=ginge model=claude-sonnet-4-6 version=1
+  stage=idea taskId=-
+  tags=[]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=ginge
+  created=2026-04-03T12:40:29.555Z updated=2026-04-03T12:40:29.555Z
+
+- id=P-0.3a
+  name="Revenue Model Scan"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=1
+  stage=idea taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T12:54:04.103Z updated=2026-04-03T12:54:04.103Z
+  stale-term hits: darwin
+
+- id=P-0.6a
+  name="GTM Hypothesis"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=1
+  stage=idea taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T12:54:04.332Z updated=2026-04-03T12:54:04.332Z
+  stale-term hits: darwin
+
+- id=P-1.3a
+  name="Segment-Pain Fit Confirmation"
+  category=research owner=darwin model=claude-sonnet-4-6 version=1
+  stage=validation taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T12:54:04.546Z updated=2026-04-03T12:54:04.546Z
+  stale-term hits: darwin
+
+- id=P-1.3b
+  name="Willingness-to-Pay Validation"
+  category=research owner=darwin model=claude-sonnet-4-6 version=1
+  stage=validation taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T12:54:04.760Z updated=2026-04-03T12:54:04.760Z
+  stale-term hits: darwin
+
+- id=P-2.3a
+  name="Competitive Positioning Statement"
+  category=strategy owner=darwin model=claude-sonnet-4-6 version=1
+  stage=design taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T13:02:38.119Z updated=2026-04-03T13:02:38.119Z
+  stale-term hits: darwin
+
+- id=P-3.11
+  name="Set Up ManyChat / Messaging Automation"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=1
+  stage=mvp taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-03T13:09:30.041Z updated=2026-04-03T13:09:30.041Z
+
+- id=P-3.12
+  name="Set Up Email Sequences"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=1
+  stage=mvp taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-03T13:09:30.252Z updated=2026-04-03T13:09:30.252Z
+
+- id=P-3.13
+  name="Set Up CRM / Lead Database"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=1
+  stage=mvp taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-03T13:09:30.464Z updated=2026-04-03T13:09:30.464Z
+  stale-term hits: newton
+
+- id=P-3.14
+  name="Set Up Fulfillment Automation"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=1
+  stage=mvp taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-03T13:09:30.673Z updated=2026-04-03T13:09:30.673Z
+
+- id=P-3.16
+  name="Security & Pre-Launch Hardening"
+  category=review owner=darwin model=claude-sonnet-4-6 version=1
+  stage=mvp taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T13:09:30.895Z updated=2026-04-03T13:09:30.895Z
+  stale-term hits: darwin
+
+- id=P-4.9
+  name="Schedule & Publish Content"
+  category=ops owner=atlas model=claude-sonnet-4-6 version=1
+  stage=traffic taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T13:34:19.186Z updated=2026-04-03T13:34:19.186Z
+  stale-term hits: darwin, atlas
+
+- id=P-4.10
+  name="Set Up Paid Amplification"
+  category=build owner=atlas model=claude-sonnet-4-6 version=1
+  stage=traffic taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T13:34:19.399Z updated=2026-04-03T13:34:19.399Z
+  stale-term hits: atlas
+
+- id=P-4.11
+  name="Post-Publish Monitoring Log"
+  category=ops owner=atlas model=claude-sonnet-4-6 version=1
+  stage=traffic taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T13:34:19.615Z updated=2026-04-03T13:34:19.615Z
+  stale-term hits: darwin, atlas
+
+- id=P-5.7
+  name="Collect A/B Test Data"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=1
+  stage=conversion taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-03T14:13:20.995Z updated=2026-04-03T14:13:20.995Z
+  stale-term hits: newton
+
+- id=P-6.2
+  name="Execute Product Delivery"
+  category=ops owner=claude-code model=claude-sonnet-4-6 version=1
+  stage=delivery taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-03T14:31:09.081Z updated=2026-04-03T14:31:09.081Z
+  stale-term hits: atlas
+
+- id=P-6.3
+  name="Send Welcome Sequence"
+  category=ops owner=atlas model=claude-sonnet-4-6 version=1
+  stage=delivery taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T14:31:09.317Z updated=2026-04-03T14:31:09.317Z
+  stale-term hits: atlas
+
+- id=P-6.7
+  name="Fix Friction Points"
+  category=build owner=claude-code model=claude-sonnet-4-6 version=1
+  stage=delivery taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=claude-code
+  created=2026-04-03T14:31:09.557Z updated=2026-04-03T14:31:09.557Z
+
+- id=P-6.8
+  name="Improve Onboarding"
+  category=strategy owner=atlas model=claude-sonnet-4-6 version=1
+  stage=delivery taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T14:31:09.844Z updated=2026-04-03T14:31:09.844Z
+  stale-term hits: atlas
+
+- id=P-6.12
+  name="Implement Retention Improvements"
+  category=build owner=atlas model=claude-sonnet-4-6 version=1
+  stage=delivery taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T14:31:10.074Z updated=2026-04-03T14:31:10.074Z
+  stale-term hits: newton, darwin, atlas
+
+- id=P-7.11
+  name="Weekly Metrics Dashboard"
+  category=analytics owner=newton model=claude-sonnet-4-6 version=1
+  stage=scale taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-03T14:39:14.669Z updated=2026-04-03T14:39:14.669Z
+  stale-term hits: newton, darwin
+
+- id=P-7.2
+  name="Launch Second Product or Brand"
+  category=strategy owner=darwin model=claude-opus-4-6 version=1
+  stage=scale taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T14:39:14.887Z updated=2026-04-03T14:39:14.887Z
+  stale-term hits: darwin
+
+- id=P-7.3
+  name="Expand to New Markets"
+  category=strategy owner=newton model=claude-sonnet-4-6 version=1
+  stage=scale taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=newton
+  created=2026-04-03T14:39:15.127Z updated=2026-04-03T14:39:15.127Z
+  stale-term hits: newton
+
+- id=P-7.4
+  name="Build Partner / Affiliate Program"
+  category=strategy owner=atlas model=claude-sonnet-4-6 version=1
+  stage=scale taskId=-
+  tags=[new]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T14:39:15.346Z updated=2026-04-03T14:39:15.346Z
+  stale-term hits: atlas
+
+- id=P-7.7
+  name="Scale Paid Acquisition"
+  category=strategy owner=darwin model=claude-opus-4-6 version=1
+  stage=scale taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T14:39:15.564Z updated=2026-04-03T14:39:15.564Z
+  stale-term hits: darwin
+
+- id=P-7.9
+  name="Build Brand Moat"
+  category=strategy owner=darwin model=claude-opus-4-6 version=1
+  stage=scale taskId=-
+  tags=[new,darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T14:39:15.781Z updated=2026-04-03T14:39:15.781Z
+  stale-term hits: darwin
+
+- id=P-4.4b
+  name="Darwin Topic Review Gate"
+  category=review owner=darwin model=claude-sonnet-4-6 version=4
+  stage=traffic taskId=-
+  tags=[darwin-gate]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T15:47:37.047Z updated=2026-04-04T01:55:27.099Z
+  stale-term hits: newton, darwin, jimmy
+
+- id=P-4.5b
+  name="Create 5 Reel Style Variations"
+  category=content owner=atlas model=claude-sonnet-4-6 version=1
+  stage=traffic taskId=-
+  tags=[new,style-test]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=atlas
+  created=2026-04-03T15:47:37.283Z updated=2026-04-03T15:47:37.283Z
+  stale-term hits: darwin, atlas
+
+- id=P-4.5d
+  name="Darwin Style Review Gate"
+  category=review owner=darwin model=claude-sonnet-4-6 version=1
+  stage=traffic taskId=-
+  tags=[darwin-gate,new,style-test]
+  usage: timesUsed=0 lastUsed=- lastEditedBy=darwin
+  created=2026-04-03T15:47:37.534Z updated=2026-04-03T15:47:37.534Z
+  stale-term hits: darwin, atlas
+
