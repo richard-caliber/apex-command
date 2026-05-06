@@ -80,6 +80,7 @@ interface AgentRecord {
   title?: string;
   department?: string;
   status: string;
+  dormant?: boolean;
   current_task?: string;
   task_since?: string;
   identity_text?: string;
@@ -271,7 +272,28 @@ const handler = createMcpHandler(
         const yourActions = open.filter((t) => t.owner === "ginge").sort(sortByPriorityThenCreated).slice(0, 10);
         const squadActions = open.filter((t) => t.owner && SQUAD_OWNERS.has(t.owner)).sort(sortByPriorityThenCreated).slice(0, 10);
 
-        const agentStatus = agents.map((a) => ({ id: a.id, name: a.name, status: a.status, current_task: a.current_task }));
+        // M3.5: respect the dormant flag added in M3. Dormant agents render
+        // with status "dormant" and a fixed copy line; their pre-Magnificent
+        // current_task strings are stale and misleading.
+        const DORMANT_TASK_COPY =
+          "Dormant — squad not running on cron, available for on-demand work via Newton/Darwin Projects (Phase 7)";
+        const agentStatus = agents.map((a) => {
+          if (a.dormant === true) {
+            return { id: a.id, name: a.name, status: "dormant", current_task: DORMANT_TASK_COPY };
+          }
+          // Non-dormant: prefer a fresh copy line for ginge over stale strings.
+          if (a.id === "ginge") {
+            return {
+              id: a.id,
+              name: a.name,
+              status: a.status,
+              current_task: a.current_task && a.current_task.length > 0
+                ? a.current_task
+                : "Magnificent sprint in progress",
+            };
+          }
+          return { id: a.id, name: a.name, status: a.status, current_task: a.current_task };
+        });
         const blockers = projects
           .filter((p) => p.blocker && (p.status || "") === "active")
           .map((p) => ({ project: p.id, blocker: p.blocker }));

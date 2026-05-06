@@ -1,5 +1,15 @@
 # Apex Magnificent Sprint Log
 
+## M3.5 — Briefing dormancy + archived task cleanup (2026-05-06)
+
+Patch phase between M3 and M4 — three tail-end fixes from M3:
+
+- **Briefing API now reads the squad dormancy flag.** `apex_get_briefing.agent_status` checks `dormant: boolean` per agent. Dormant agents render `status="dormant"` with the fixed copy line; the four pre-Magnificent stale `current_task` strings (e.g. "Researching: missing dosing protocols") no longer leak. Ginge's persisted `current_task` refreshed in `apex:squad:v4` from "Building the machine that builds the machine" → "Magnificent sprint in progress" via `scripts/m3.5-refresh-ginge-current-task.mjs`.
+- **782 stale templated tasks under 16 archived snap-* projects + gemsnap suspended** (`status=blocked`, blocker = "Project archived 2026-05-05 — agent dormant — task suspended"). Each templated snap project carried ~61 squad-owned not_started tasks across mvp→scale stages. `scripts/m3.5-bulk-block-archived-pipeline-tasks.mjs` + dry-run `scripts/m3.5-bulk-block-preview.mjs`. **Kill criterion #2 fired (782 vs 500 threshold).** Surfaced and overridden after review — count was correct given templated pipeline depth, action fully reversible. Log: `data/m3.5-archived-task-cleanup-log.json`.
+- **AH-002 verified** as `project_id=snap-apps`, `status=blocked`, `priority=low`. No drift; no re-apply needed.
+- Production briefing post-deploy: 4 venture commitments lead `your_actions` (Villas WhatsApp, Caliber CRM, Atlas Drift domain, Todd website — all high). 4 dormant agents + Ginge active. squad_actions no longer dominated by stale damagesnap T-4.x tasks. AH-002 absent.
+- Verification: `data/magnificent-m3.5-verify-2026-05-06.md`.
+
 ## M3 — Data hygiene + pipeline restoration (2026-05-06)
 
 - **17 venture-track ideas restored to `paused`** with original blockers (suffix stripped). All retained their pipeline tasks (16-129 each). Restoration log: `data/magnificent-m3-restoration-log.json`.
