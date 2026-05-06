@@ -1,5 +1,18 @@
 # Apex Magnificent Sprint Log
 
+## M3 — Data hygiene + pipeline restoration (2026-05-06)
+
+- **17 venture-track ideas restored to `paused`** with original blockers (suffix stripped). All retained their pipeline tasks (16-129 each). Restoration log: `data/magnificent-m3-restoration-log.json`.
+- **ideas-vault parent + 17 transition-scaffold tasks cleaned up.** Tasks set to `done` with cleanup note; parent archived.
+- **Creative-track moved out of Apex.** bracelet-quest, pokemon-fusion, personal-tv-script, personal-rms archived. New practice entry `manual-4b708ccf-…` ("Creative threads") in `apex:practices:v1` covers all four threads + when-to-promote-to-venture criteria. `personal` parent + 2 personal-track tasks cleaned up.
+- **Villas WhatsApp MCP task bumped to `priority=high`.** Now position 4 in `your_actions`; all 4 venture commitments present in top 7.
+- **`dormant` flag added to `apex:squad:v4`.** atlas/newton/darwin/jimmy = true; ginge = false. Action-room banner updated to incorporate the flag with the M2 count-fallback as defence-in-depth.
+- **Drift sweep:** `edgeauto` → `edge-auto` in 6 src files (seed data + color maps); 3 remaining occurrences are real-world strings (`@edgeautomate` handle, `richard@edgeautomate.org` email, `edgeauto-card.jpg` image filename).
+- **Practice categories normalised:** `Best Practices` → `best-practices` on `vault-caliber-cta-library`.
+- **Stage enum unified:** `/api/projects` `VALID_STAGES` aligned with MCP — dropped `inbox`, added `archived`.
+- Production deploy `dpl_3Fpsg5GFTvPPMFBELYfTCKKHiSvu`. Briefing now: 6 active projects, 4 venture commitments at high priority, 4 active blockers. `apex_list_projects` returns 49 total: 6 active / 19 paused / 24 archived.
+- Research: `data/magnificent-m3-research.md`. Verification: `data/magnificent-m3-verify-2026-05-06.md`. Helper script: `scripts/m3-add-dormant-flag.mjs`.
+
 ## M2 — Briefing display polish (2026-05-05)
 
 - **Briefing Room — dormant squad banner.** `src/app/action-room/page.tsx` now renders Ginge's row plus a single "Squad dormant — Operating Mission Control + MCP only" banner when all four `[atlas, newton, darwin, jimmy]` are present. M3 will replace the hard-code with a proper `dormant` flag.

@@ -1,0 +1,109 @@
+{
+  "applied_at": "2026-05-06T05:26:52Z",
+  "phase": "M3 D1",
+  "rationale": "Restore 17 venture-track parked ideas wrongly archived in the 04 May trim. Each retains pre-existing pipeline tasks under apex:pipeline-tasks. Archive suffix stripped from blocker; status archived → paused; stage preserved.",
+  "changes": [
+    {
+      "id": "storyquest",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Needs Stripe paywall + SFX + TTS\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Needs Stripe paywall + SFX + TTS" }
+    },
+    {
+      "id": "repostai",
+      "task_count": 129,
+      "before": { "status": "archived", "stage": "traffic", "blocker": "Needs Product Hunt launch + demo video\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "traffic", "blocker": "Needs Product Hunt launch + demo video" }
+    },
+    {
+      "id": "parliament",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Low revenue potential — parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Low revenue potential — parked" }
+    },
+    {
+      "id": "comic-creator",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked — creative project\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked — creative project" }
+    },
+    {
+      "id": "peptide-stack",
+      "task_count": 117,
+      "before": { "status": "archived", "stage": "mvp", "blocker": "Depends on Caliber revenue path\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "mvp", "blocker": "Depends on Caliber revenue path" }
+    },
+    {
+      "id": "villa-investor",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Depends on villa sales\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Depends on villa sales" }
+    },
+    {
+      "id": "market-intel",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "geopolitik",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "promptcraft",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked — scored 3/10\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked — scored 3/10" }
+    },
+    {
+      "id": "sales-copilot",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "splashboard",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "send-delete",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "polymarket-bot",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "ugc-network",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "newsletter-factory",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "youtube-channels",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    },
+    {
+      "id": "tiktok-machine",
+      "task_count": 16,
+      "before": { "status": "archived", "stage": "idea", "blocker": "Parked\nArchived 2026-05-05: Moved to ideas-vault parent" },
+      "after": { "status": "paused", "stage": "idea", "blocker": "Parked" }
+    }
+  ]
+}

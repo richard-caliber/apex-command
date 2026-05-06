@@ -41,8 +41,8 @@ const SEED: ActionStore = {
     { id: "A-gem-003", project_id: "gemsnap", name: "Monitor A/B test results", description: "Check conversion data weekly until statistical significance", owner: "darwin", priority: "medium", deadline: "", type: "recurring", status: "in_progress", created_at: "2026-03-30T00:00:00Z", updated_at: "2026-04-04T00:00:00Z" },
 
     // Edge Auto
-    { id: "A-edge-001", project_id: "edgeauto", name: "Finish 9-section report page build", description: "Complete the personalised audit report — £4K implementation", owner: "claude-code", priority: "urgent", deadline: "2026-04-07", type: "one-off", status: "in_progress", created_at: "2026-04-01T00:00:00Z", updated_at: "2026-04-04T00:00:00Z" },
-    { id: "A-edge-002", project_id: "edgeauto", name: "Set up quiz-to-report data flow", description: "Connect quiz answers to report generation pipeline", owner: "newton", priority: "high", deadline: "2026-04-10", type: "one-off", status: "not_started", created_at: "2026-04-03T00:00:00Z", updated_at: "2026-04-03T00:00:00Z" },
+    { id: "A-edge-001", project_id: "edge-auto", name: "Finish 9-section report page build", description: "Complete the personalised audit report — £4K implementation", owner: "claude-code", priority: "urgent", deadline: "2026-04-07", type: "one-off", status: "in_progress", created_at: "2026-04-01T00:00:00Z", updated_at: "2026-04-04T00:00:00Z" },
+    { id: "A-edge-002", project_id: "edge-auto", name: "Set up quiz-to-report data flow", description: "Connect quiz answers to report generation pipeline", owner: "newton", priority: "high", deadline: "2026-04-10", type: "one-off", status: "not_started", created_at: "2026-04-03T00:00:00Z", updated_at: "2026-04-03T00:00:00Z" },
   ],
 };
 

@@ -28,7 +28,9 @@ interface ProjectStore {
   lastUpdated: string;
 }
 
-const VALID_STAGES = ["inbox", "idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale"];
+// M3: aligned with MCP VALID_PROJECT_STAGES — drops "inbox" (projects start at
+// "idea" once captured), adds "archived" (post-deprecation marker).
+const VALID_STAGES = ["idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale", "archived"];
 const VALID_STATUSES = ["active", "paused", "blocked", "completed"];
 
 /* ── Seed data — migrated from War Room ── */
@@ -66,7 +68,7 @@ const SEED: ProjectStore = {
       updated_at: "2026-04-02T00:00:00Z",
     },
     {
-      id: "edgeauto",
+      id: "edge-auto",
       name: "Edge Auto",
       description: "Small business automation consultancy",
       stage: "mvp",

@@ -75,7 +75,7 @@ const SEED = {
       topics: [],
     },
     {
-      id: "edgeauto",
+      id: "edge-auto",
       name: "Edge Auto",
       handle: "@edgeautomate",
       active: false,

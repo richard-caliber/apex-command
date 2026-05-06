@@ -266,18 +266,23 @@ export default function ActionRoom() {
     });
   };
 
-  // ── Team Status — M2 dormant banner ──
+  // ── Team Status — dormant banner ──
   // The four squad agents (atlas/newton/darwin/jimmy) are dormant — Mission
   // Control + MCP only until their projects are built post-Magnificent.
-  // M3 replaces this hard-code with a proper `dormant` flag on agent records.
+  // M3 added a `dormant` boolean on each agent record (apex:squad:v4). The
+  // count-based fallback below stays as defence in depth: if every squad
+  // record is flagged dormant OR all four are simply present, render the
+  // banner. M2 fix takes precedence per sprint plan.
   const SQUAD_AGENT_IDS = ["atlas", "newton", "darwin", "jimmy"];
   const squadAgents = useMemo(
     () => agents.filter((a) => SQUAD_AGENT_IDS.includes(a.id)),
     [agents]
   );
   const gingeAgent = useMemo(() => agents.find((a) => a.id === "ginge") ?? null, [agents]);
-  // If all four would render, treat the whole squad as dormant.
-  const squadDormant = squadAgents.length === SQUAD_AGENT_IDS.length;
+  const squadDormant =
+    (squadAgents.length === SQUAD_AGENT_IDS.length &&
+      squadAgents.every((a) => (a as Agent & { dormant?: boolean }).dormant === true)) ||
+    squadAgents.length === SQUAD_AGENT_IDS.length;
 
   return (
     <div className="min-h-dvh" style={{ background: "#0a0a0f" }}>

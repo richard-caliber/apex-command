@@ -72,8 +72,8 @@ const SEED: Record<string, ProjectDetail> = {
     ],
     notes: "",
   },
-  edgeauto: {
-    id: "edgeauto",
+  "edge-auto": {
+    id: "edge-auto",
     tasks: [
       { id: "t1", text: "Landing page rebuild (conversion-focused)", owner: "🧭", priority: "red", status: "in-progress" },
       { id: "t2", text: "Add richard@edgeautomate.org to phone", owner: "👤", priority: "red", status: "todo" },
