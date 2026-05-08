@@ -7,6 +7,7 @@ import { lookupAccessToken } from "@/lib/mcp-oauth";
 import { appendAuditEvent, currentMonth, getAuditMonth } from "@/lib/mcp-audit";
 import { getAllProjects } from "@/lib/projects";
 import { getAllTasks } from "@/lib/tasks";
+import { buildBriefing } from "@/lib/briefing";
 
 const REQUIRED_SCOPE = "apex:full";
 
@@ -24,6 +25,7 @@ const VALID_PRACTICE_SOURCES = new Set(["newton", "atlas", "darwin", "jimmy", "g
 // tolerant; reconciling the two write paths is Phase 6 work.
 const VALID_PROJECT_STAGES = new Set(["idea", "validation", "design", "mvp", "traffic", "conversion", "delivery", "scale", "archived"]);
 const VALID_PROJECT_STATUSES = new Set(["active", "paused", "blocked", "completed", "archived"]);
+const VALID_PROJECT_TIERS = new Set(["tier-1", "tier-2", "tier-3"]);
 
 function asText(label: string, payload: unknown) {
   return { content: [{ type: "text" as const, text: `${label}\n\n${JSON.stringify(payload, null, 2)}` }] };
@@ -46,6 +48,7 @@ interface ProjectRecord {
   score?: number | null;
   featured?: boolean;
   order?: number;
+  tier?: "tier-1" | "tier-2" | "tier-3" | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -185,22 +188,78 @@ const handler = createMcpHandler(
       "apex_list_tasks",
       {
         title: "List Apex pipeline tasks",
-        description: "Returns Apex pipeline tasks. Filters: project_id, owner, status, stage. Default returns top 20 by recent updated_at.",
+        description:
+          "Returns Apex pipeline tasks. Filters: project_id, owner, status, stage, tier. By default excludes tasks under paused/archived parents and tasks owned by dormant agents — pass exclude_paused_parents=false or exclude_dormant_owners=false to include them. Default returns top 20 by recent updated_at.",
         inputSchema: {
           project_id: z.string().optional(),
           owner: z.string().optional(),
           status: z.string().optional(),
           stage: z.string().optional(),
           limit: z.number().int().min(1).max(200).optional().describe("Max rows to return (default 20)"),
+          exclude_paused_parents: z
+            .boolean()
+            .optional()
+            .describe("Default true. Drops tasks whose parent project has status=paused or status=archived."),
+          exclude_dormant_owners: z
+            .boolean()
+            .optional()
+            .describe("Default true. Drops tasks owned by agents flagged dormant=true."),
+          stale_days: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe("Optional. Only return tasks last updated more than N days ago."),
+          tier: z
+            .enum(["tier-1", "tier-2", "tier-3"])
+            .optional()
+            .describe("Optional. Only return tasks whose parent project has the given tier."),
         },
       },
-      async ({ project_id, owner, status, stage, limit }) => {
-        const all = await kvTasks();
-        const filtered = all.filter((t) => {
+      async ({
+        project_id,
+        owner,
+        status,
+        stage,
+        limit,
+        exclude_paused_parents,
+        exclude_dormant_owners,
+        stale_days,
+        tier,
+      }) => {
+        const excludePausedParents = exclude_paused_parents ?? true;
+        const excludeDormantOwners = exclude_dormant_owners ?? true;
+
+        const [allTasks, allProjects, allAgents] = await Promise.all([
+          kvTasks(),
+          excludePausedParents || tier ? kvProjects() : Promise.resolve([] as ProjectRecord[]),
+          excludeDormantOwners ? kvAgents() : Promise.resolve([] as AgentRecord[]),
+        ]);
+
+        const projectsById = new Map(allProjects.map((p) => [p.id, p]));
+        const dormantOwnerIds = new Set(allAgents.filter((a) => a.dormant === true).map((a) => a.id));
+        const staleCutoffIso = stale_days ? new Date(Date.now() - stale_days * 86400_000).toISOString() : null;
+
+        const filtered = allTasks.filter((t) => {
           if (project_id && t.project_id !== project_id) return false;
           if (owner && t.owner !== owner) return false;
           if (status && t.status !== status) return false;
           if (stage && t.stage !== stage) return false;
+
+          if (excludePausedParents) {
+            const parent = projectsById.get(t.project_id);
+            const parentStatus = parent?.status ?? "";
+            if (parentStatus === "paused" || parentStatus === "archived") return false;
+          }
+          if (excludeDormantOwners && t.owner && dormantOwnerIds.has(t.owner)) return false;
+          if (tier) {
+            const parent = projectsById.get(t.project_id);
+            if (parent?.tier !== tier) return false;
+          }
+          if (staleCutoffIso) {
+            const ts = t.updated_at || t.created_at || "1970-01-01T00:00:00Z";
+            if (ts >= staleCutoffIso) return false;
+          }
           return true;
         });
         filtered.sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
@@ -215,7 +274,63 @@ const handler = createMcpHandler(
           blocker: t.blocker,
           updated_at: t.updated_at,
         }));
-        return asText(`${slice.length} task(s) (of ${filtered.length} matching, ${all.length} total)`, slice);
+        return asText(`${slice.length} task(s) (of ${filtered.length} matching, ${allTasks.length} total)`, slice);
+      },
+    );
+
+    // ─────── apex_list_stale_tasks ───────
+    server.registerTool(
+      "apex_list_stale_tasks",
+      {
+        title: "List stale Apex tasks",
+        description:
+          "Returns open Apex tasks last updated more than N days ago (default 30), oldest first. Excludes done/skipped/blocked tasks, tasks under paused/archived parents, and tasks owned by dormant agents — these are not actionable signals about staleness.",
+        inputSchema: {
+          days: z.number().int().positive().optional().describe("Staleness threshold in days. Default 30."),
+          limit: z.number().int().positive().max(200).optional().describe("Max rows to return. Default 10."),
+        },
+      },
+      async ({ days, limit }) => {
+        const staleDays = days ?? 30;
+        const cap = limit ?? 10;
+
+        const [allTasks, allProjects, allAgents] = await Promise.all([
+          kvTasks(),
+          kvProjects(),
+          kvAgents(),
+        ]);
+        const projectsById = new Map(allProjects.map((p) => [p.id, p]));
+        const dormantOwnerIds = new Set(allAgents.filter((a) => a.dormant === true).map((a) => a.id));
+
+        const cutoffMs = Date.now() - staleDays * 86400_000;
+        const cutoffIso = new Date(cutoffMs).toISOString();
+
+        const stale = allTasks
+          .filter((t) => {
+            if (t.status === "done" || t.status === "skipped" || t.status === "blocked") return false;
+            const parent = projectsById.get(t.project_id);
+            if (!parent) return false; // skips _template seeds and orphaned tasks
+            if (parent.status === "paused" || parent.status === "archived") return false;
+            if (t.owner && dormantOwnerIds.has(t.owner)) return false;
+            const ts = t.updated_at || t.created_at || "1970-01-01T00:00:00Z";
+            return ts < cutoffIso;
+          })
+          .map((t) => {
+            const ts = t.updated_at || t.created_at || "1970-01-01T00:00:00Z";
+            const daysUntouched = Math.floor((Date.now() - new Date(ts).getTime()) / 86400_000);
+            return {
+              task_id: t.id,
+              name: t.name,
+              project_id: t.project_id,
+              owner: t.owner,
+              days_untouched: daysUntouched,
+              last_updated_iso: ts,
+            };
+          })
+          .sort((a, b) => b.days_untouched - a.days_untouched)
+          .slice(0, cap);
+
+        return asText(`${stale.length} stale task(s) (>${staleDays} days untouched)`, stale);
       },
     );
 
@@ -241,70 +356,12 @@ const handler = createMcpHandler(
       {
         title: "Get the Briefing Room view",
         description:
-          "Composite read mirroring the Briefing Room: active projects, top 10 open tasks owned by ginge, top 10 open tasks owned by other agents, current blockers across active projects.",
+          "Composite read of Apex state for daily decision-making. Returns 8 sections: this_week_frontline (top 5 actionable tasks across tiered ventures), active_ventures (status=active and tiered, ordered by tier then order), blocked_external (status=blocked with parsed waiting_on), meta_work (tag=meta), paused_summary (paused/archived/creative counts), stale_tasks (top 10 untouched >30 days), dormant_agent_warnings (orphan-task count, excluding newton/darwin Project surfaces), agents (squad status). Cached 30s.",
         inputSchema: {},
       },
       async () => {
-        const [projects, tasks, agents] = await Promise.all([kvProjects(), kvTasks(), kvAgents()]);
-        const activeProjects = projects.filter((p) => (p.status || "") === "active").map((p) => ({
-          id: p.id,
-          name: p.name,
-          stage: p.stage,
-          status: p.status,
-          blocker: p.blocker,
-        }));
-
-        const SQUAD_OWNERS = new Set(["atlas", "newton", "darwin", "jimmy"]);
-        const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
-        const open = tasks.filter(
-          (t) =>
-            t.project_id !== "_template" &&
-            t.status !== "done" &&
-            t.status !== "skipped" &&
-            t.status !== "blocked"
-        );
-        const sortByPriorityThenCreated = (a: PipelineTaskRecord, b: PipelineTaskRecord) => {
-          const pa = PRIORITY_RANK[(a.priority || "").toLowerCase()] ?? 3;
-          const pb = PRIORITY_RANK[(b.priority || "").toLowerCase()] ?? 3;
-          if (pa !== pb) return pa - pb;
-          return (b.created_at || "").localeCompare(a.created_at || "");
-        };
-        const yourActions = open.filter((t) => t.owner === "ginge").sort(sortByPriorityThenCreated).slice(0, 10);
-        const squadActions = open.filter((t) => t.owner && SQUAD_OWNERS.has(t.owner)).sort(sortByPriorityThenCreated).slice(0, 10);
-
-        // M3.5: respect the dormant flag added in M3. Dormant agents render
-        // with status "dormant" and a fixed copy line; their pre-Magnificent
-        // current_task strings are stale and misleading.
-        const DORMANT_TASK_COPY =
-          "Dormant — squad not running on cron, available for on-demand work via Newton/Darwin Projects (Phase 7)";
-        const agentStatus = agents.map((a) => {
-          if (a.dormant === true) {
-            return { id: a.id, name: a.name, status: "dormant", current_task: DORMANT_TASK_COPY };
-          }
-          // Non-dormant: prefer a fresh copy line for ginge over stale strings.
-          if (a.id === "ginge") {
-            return {
-              id: a.id,
-              name: a.name,
-              status: a.status,
-              current_task: a.current_task && a.current_task.length > 0
-                ? a.current_task
-                : "Magnificent sprint in progress",
-            };
-          }
-          return { id: a.id, name: a.name, status: a.status, current_task: a.current_task };
-        });
-        const blockers = projects
-          .filter((p) => p.blocker && (p.status || "") === "active")
-          .map((p) => ({ project: p.id, blocker: p.blocker }));
-
-        return asText("Apex Briefing", {
-          active_projects: activeProjects,
-          your_actions: yourActions.map((t) => ({ id: t.id, name: t.name, project_id: t.project_id, status: t.status, priority: t.priority, blocker: t.blocker })),
-          squad_actions: squadActions.map((t) => ({ id: t.id, name: t.name, project_id: t.project_id, owner: t.owner, status: t.status, priority: t.priority })),
-          agent_status: agentStatus,
-          blockers,
-        });
+        const briefing = await buildBriefing();
+        return asText("Apex Briefing", briefing);
       },
     );
 
@@ -623,6 +680,7 @@ const handler = createMcpHandler(
           image_url: z.string().optional(),
           metrics: z.record(z.string(), z.string()).optional(),
           order: z.number().optional(),
+          tier: z.enum(["tier-1", "tier-2", "tier-3"]).nullable().optional().describe("Priority tier: tier-1 = current revenue priority, tier-2 = active lower priority, tier-3 = experimental/batch. Null = meta/creative/paused/archived."),
         },
       },
       async (input, extra) => {
@@ -631,6 +689,9 @@ const handler = createMcpHandler(
         }
         if (input.status !== undefined && !VALID_PROJECT_STATUSES.has(input.status)) {
           return { content: [{ type: "text", text: `Invalid status: ${input.status}. Valid: ${[...VALID_PROJECT_STATUSES].join(", ")}` }], isError: true };
+        }
+        if (input.tier !== undefined && input.tier !== null && !VALID_PROJECT_TIERS.has(input.tier)) {
+          return { content: [{ type: "text", text: `Invalid tier: ${input.tier}. Valid: ${[...VALID_PROJECT_TIERS].join(", ")} or null` }], isError: true };
         }
 
         const now = new Date().toISOString();
@@ -659,6 +720,7 @@ const handler = createMcpHandler(
           if (input.image_url !== undefined) merged.image_url = input.image_url;
           if (input.metrics !== undefined) merged.metrics = input.metrics;
           if (input.order !== undefined) merged.order = input.order;
+          if (input.tier !== undefined) merged.tier = input.tier;
           store.projects[idx] = merged;
           result = merged;
         } else {
@@ -678,6 +740,7 @@ const handler = createMcpHandler(
             score: input.score ?? null,
             featured: input.featured ?? false,
             order: input.order,
+            tier: input.tier ?? null,
             created_at: now,
             updated_at: now,
           };

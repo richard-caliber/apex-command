@@ -2,6 +2,8 @@ import { kv } from "@vercel/kv";
 
 const KV_KEY = "apex:warroom:projects";
 
+export type ProjectTier = "tier-1" | "tier-2" | "tier-3";
+
 export interface Project {
   id: string;
   name: string;
@@ -17,6 +19,7 @@ export interface Project {
   image_url?: string;
   metrics?: Record<string, string>;
   order?: number;
+  tier?: ProjectTier | null;
   created_at?: string;
   updated_at?: string;
 }
