@@ -1,0 +1,101 @@
+Project-context MCP local-test @ 2026-05-20T11:43:22.225Z
+BASE = http://localhost:3000
+
+── DCR + authorize + token ──
+access_token apex-mcp-tok-RM_zSLz…
+
+── tools/list — expect 4 new tools present ──
+got 24 tools
+  ✓ tool present: apex_get_project_context
+  ✓ tool present: apex_log_context
+  ✓ tool present: apex_set_project_context
+  ✓ tool present: apex_compact_project_context
+TEST project_id = pctx-test-mpdztt14
+
+── apex_get_project_context on missing id pctx-test-mpdztt14 ──
+  ✓ isError === false for missing doc
+  ✓ payload is null
+
+── apex_log_context active_hypotheses (creates doc) ──
+  ✓ isError === false
+  ✓ version === 1
+  ✓ active_hypotheses has 1 entry
+
+── apex_log_context open_questions ──
+  ✓ version === 2
+  ✓ open_questions has 1 entry
+  ✓ active_hypotheses preserved
+
+── apex_log_context stakeholder_notes ──
+  ✓ version === 3
+  ✓ name === Todd
+  ✓ stakeholder updated_at present
+
+── apex_log_context recent_decisions ──
+  ✓ version === 4
+  ✓ decision logged
+  ✓ decision logged_at present
+
+── apex_log_context — invalid section ──
+  ✓ rejected invalid section (got: MCP error -32602: Input validation error: Invalid arguments for tool apex_log_context: [
+  {
+    "code": "invalid_value")
+
+── apex_log_context — stakeholder_notes payload missing name ──
+  ✓ isError === true
+  ✓ error mentions name field
+
+── apex_log_context — over-length hypothesis (600 chars) ──
+  ✓ isError === true
+  ✓ error mentions 500-char limit
+
+── apex_log_context — whitespace-only hypothesis ──
+  ✓ isError === true
+  ✓ error mentions empty/whitespace
+
+── apex_get_project_context after logs ──
+  ✓ version still 4 (failed logs did not bump)
+  ✓ 1 hypothesis
+  ✓ 1 question
+  ✓ 1 stakeholder note
+  ✓ 1 decision
+
+── apex_compact_project_context — propose only ──
+  ✓ isError === false
+  ✓ returns { proposed, diff }
+  ✓ diff.triggers present
+  ✓ compaction did NOT save (version still 4)
+
+── apex_compact_project_context on missing id ──
+  ✓ isError === true
+
+── apex_set_project_context — full overwrite ──
+  ✓ isError === false
+  ✓ version === 5 after overwrite
+  ✓ prior_version captures v4
+  ✓ prior_version.prior_version === null (no recursion)
+  ✓ 1 hypothesis remains
+  ✓ 0 questions
+
+── apex_set_project_context — over-length current_state ──
+  ✓ isError === true on over-length
+
+── apex_get_briefing — expect new keys ──
+  ✓ briefing is an object
+  ✓ has top_project_context key
+  ✓ has context_compaction_due key
+  ✓ has stale_context_projects key
+
+── apex_get_briefing — project_id=pctx-test-mpdztt14 swap ──
+  ✓ top_project_context swapped to test id
+
+── apex_get_audit — confirm log/set entries ──
+  ✓ audit contains apex_log_context
+  ✓ audit contains apex_set_project_context
+  ✓ audit does NOT contain apex_get_project_context (read tool)
+  ✓ audit does NOT contain apex_compact_project_context (proposal tool)
+
+── Regression: apex_list_projects + apex_get_practice (sanity) ──
+  ✓ apex_list_projects still works
+
+── SUMMARY: 52 passed, 0 failed ──

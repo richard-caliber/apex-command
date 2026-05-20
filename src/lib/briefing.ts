@@ -2,6 +2,12 @@ import { kv } from "@vercel/kv";
 import { unstable_cache } from "next/cache";
 import { getAllProjects, type Project, type ProjectTier } from "./projects";
 import { getAllTasks, type Task } from "./tasks";
+import {
+  getProjectContext,
+  getCompactionDueProjectIds,
+  getStaleContextProjectIds,
+  type ProjectContextDoc,
+} from "./project-context";
 
 const DAY_MS = 86_400_000;
 const STALE_DAYS = 30;
@@ -86,6 +92,17 @@ export interface AgentItem {
   current_task: string;
 }
 
+export interface ContextCompactionDueItem {
+  project_id: string;
+  reasons: string[];
+}
+
+export interface StaleContextItem {
+  project_id: string;
+  days_since_context_update: number;
+  open_task_count: number;
+}
+
 export interface Briefing {
   this_week_frontline: FrontlineItem[];
   active_ventures: VentureItem[];
@@ -95,6 +112,9 @@ export interface Briefing {
   stale_tasks: StaleItem[];
   dormant_agent_warnings: DormantWarnings;
   agents: AgentItem[];
+  top_project_context: ProjectContextDoc | null;
+  context_compaction_due: ContextCompactionDueItem[];
+  stale_context_projects: StaleContextItem[];
 }
 
 async function loadAgents(): Promise<AgentRecord[]> {
@@ -407,6 +427,32 @@ async function buildBriefingUncached(): Promise<Briefing> {
     };
   });
 
+  // ── top_project_context ──
+  // Top-priority project = first in active_ventures (already sorted tier → order → name).
+  const topProjectId = active_ventures[0]?.id ?? null;
+  const top_project_context: ProjectContextDoc | null = topProjectId
+    ? await getProjectContext(topProjectId)
+    : null;
+
+  // ── context_compaction_due ──
+  const context_compaction_due = await getCompactionDueProjectIds(nowMs);
+
+  // ── stale_context_projects ──
+  // Only consider active+tiered ventures here; meta/paused don't count.
+  const projectsWithOpenTasks: string[] = [];
+  const openTaskCountByProject = new Map<string, number>();
+  for (const v of active_ventures) {
+    if (v.open_task_count > 0) {
+      projectsWithOpenTasks.push(v.id);
+      openTaskCountByProject.set(v.id, v.open_task_count);
+    }
+  }
+  const stale_context_projects = await getStaleContextProjectIds(
+    projectsWithOpenTasks,
+    openTaskCountByProject,
+    nowMs,
+  );
+
   return {
     this_week_frontline,
     active_ventures,
@@ -416,6 +462,9 @@ async function buildBriefingUncached(): Promise<Briefing> {
     stale_tasks,
     dormant_agent_warnings,
     agents: agentItems,
+    top_project_context,
+    context_compaction_due,
+    stale_context_projects,
   };
 }
 
@@ -424,3 +473,15 @@ export const buildBriefing = unstable_cache(
   ["apex-briefing-v1"],
   { revalidate: 30 },
 );
+
+/**
+ * Briefing wrapper that lets the caller swap top_project_context to a specific
+ * project's doc. Uncached read-through; the underlying briefing is still
+ * served from the 30s cache.
+ */
+export async function getBriefingForProject(project_id?: string): Promise<Briefing> {
+  const briefing = await buildBriefing();
+  if (!project_id) return briefing;
+  const doc = await getProjectContext(project_id);
+  return { ...briefing, top_project_context: doc };
+}

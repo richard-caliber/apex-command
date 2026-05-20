@@ -1,0 +1,262 @@
+{
+  "started_at": "2026-05-20T11:44:41.287Z",
+  "finished_at": "2026-05-20T11:44:56.866Z",
+  "base": "http://localhost:3000",
+  "label": "local",
+  "log": [
+    {
+      "ts": "2026-05-20T11:44:41.287Z",
+      "msg": "Bootstrap starting @ 2026-05-20T11:44:41.286Z"
+    },
+    {
+      "ts": "2026-05-20T11:44:41.287Z",
+      "msg": "BASE = http://localhost:3000, LABEL = local"
+    },
+    {
+      "ts": "2026-05-20T11:44:43.537Z",
+      "msg": "OAuth OK — access token acquired"
+    },
+    {
+      "ts": "2026-05-20T11:44:44.307Z",
+      "msg": "Loaded 54 projects from apex:warroom:projects"
+    },
+    {
+      "ts": "2026-05-20T11:44:44.308Z",
+      "msg": "  ✓ Todd-Safent → todd-safent (\"Safe NT (Todd) — fire safety reporting + Pack Builder wedge\") via exact-id:\"todd-safent\""
+    },
+    {
+      "ts": "2026-05-20T11:44:44.308Z",
+      "msg": "  ✓ Caliber Peptides → caliber (\"Caliber Peptides — scout pyramid + coach-funnel scaling layer\") via exact-id:\"caliber\""
+    },
+    {
+      "ts": "2026-05-20T11:44:44.308Z",
+      "msg": "  ✓ Atlas Drift → atlas-drift (\"Atlas Drift\") via exact-name:\"atlas drift\""
+    },
+    {
+      "ts": "2026-05-20T11:44:44.308Z",
+      "msg": "  ✓ Rawai Villas → villas (\"Rawai Villas — 3× 24M THB sale or hold\") via exact-id:\"villas\""
+    },
+    {
+      "ts": "2026-05-20T11:44:44.309Z",
+      "msg": "  ✓ Poker OS → poker-os (\"Poker Content OS\") via exact-id:\"poker-os\""
+    },
+    {
+      "ts": "2026-05-20T11:44:44.309Z",
+      "msg": "Writing context for todd-safent (Todd-Safent)…"
+    },
+    {
+      "ts": "2026-05-20T11:44:48.266Z",
+      "msg": "  ✓ todd-safent — Context for todd-safent saved (v1)"
+    },
+    {
+      "ts": "2026-05-20T11:44:48.266Z",
+      "msg": "  ℹ name-divergence: bootstrap target \"Todd-Safent\" stored as project \"Safe NT (Todd) — fire safety reporting + Pack Builder wedge\" (id=todd-safent)"
+    },
+    {
+      "ts": "2026-05-20T11:44:48.266Z",
+      "msg": "Writing context for caliber (Caliber Peptides)…"
+    },
+    {
+      "ts": "2026-05-20T11:44:51.117Z",
+      "msg": "  ✓ caliber — Context for caliber saved (v1)"
+    },
+    {
+      "ts": "2026-05-20T11:44:51.117Z",
+      "msg": "Writing context for atlas-drift (Atlas Drift)…"
+    },
+    {
+      "ts": "2026-05-20T11:44:54.756Z",
+      "msg": "  ✓ atlas-drift — Context for atlas-drift saved (v1)"
+    },
+    {
+      "ts": "2026-05-20T11:44:54.756Z",
+      "msg": "Writing context for villas (Rawai Villas)…"
+    },
+    {
+      "ts": "2026-05-20T11:44:56.866Z",
+      "msg": "  ✓ villas — Context for villas saved (v1)"
+    },
+    {
+      "ts": "2026-05-20T11:44:56.866Z",
+      "msg": "  SKIP Poker OS — bootstrap body has empty current_state"
+    },
+    {
+      "ts": "2026-05-20T11:44:56.866Z",
+      "msg": "Bootstrap complete: 4/5 written"
+    }
+  ],
+  "halted": false,
+  "resolved": [
+    {
+      "expected": {
+        "label": "Todd-Safent",
+        "aliases": [
+          "todd-safent",
+          "todd-saifent",
+          "todd safent",
+          "safent"
+        ]
+      },
+      "match": {
+        "id": "todd-safent",
+        "name": "Safe NT (Todd) — fire safety reporting + Pack Builder wedge",
+        "stage": "validation",
+        "status": "active",
+        "blocker": "Waiting on Todd to schedule call this week (Carlie must be present with DDNS creds)",
+        "tags": [
+          "venture",
+          "validation",
+          "b2b",
+          "wedge",
+          "real-client",
+          "safent",
+          "carlie-pain-owner",
+          "pack-builder"
+        ]
+      },
+      "mode": "exact-id",
+      "alias": "todd-safent"
+    },
+    {
+      "expected": {
+        "label": "Caliber Peptides",
+        "aliases": [
+          "caliber peptides",
+          "caliber"
+        ]
+      },
+      "match": {
+        "id": "caliber",
+        "name": "Caliber Peptides — scout pyramid + coach-funnel scaling layer",
+        "stage": "traffic",
+        "status": "active",
+        "blocker": "Critical path (updated 2026-05-20): SCOUT MECHANIC PROVEN END-TO-END. Grant active and sharing IG stories independently — applied his own aesthetic, no Caliber-side creative production required. First \"Grant sent me\" WhatsApp inbound LANDED 2026-05-19. (1) P0: CONVERT GRANT WA INBOUND — Ginge to close the loop and log outcome. Single highest-EV human action on the board. Outcome gates Cam/George replication. (2) Architecture pivot in flight: scout model unchanged + new lead-magnet-to-coach funnel as scaling layer + Nic-fronted coach-the-coach offer concept. (3) 5 Newton research briefs filed 2026-05-20; outputs feed downstream offer design. Run order: compliance brief FIRST (MCP-MPDWPSDR-0qwg, HIGH). (4) Wrapper/apparel/Nic-led-retreat all PARKED — coach-funnel is the active direction.",
+        "tags": [
+          "venture",
+          "ecommerce",
+          "peptides",
+          "affiliate-pivot",
+          "crypto",
+          "trust-graph",
+          "real-revenue",
+          "p0-checkout-broken"
+        ]
+      },
+      "mode": "exact-id",
+      "alias": "caliber"
+    },
+    {
+      "expected": {
+        "label": "Atlas Drift",
+        "aliases": [
+          "atlas drift",
+          "atlas-drift"
+        ]
+      },
+      "match": {
+        "id": "atlas-drift",
+        "name": "Atlas Drift",
+        "stage": "mvp",
+        "status": "active",
+        "blocker": "None. Wave-v1 shipped to production 2026-05-19 (merge of routing refactor + neighbourhoods email-capture refactor). Backlog: 4 polish tasks + deferred customer-journey review + plan-deviation ratify. Domain atlasdrift.org still not cutover — atlas-drift.vercel.app is current production URL.",
+        "tags": [
+          "venture",
+          "mvp",
+          "geo-niche",
+          "lead-magnet",
+          "ginge-favourite",
+          "atlas-drift",
+          "se-asia",
+          "founder-voice"
+        ]
+      },
+      "mode": "exact-name",
+      "alias": "atlas drift"
+    },
+    {
+      "expected": {
+        "label": "Rawai Villas",
+        "aliases": [
+          "rawai villas",
+          "rawai-villas",
+          "rawai",
+          "phuket villas",
+          "villas"
+        ]
+      },
+      "match": {
+        "id": "villas",
+        "name": "Rawai Villas — 3× 24M THB sale or hold",
+        "stage": "traffic",
+        "status": "active",
+        "blocker": "Critical path (updated 2026-05-19): Notion Villa Agent CRM now LIVE under Ops HQ → Villa Sales (notion.so/35ac89ff7da181fbbc50e2decdc9b6d7). Two databases — Villa Agents (19 contacts pre-loaded, Russian/Chinese/Western/YouTube/PropertyMgr) + Touchpoints (linked conversation log). Workflow: Ginge forwards WhatsApp replies/updates → Claude logs Touchpoint + updates Agent's Stage/Last Contact/Next Chase + drafts reply. \n\nNEXT 7 DAYS: Run first chase cycle (MCP-MPBJPAEB-4tsi). All Apr 24 outreach (14 agents) is now overdue. Priority A: Storm, InDreams, CBRE Narumon, Mike Davison. Secondary: 9 RU agencies + 3 CN desks.\n\nPARALLEL: Mike Davison free-stay shoot reminder (MCP-MOUC66P5-6hnx). Landing page build still queued (MCP-MOUC7K95-lyym) — awaiting traffic driver before unblock. Past-guest list ask still parked (MCP-MOUC6RRV-i028).\n\nStill no firm offers. Need viewings before any price-drop conversation.",
+        "tags": [
+          "venture",
+          "property",
+          "real-asset",
+          "rawai",
+          "phuket",
+          "high-absolute-value",
+          "tier-2-active",
+          "hold-or-sell"
+        ]
+      },
+      "mode": "exact-id",
+      "alias": "villas"
+    },
+    {
+      "expected": {
+        "label": "Poker OS",
+        "aliases": [
+          "poker os",
+          "poker-os",
+          "pokeros"
+        ]
+      },
+      "match": {
+        "id": "poker-os",
+        "name": "Poker Content OS",
+        "stage": "mvp",
+        "status": "active",
+        "blocker": "(1) MVP not yet validated against real poker source video — synthetic render verified end-to-end. Smoke test MCP-MOWR02FG-vlxu queued, needs Sheils clip sourced (MCP-MPC9ZMLC-ki22). (2) Provider decisions deferred: ASR (interface scaffolded by Codex in lib/metadataGenerator.ts — swap cost low when ready), AI voice, platform OAuth (YouTube/TikTok/Meta). (3) Post-smoke-test priorities: render progress indicator (MCP-MPC9TPTW-ewbs), dashboard upload UX mismatch (MCP-MPC9U0PI-9uzz), polish batch (MCP-MPC9UCGC-gb0z). Repo now attached to Claude Project via native GitHub sync — code-level reads available in future sessions.",
+        "tags": [
+          "venture",
+          "mvp",
+          "niche-down",
+          "content-tooling",
+          "ginge-favourite",
+          "local-first"
+        ]
+      },
+      "mode": "exact-id",
+      "alias": "poker-os"
+    }
+  ],
+  "missing": [],
+  "written": [
+    {
+      "project_id": "todd-safent",
+      "label": "Todd-Safent",
+      "ok": true,
+      "summary": "Context for todd-safent saved (v1)"
+    },
+    {
+      "project_id": "caliber",
+      "label": "Caliber Peptides",
+      "ok": true,
+      "summary": "Context for caliber saved (v1)"
+    },
+    {
+      "project_id": "atlas-drift",
+      "label": "Atlas Drift",
+      "ok": true,
+      "summary": "Context for atlas-drift saved (v1)"
+    },
+    {
+      "project_id": "villas",
+      "label": "Rawai Villas",
+      "ok": true,
+      "summary": "Context for villas saved (v1)"
+    }
+  ]
+}

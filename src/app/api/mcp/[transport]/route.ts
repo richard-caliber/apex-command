@@ -7,7 +7,16 @@ import { lookupAccessToken } from "@/lib/mcp-oauth";
 import { appendAuditEvent, currentMonth, getAuditMonth } from "@/lib/mcp-audit";
 import { getAllProjects } from "@/lib/projects";
 import { getAllTasks } from "@/lib/tasks";
-import { buildBriefing } from "@/lib/briefing";
+import { buildBriefing, getBriefingForProject } from "@/lib/briefing";
+import {
+  getProjectContext,
+  logContext,
+  setProjectContext,
+  proposeCompaction,
+  ValidationError as ProjectContextValidationError,
+  type LogSection,
+  type SetProjectContextInput,
+} from "@/lib/project-context";
 
 const REQUIRED_SCOPE = "apex:full";
 
@@ -356,11 +365,20 @@ const handler = createMcpHandler(
       {
         title: "Get the Briefing Room view",
         description:
-          "Composite read of Apex state for daily decision-making. Returns 8 sections: this_week_frontline (top 5 actionable tasks across tiered ventures), active_ventures (status=active and tiered, ordered by tier then order), blocked_external (status=blocked with parsed waiting_on), meta_work (tag=meta), paused_summary (paused/archived/creative counts), stale_tasks (top 10 untouched >30 days), dormant_agent_warnings (orphan-task count, excluding newton/darwin Project surfaces), agents (squad status). Cached 30s.",
-        inputSchema: {},
+          "Composite read of Apex state for daily decision-making. Returns 11 sections: this_week_frontline (top 5 actionable tasks across tiered ventures), active_ventures (status=active and tiered, ordered by tier then order), blocked_external (status=blocked with parsed waiting_on), meta_work (tag=meta), paused_summary (paused/archived/creative counts), stale_tasks (top 10 untouched >30 days), dormant_agent_warnings (orphan-task count, excluding newton/darwin Project surfaces), agents (squad status), top_project_context (live narrative doc for the top-priority active venture; null if no doc yet), context_compaction_due (project_ids whose context doc has size/age/decision-count over thresholds), stale_context_projects (active ventures with open tasks but no context update in 30+ days). Cached 30s; the optional project_id parameter swaps top_project_context to that project's doc via an uncached read-through.",
+        inputSchema: {
+          project_id: z
+            .string()
+            .optional()
+            .describe(
+              "If set, swaps top_project_context to this project's doc (uncached read-through). Default: top of active_ventures.",
+            ),
+        },
       },
-      async () => {
-        const briefing = await buildBriefing();
+      async ({ project_id }) => {
+        const briefing = project_id
+          ? await getBriefingForProject(project_id)
+          : await buildBriefing();
         return asText("Apex Briefing", briefing);
       },
     );
@@ -847,6 +865,175 @@ const handler = createMcpHandler(
           callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
         });
         return asText(`Practice ${input.id} updated`, updated);
+      },
+    );
+
+    // ─────── apex_get_project_context ───────
+    server.registerTool(
+      "apex_get_project_context",
+      {
+        title: "Get project context document",
+        description:
+          "Returns the live narrative context document for a project from apex:project-context:v1 — current_state, active_hypotheses, open_questions, stakeholder_notes, recent_decisions, and meta (version + prior_version for one-level rollback). Returns null if no context doc exists for this project yet (call apex_log_context to create one by appending a first entry). This is the narrative layer — hypotheses, decisions, signals. For structural enrichment (timeline, waitingOn) see /api/project/[id]. For top-level project metadata see apex_get_project.",
+        inputSchema: {
+          project_id: z.string().describe("Project id, e.g. caliber, atlas-drift, todd-safent"),
+        },
+      },
+      async ({ project_id }) => {
+        const doc = await getProjectContext(project_id);
+        if (!doc) {
+          return asText(`No context document for ${project_id}`, null);
+        }
+        return asText(`Context for ${project_id} (v${doc.meta.version})`, doc);
+      },
+    );
+
+    // ─────── apex_log_context ─────── (THE WORKHORSE)
+    server.registerTool(
+      "apex_log_context",
+      {
+        title: "Append a narrative note to a project's context",
+        description:
+          "Append a single narrative note to a project's live context document in apex:project-context:v1. Used to capture texture that would otherwise be lost between sessions — hypotheses being tested, unknowns blocking decisions, stakeholder signals, decisions taken with reasoning.\n\n" +
+          "One call, one note. No batching. No cross-topic summaries. Ceremony defeats the purpose; the layer only works if calls are cheap.\n\n" +
+          "section (required) and matching payload (required):\n" +
+          "- active_hypotheses → { hypothesis: string } — what is currently being tested\n" +
+          "- open_questions → { question: string } — an unknown that blocks a decision\n" +
+          "- stakeholder_notes → { name: string, note: string } — a narrative observation about a specific person involved with this project\n" +
+          "- recent_decisions → { decision: string, rationale: string } — a decision taken plus why\n\n" +
+          "Each entry is timestamped automatically. Append-only between compactions; to revise, supersede, or remove existing entries, use apex_compact_project_context (proposes a diff) then apex_set_project_context (commits the agreed compacted version). The doc is created on first call — no setup required. Target latency: under 500ms.\n\n" +
+          "Do not log: factual answers Claude provided, generic discussion, half-formed ideas the user has not committed to, or anything that is already a task in Apex. If it is actionable, it is a task — not context.\n\n" +
+          "When to log. If the thought \"that's worth remembering\" crosses your mind, the answer is to log it, not to keep talking. Under-logging loses signal forever; over-logging is cleaned by compaction. When in doubt, log.\n\n" +
+          "Examples: when the user voices a hypothesis (\"I think the reason X is happening is Y\") → log to active_hypotheses. When an unknown blocks progress (\"we don't actually know whether Z holds\") → log to open_questions. When someone's behaviour is part of the picture (\"Todd hasn't replied in three weeks\") → log to stakeholder_notes. When a course of action is chosen (\"right, let's go with option two because of A and B\") → log to recent_decisions.",
+        inputSchema: {
+          project_id: z
+            .string()
+            .describe("Project id from apex:warroom:projects, e.g. caliber, atlas-drift, todd-safent"),
+          section: z
+            .enum(["active_hypotheses", "open_questions", "stakeholder_notes", "recent_decisions"])
+            .describe("Which section to append to. Determines the required payload shape."),
+          payload: z
+            .record(z.string(), z.string())
+            .describe(
+              "Shape depends on section: active_hypotheses → { hypothesis }; open_questions → { question }; stakeholder_notes → { name, note }; recent_decisions → { decision, rationale }.",
+            ),
+        },
+      },
+      async ({ project_id, section, payload }, extra) => {
+        try {
+          const updated = await logContext(project_id, section as LogSection, payload);
+          const payloadChars = JSON.stringify(payload).length;
+          await appendAuditEvent({
+            tool: "apex_log_context",
+            input: { project_id, section, payload_chars: payloadChars },
+            resultSummary: `appended ${section} entry to ${project_id} (v${updated.meta.version})`,
+            callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
+          });
+          return asText(`Context updated for ${project_id} (v${updated.meta.version})`, updated);
+        } catch (e) {
+          if (e instanceof ProjectContextValidationError) {
+            return { content: [{ type: "text", text: e.message }], isError: true };
+          }
+          throw e;
+        }
+      },
+    );
+
+    // ─────── apex_set_project_context ───────
+    server.registerTool(
+      "apex_set_project_context",
+      {
+        title: "Overwrite a project's context document",
+        description:
+          "Overwrite a project's full context document in apex:project-context:v1. The previous version is stashed inline at meta.prior_version (one level of rollback). Used by compaction (after apex_compact_project_context proposes a diff and Claude + user agree the new shape) and by bootstrap. Increments meta.version and stamps last_compacted_at = now. For routine note-taking use apex_log_context — it's append-only, faster, and doesn't bump the compaction timer. Use this tool only when deliberately rewriting the whole doc.",
+        inputSchema: {
+          project_id: z
+            .string()
+            .describe("Project id; doc will be stored at apex:project-context:v1.docs[project_id]"),
+          current_state: z
+            .string()
+            .describe("Single paragraph summarising what is currently true for this project. Max 500 chars. May be empty on bootstrap."),
+          active_hypotheses: z
+            .array(z.string())
+            .describe("What is currently being tested. Each entry max 500 chars."),
+          open_questions: z
+            .array(z.string())
+            .describe("Unknowns blocking decisions. Each entry max 500 chars."),
+          stakeholder_notes: z
+            .array(
+              z.object({
+                name: z.string(),
+                note: z.string(),
+                updated_at: z.string().optional(),
+              }),
+            )
+            .describe("Per-person narrative observations. name max 100 chars, note max 500 chars."),
+          recent_decisions: z
+            .array(
+              z.object({
+                decision: z.string(),
+                rationale: z.string(),
+                logged_at: z.string().optional(),
+              }),
+            )
+            .describe("Decisions and the reason behind each. decision/rationale max 500 chars each."),
+        },
+      },
+      async (input, extra) => {
+        try {
+          const body: SetProjectContextInput = {
+            current_state: input.current_state,
+            active_hypotheses: input.active_hypotheses,
+            open_questions: input.open_questions,
+            stakeholder_notes: input.stakeholder_notes,
+            recent_decisions: input.recent_decisions,
+          };
+          const updated = await setProjectContext(input.project_id, body);
+          const bodyBytes = JSON.stringify(body).length;
+          const priorVersion = updated.meta.prior_version?.meta.version ?? 0;
+          await appendAuditEvent({
+            tool: "apex_set_project_context",
+            input: { project_id: input.project_id, body_bytes: bodyBytes },
+            resultSummary: `overwrote context for ${input.project_id} (v${priorVersion} → v${updated.meta.version})`,
+            callerUserAgent: (extra as { request?: Request } | undefined)?.request?.headers?.get?.("user-agent") ?? undefined,
+          });
+          return asText(
+            `Context for ${input.project_id} saved (v${updated.meta.version})`,
+            updated,
+          );
+        } catch (e) {
+          if (e instanceof ProjectContextValidationError) {
+            return { content: [{ type: "text", text: e.message }], isError: true };
+          }
+          throw e;
+        }
+      },
+    );
+
+    // ─────── apex_compact_project_context ───────
+    server.registerTool(
+      "apex_compact_project_context",
+      {
+        title: "Propose a compacted context document",
+        description:
+          "Propose a compacted version of a project's context document, WITHOUT saving. Returns the proposed doc plus a structured diff: which decisions were absorbed into current_state, which hypotheses are candidates for supersession (Claude/user must judge), how many stakeholder notes were dropped as duplicates/empty, and which compaction triggers are firing. Heuristic only — this tool absorbs decisions older than 30 days and surfaces stale hypotheses for review; it does NOT decide what is superseded. After reviewing the proposal with the user, commit by calling apex_set_project_context with the agreed body (typically with some of the surfaced candidates pruned from active_hypotheses, and the current_state paragraph rewritten in your own words). Errors if no context doc exists for the project_id.",
+        inputSchema: {
+          project_id: z.string().describe("Project id whose context doc should be compacted"),
+        },
+      },
+      async ({ project_id }) => {
+        const doc = await getProjectContext(project_id);
+        if (!doc) {
+          return {
+            content: [{ type: "text", text: `No context document for ${project_id} — nothing to compact` }],
+            isError: true,
+          };
+        }
+        const proposal = proposeCompaction(doc);
+        return asText(
+          `Compaction proposal for ${project_id} (NOT SAVED — review then call apex_set_project_context to commit)`,
+          proposal,
+        );
       },
     );
   },

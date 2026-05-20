@@ -53,11 +53,22 @@ The squad agents (Newton, Darwin, Atlas, Jimmy) ran on a GCP VM ("OpenClaw") on 
 | `apex:prompts:v2` | Prompt library (119 entries; squad-targeted, currently unused) | `/api/prompts` POST. Squad revival in Phase 7 will start exercising these. |
 | `apex:squad:v4` | Agent records (5: ginge active, atlas/newton/darwin/jimmy dormant) | `/api/squad`. Includes `dormant: boolean` per agent (added in M3). |
 | `apex:mcp-audit:{YYYY-MM}` | Per-month audit log of every MCP write | Append-only; appended by `appendAuditEvent()` in every MCP write tool. Read via MCP `apex_get_audit`. |
-| `apex:project:{id}` | Per-project enrichment store (5 records: caliber, edge-auto, gemsnap, squad, storyquest) | Holds timeline / waitingOn / notes the canonical record doesn't. Read via `/api/project/[id]`. Migration into canonical deferred to Phase 7/8. |
+| `apex:project:{id}` | Per-project **structural** enrichment store (5 records: caliber, edge-auto, gemsnap, squad, storyquest) | Holds timeline / waitingOn / notes the canonical record doesn't. Read via `/api/project/[id]`. Migration into canonical deferred to Phase 7/8. |
+| `apex:project-context:v1` | Per-project **narrative** context (live, separate from the structural store above) | `{ docs: { [project_id]: ProjectContextDoc }, lastUpdated }`. Each doc has `meta` (version + inline `prior_version` for N=1 rollback) plus `current_state`, `active_hypotheses`, `open_questions`, `stakeholder_notes`, `recent_decisions`. Read via `src/lib/project-context.ts`; written via MCP `apex_log_context` (append, the workhorse) and `apex_set_project_context` (overwrite). `apex_compact_project_context` returns a heuristic proposal (no save). Surfaced in `apex_get_briefing` as `top_project_context`, `context_compaction_due`, `stale_context_projects`. |
 | `apex:pipeline:caliber:{date}` | Caliber content-pipeline grids per day | Out-of-scope for the warroom/tasks lifecycle; left untouched in Magnificent. |
 | `vault:apikeys:*` | Encrypted API keys + `vault:apikeys:_index` | `/api/vault` (AES-256-GCM, key in `VAULT_ENCRYPTION_KEY`). Surfaced at `/schematics/keys`. |
 
 Removed during Magnificent (M4 + M5): `apex:projects`, `maproom:projects`, `apex:squad:v2`, `vault:ip-entries`, `maproom:{ip-vault, ip-vault-v2, prompts, ideas, capabilities, outputs, metrics, platform-rules}`, `apex:action-room:{feed, suggestions}`. Total: 14 KV keys deleted, ~898KB freed.
+
+### Per-project state — note for Phase 7/8 consolidation
+
+Per-project state is now intentionally split across **three** stores. Future consolidation work must consume all three, not one:
+
+- **`apex:warroom:projects`** — canonical metadata (id, name, stage, status, tier, blocker, owner, score, image, url, tags).
+- **`apex:project:{id}`** — *structural* enrichment: timeline milestones, waitingOn items, generic notes blob. Per-id keys. (`tasks` duplicates `apex:pipeline-tasks` — drop on migration.)
+- **`apex:project-context:v1`** — *narrative* context: current_state, hypotheses, questions, stakeholder signals, decisions. Single envelope, versioned with inline N=1 rollback.
+
+The two per-project stores serve different concerns and intentionally do not share fields: `apex:project:{id}.notes` is a free-form blob; `apex:project-context:v1.stakeholder_notes` is per-person structured narrative with timestamps. Consolidation must preserve both shapes (or explicitly choose which to drop).
 
 ---
 
